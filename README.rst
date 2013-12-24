@@ -24,7 +24,7 @@ Tested against:
 - django-tastypie >= 0.9.14
 
 (see the `tox.ini
-<https://github.com/cryporchild/tastytopping/blob/master/tox.ini>`_ file for
+<https://github.com/cboelsen/tastytopping/blob/master/tox.ini>`_ file for
 more information).
 
 

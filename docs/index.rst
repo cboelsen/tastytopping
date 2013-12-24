@@ -55,7 +55,7 @@ Tested with / against:
 - requests >= 1.0.0
 
 (see the `tox.ini
-<https://github.com/cryporchild/tastytopping/blob/master/tox.ini>`_ file for
+<https://github.com/cboelsen/tastytopping/blob/master/tox.ini>`_ file for
 more information).
 
 
@@ -147,7 +147,7 @@ To install tastytopping:
 
 ::
 
-    $ git clone https://github.com/cryporchild/tastytopping
+    $ git clone https://github.com/cboelsen/tastytopping
     $ cd tastytopping
     $ virtualenv env
     $ . env/bin/activate
@@ -163,7 +163,7 @@ And to run the tests:
 
 The tests are run against several environments with different versions of the
 same packages, and are meant to pass all the tests at all times. If they aren't
-passing, it's a `bug <https://github.com/cryporchild/tastytopping/issues>`_!
+passing, it's a `bug <https://github.com/cboelsen/tastytopping/issues>`_!
 The tests aren't run against every combination of requests, django, and
 tastypie supported, though, so there's a small chance a bug might slip in
 unnoticed.
