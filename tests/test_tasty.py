@@ -51,21 +51,20 @@ class IntegrationTest(unittest.TestCase):
     def _delete_all_test_objects(self):
         self._delete_all(TestResource)
         self._delete_all(TestResource2)
-        try:
-            for resource in TestTreeResource.all():
-                try:
-                    resource.delete()
-                except ErrorResponse:
-                    pass
-        except NoResourcesExist:
-            pass
+        self._delete_all(TestTreeResource)
 
     def _delete_all(self, resource_class):
         try:
             for resource in resource_class.all():
-                resource.delete()
+                try:
+                    resource.delete()
+                except ObjectDeleted:
+                    pass
         except NoResourcesExist:
             pass
+
+    def _delete(self, res):
+        res._api().delete(res.uri(), res._schema())
 
     def _api_init_with_max_results(self, fn, num):
         def init(self, *args, **kwargs):
@@ -384,6 +383,11 @@ class IntegrationTest(unittest.TestCase):
         self.assertFalse(res)
         self.assertFalse(res_copy)
 
+    def test_resource_deleted_on_another_machine___exception_raised_when_updating(self):
+        res = TestResource(path=self.TEST_PATH1)
+        self._delete(res)
+        self.assertRaises(ObjectDeleted, setattr, res, 'rating', 50)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -396,14 +400,14 @@ class IntegrationTest(unittest.TestCase):
     #  - files
     #  - cookies ???
     # TODO Allow bulk operations (update multiple objects at once) - how?!? PATCH !
-    # TODO PATCH ?!??
     # TODO Get tastypie to return resources that have ALL related resources given, so that
     # TestTreeResource.get(children=[t1, t2]) does not return the same as TestTreeResource.get(children=[t2]).
-    # TODO Gracefully handle resources being deleted underneath our feet. Possible?!?
     # TODO Only silently remove filters after construction - raise exception at other times.
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Make cache also related to setting fields (ie. maybe use a 'save()' method?!?)
+    # TODO ObjectDeleted => ResourceDeleted
+    # TODO Factory should raise exception on getattr (ie. not need to use). - ?!?!?!
 
     # TESTING:
     # TODO exceptions

@@ -49,7 +49,7 @@ class TestResource(ModelResource):
         queryset = Test.objects.all()
         resource_name = 'test_resource'
         list_allowed_methods   = ['get', 'post']
-        detail_allowed_methods = ['get', 'post', 'put', 'delete']
+        detail_allowed_methods = ['get', 'delete', 'patch']
         authentication = ApiKeyAuthentication()
         authorization = Authorization()
         filtering = {
@@ -96,6 +96,8 @@ class TreeResource(ModelResource):
     class Meta:
         resource_name = 'tree'
         queryset = Tree.objects.all()
+        list_allowed_methods   = ['get', 'post']
+        detail_allowed_methods = ['get', 'delete', 'put']
         authorization = Authorization()
         always_return_data = True
         filtering = {

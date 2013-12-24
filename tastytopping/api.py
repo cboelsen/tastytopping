@@ -19,7 +19,9 @@ from .exceptions import (
     BadJsonResponse,
     ErrorResponse,
     NonExistantResource,
-    CannotConnectToAddress
+    CannotConnectToAddress,
+    ObjectDeleted,
+    RestMethodNotAllowed,
 )
 
 
@@ -75,6 +77,8 @@ class TastyApi(object):
             if response.text:
                 raise BadJsonResponse(err, response.text, url, params, data)
         except requests.exceptions.HTTPError as err:
+            if response.status_code == 404:
+                raise ObjectDeleted(url)
             raise ErrorResponse(err, response.text, url, params, data)
         except requests.exceptions.ConnectionError as err:
             raise CannotConnectToAddress(self._address())
@@ -172,8 +176,13 @@ class TastyApi(object):
         :type resource: str
         """
         url = self._resource_url(resource)
-        schema.check_detail_request_allowed('put')
-        return self._transmit(requests.put, url, data=kwargs)
+        try:
+            schema.check_detail_request_allowed('patch')
+            method = requests.patch
+        except RestMethodNotAllowed:
+            schema.check_detail_request_allowed('put')
+            method = requests.put
+        return self._transmit(method, url, data=kwargs)
 
     def delete(self, resource, schema):
         """Remove a given resource from the API.
