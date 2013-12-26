@@ -16,7 +16,7 @@ from datetime import datetime
 
 from .meta import ResourceMeta
 from .exceptions import (
-    ObjectDeleted,
+    ResourceDeleted,
     CreatedResourceNotFound,
     NoFiltersInSchema,
     FieldNotInSchema,
@@ -96,12 +96,12 @@ class Resource(_BaseMetaBridge, object):
         if name not in self.fields():
             super(Resource, self).__setattr__(name, value)
         if self.uri() not in self._ALIVE:
-            raise ObjectDeleted(self.uri())
+            raise ResourceDeleted(self.uri())
         self.update(**{name: value})
 
     def __getattr__(self, name):
         if self.uri() not in self._ALIVE:
-            raise ObjectDeleted(self.uri())
+            raise ResourceDeleted(self.uri())
         try:
             return self._cached_field(name)
         except KeyError:
@@ -233,12 +233,12 @@ class Resource(_BaseMetaBridge, object):
         """Delete the object through the API.
 
         Note that any attempt to use this object after calling delete will
-        result in an ObjectDeleted exception.
+        result in an ResourceDeleted exception.
 
-        :raises: ObjectDeleted
+        :raises: ResourceDeleted
         """
         if self.uri() not in self._ALIVE:
-            raise ObjectDeleted(self.uri())
+            raise ResourceDeleted(self.uri())
         self._api().delete(self.uri(), self._schema())
         del self._ALIVE[self.uri()]
 

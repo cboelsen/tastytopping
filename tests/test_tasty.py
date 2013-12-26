@@ -58,7 +58,7 @@ class IntegrationTest(unittest.TestCase):
             for resource in resource_class.all():
                 try:
                     resource.delete()
-                except ObjectDeleted:
+                except ResourceDeleted:
                     pass
         except NoResourcesExist:
             pass
@@ -108,17 +108,17 @@ class IntegrationTest(unittest.TestCase):
     def test_delete_object_twice___exception_raised(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource.delete()
-        self.assertRaises(ObjectDeleted, resource.delete)
+        self.assertRaises(ResourceDeleted, resource.delete)
 
     def test_delete_then_access_member___exception_raised(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource.delete()
-        self.assertRaises(ObjectDeleted, getattr, resource, 'path')
+        self.assertRaises(ResourceDeleted, getattr, resource, 'path')
 
     def test_delete_then_set_member___exception_raised(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource.delete()
-        self.assertRaises(ObjectDeleted, setattr, resource, 'path', self.TEST_PATH2)
+        self.assertRaises(ResourceDeleted, setattr, resource, 'path', self.TEST_PATH2)
 
     def test_cache_refresh___new_changes_picked_up(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
@@ -386,7 +386,7 @@ class IntegrationTest(unittest.TestCase):
     def test_resource_deleted_on_another_machine___exception_raised_when_updating(self):
         res = TestResource(path=self.TEST_PATH1)
         self._delete(res)
-        self.assertRaises(ObjectDeleted, setattr, res, 'rating', 50)
+        self.assertRaises(ResourceDeleted, setattr, res, 'rating', 50)
 
     #def test_zzz(self):
     #    import sys
@@ -406,7 +406,6 @@ class IntegrationTest(unittest.TestCase):
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Make cache also related to setting fields (ie. maybe use a 'save()' method?!?)
-    # TODO ObjectDeleted => ResourceDeleted
     # TODO Factory should raise exception on getattr (ie. not need to use). - ?!?!?!
 
     # TESTING:

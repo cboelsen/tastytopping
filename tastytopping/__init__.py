@@ -26,7 +26,7 @@ from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
     RestMethodNotAllowed,
-    ObjectDeleted,
+    ResourceDeleted,
     CreatedResourceNotFound,
     BadJsonResponse,
     ErrorResponse,

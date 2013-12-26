@@ -66,8 +66,8 @@ class FilterNotAllowedForField(PrettyException):
 
 
 
-class ObjectDeleted(PrettyException):
-    """Raised when attempting to use a deleted object."""
+class ResourceDeleted(PrettyException):
+    """Raised when attempting to use a deleted resource."""
     pass
 
 class CreatedResourceNotFound(PrettyException):

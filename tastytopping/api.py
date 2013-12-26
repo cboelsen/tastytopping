@@ -20,7 +20,7 @@ from .exceptions import (
     ErrorResponse,
     NonExistantResource,
     CannotConnectToAddress,
-    ObjectDeleted,
+    ResourceDeleted,
     RestMethodNotAllowed,
 )
 
@@ -78,7 +78,7 @@ class TastyApi(object):
                 raise BadJsonResponse(err, response.text, url, params, data)
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:
-                raise ObjectDeleted(url)
+                raise ResourceDeleted(url)
             raise ErrorResponse(err, response.text, url, params, data)
         except requests.exceptions.ConnectionError as err:
             raise CannotConnectToAddress(self._address())

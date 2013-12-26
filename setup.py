@@ -1,8 +1,5 @@
 from distutils.core import setup
 
-def get_version(version, _):
-    return version
-
 setup(
     name = "TastyTopping",
     version = "1.0.5",
