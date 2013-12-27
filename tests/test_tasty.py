@@ -388,6 +388,22 @@ class IntegrationTest(unittest.TestCase):
         self._delete(res)
         self.assertRaises(ResourceDeleted, setattr, res, 'rating', 50)
 
+    def test_bulk_creation___multiple_resources_can_be_gotten(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
+        res1 = TestResource.get(path=self.TEST_PATH1)
+        res2 = TestResource.get(path=self.TEST_PATH2)
+
+    # TODO Finish this when caching applies to setting fields too.
+    #def test_bulk_updates___multiple_resources_fields_updated(self):
+    #    pass
+
+    def test_bulk_delete___multiple_resources_deleted(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        res2 = TestResource(path=self.TEST_PATH2)
+        TestResource.bulk(delete=[res1, res2])
+        self.assertRaises(NoResourcesExist, list, TestResource.all())
+        self.assertRaises(ResourceDeleted, setattr, res1, 'rating', 50)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -399,14 +415,13 @@ class IntegrationTest(unittest.TestCase):
     # TODO Allow files to be passed (as well as other things requests allows):
     #  - files
     #  - cookies ???
-    # TODO Allow bulk operations (update multiple objects at once) - how?!? PATCH !
     # TODO Get tastypie to return resources that have ALL related resources given, so that
     # TestTreeResource.get(children=[t1, t2]) does not return the same as TestTreeResource.get(children=[t2]).
     # TODO Only silently remove filters after construction - raise exception at other times.
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
-    # TODO Make cache also related to setting fields (ie. maybe use a 'save()' method?!?)
-    # TODO Factory should raise exception on getattr (ie. not need to use). - ?!?!?!
+    # TODO Make resource caching also related to setting fields (ie. maybe use a 'save()' method?!?)
+    # TODO Allow bulk operations (update multiple objects at once).
 
     # TESTING:
     # TODO exceptions

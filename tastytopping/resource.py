@@ -95,13 +95,11 @@ class Resource(_BaseMetaBridge, object):
     def __setattr__(self, name, value):
         if name not in self.fields():
             super(Resource, self).__setattr__(name, value)
-        if self.uri() not in self._ALIVE:
-            raise ResourceDeleted(self.uri())
+        self.check_alive()
         self.update(**{name: value})
 
     def __getattr__(self, name):
-        if self.uri() not in self._ALIVE:
-            raise ResourceDeleted(self.uri())
+        self.check_alive()
         try:
             return self._cached_field(name)
         except KeyError:
@@ -229,6 +227,15 @@ class Resource(_BaseMetaBridge, object):
         """
         return self._uri
 
+    def check_alive(self):
+        """Check that the Resource has not been deleted.
+
+        Note that this only checks locally, so if another client deletes the
+        resource elsewhere it won't be picked up.
+        """
+        if not self:
+            raise ResourceDeleted(self.uri())
+
     def delete(self):
         """Delete the object through the API.
 
@@ -237,8 +244,7 @@ class Resource(_BaseMetaBridge, object):
 
         :raises: ResourceDeleted
         """
-        if self.uri() not in self._ALIVE:
-            raise ResourceDeleted(self.uri())
+        self.check_alive()
         self._api().delete(self.uri(), self._schema())
         del self._ALIVE[self.uri()]
 

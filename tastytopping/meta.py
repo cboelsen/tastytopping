@@ -139,3 +139,45 @@ class ResourceMeta(type):
     def count(cls):
         """Return the number of records for this resource."""
         return len(cls)
+
+    def bulk(cls, create=None, update=None, delete=None):
+        """Create, update, and delete to multiple resources in a single request.
+
+        Note that this doesn't return anything, so any created resources will
+        have to be retrieved with :meth:`tastytopping.resource.Resource.get` /
+        :meth:`tastytopping.resource.Resource.update` /
+        :meth:`tastytopping.resource.Resource.all`, while all updated resources
+        will have to be refreshed (:meth:`tastytopping.resource.Resource.refresh`).
+        Resource objects passed into delete will be marked as deleted, so any
+        attempt to use them afterwards will raise an exception.
+
+        :param create: The dicts of fields for new resources.
+        :type create: list
+        :param update: The Resource objects to update.
+        :type update list
+        :param delete: The Resource objects to delete.
+        :type delete: list
+        """
+        create = create or []
+        update = update or []
+        delete = delete or []
+        for resource in (update + delete):
+            resource.check_alive()
+        # The resources to create or update are sent in a single list.
+        resources = create if create else [] + update if update else []
+        # Get the fields for any Resource objects given.
+        resources = (
+            [r for r in resources if not hasattr(r, 'uri')] +
+            [r.fields() for r in resources if hasattr(r, 'uri')]
+        )
+        cls.api().bulk(
+            cls.resource(),
+            cls.schema(),
+            resources,
+            [d.uri() for d in delete]
+        )
+        # Mark each deleted resource as deleted.
+        # TODO This is not given - the server can respond with a 202, but not
+        # succeed in processing the request.
+        for resource in delete:
+            del cls._ALIVE[resource.uri()]
