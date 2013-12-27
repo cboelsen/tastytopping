@@ -9,7 +9,7 @@
 """
 
 
-__all__ = ('get', )
+__all__ = ('retrieve_from_cache', )
 
 
 import weakref
@@ -18,7 +18,7 @@ import weakref
 _STORAGE = weakref.WeakValueDictionary()
 
 
-def get(class_type, *args, **kwargs):
+def retrieve_from_cache(class_type, *args, **kwargs):
     """Access the cache and return the desired object.
 
     If the object doesn't exist in the cache, a new object will be created

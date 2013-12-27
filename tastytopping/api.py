@@ -23,6 +23,7 @@ from .exceptions import (
     ResourceDeleted,
     RestMethodNotAllowed,
 )
+from .schema import TastySchema
 
 
 class TastyApi(object):
@@ -237,9 +238,13 @@ class TastyApi(object):
 
         :param resource_type: The TastyPie resource name.
         :type resource: str
+        :returns: A wrapper around the resource's schema.
+        :rtype: TastySchema
+        :raises: NonExistantResource
         """
         try:
             url = self._base_url() + self._resources()[resource_type]['schema']
-            return self._transmit(requests.get, url)
+            schema_dict = self._transmit(requests.get, url)
+            return TastySchema(schema_dict, resource_type)
         except KeyError:
             raise NonExistantResource(resource_type)

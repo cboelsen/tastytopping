@@ -17,13 +17,12 @@ __all__ = ('ResourceMeta', )
 # pylint: disable=W0212
 
 
-from . import cache
+from .cache import retrieve_from_cache
 from .api import TastyApi
 from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
 )
-from .schema import TastySchema
 
 
 class ResourceMeta(type):
@@ -55,6 +54,18 @@ class ResourceMeta(type):
         response = next(iter(cls.api().get(cls.resource(), cls.schema(), limit=1)))
         return response['meta']['total_count']
 
+    def _set_api_auth(cls, auth):
+        cls._auth = auth
+        cls.api().auth = auth
+
+    def _set_auth(cls, auth):
+        cls._set_api_auth(auth)
+        for derived in ResourceMeta._classes:
+            if issubclass(derived, cls):
+                derived._set_api_auth(auth)
+
+    auth = property(lambda cls: cls._auth, _set_auth)
+
     def resource(cls):
         """Return the resource name of this class."""
         if cls._class_resource is None:
@@ -68,7 +79,7 @@ class ResourceMeta(type):
         if cls._class_api is None:
             if cls.api_url is None:
                 raise NotImplementedError('"api_url" needs to be defined in a derived class.')
-            cls._class_api = cache.get(TastyApi, cls.api_url, id=cls)
+            cls._class_api = retrieve_from_cache(TastyApi, cls.api_url, id=cls)
             if cls.auth:
                 cls._class_api.auth = cls.auth
         return cls._class_api
@@ -76,20 +87,8 @@ class ResourceMeta(type):
     def schema(cls):
         """Return the schema used by this class."""
         if cls._class_schema is None:
-            cls._class_schema = cache.get(TastySchema, cls.api(), cls.resource())
+            cls._class_schema = retrieve_from_cache(cls.api().schema, cls.resource())
         return cls._class_schema
-
-    def _set_api_auth(cls, auth):
-        cls._auth = auth
-        cls.api().auth = auth
-
-    def _set_auth(cls, auth):
-        cls._set_api_auth(auth)
-        for derived in ResourceMeta._classes:
-            if issubclass(derived, cls):
-                derived._set_api_auth(auth)
-
-    auth = property(lambda cls: cls._auth, _set_auth)
 
     def filter(cls, **kwargs):
         """Return existing objects via the API, filtered by kwargs.
@@ -161,7 +160,7 @@ class ResourceMeta(type):
         create = create or []
         update = update or []
         delete = delete or []
-        for resource in (update + delete):
+        for resource in update + delete:
             resource.check_alive()
         # The resources to create or update are sent in a single list.
         resources = create if create else [] + update if update else []

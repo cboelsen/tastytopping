@@ -63,13 +63,12 @@ class TastySchema(object):
     :type resource: str
     """
 
-    def __init__(self, api, resource):
-        self._api = api
+    def __init__(self, data, resource):
         self._resource = resource
-        self._sch = None
+        self._schema = data
 
     def __str__(self):
-        return str(self._schema()) if self._schema() else repr(self)
+        return str(self._schema) if self._schema else repr(self)
 
     def __repr__(self):
         return '<Schema for "{0}">'.format(self._resource)
@@ -77,26 +76,21 @@ class TastySchema(object):
     def _check_request_allowed(self, req_type, req):
         key = 'allowed_{0}_http_methods'.format(req_type)
         req = req.lower()
-        if req not in self._schema()[key]:
+        if req not in self._schema[key]:
             error = (
                 "Resource '{0}' does not allow '{1}'. Allowed are '{2}': {3}"
-                "".format(self._resource, req, key, self._schema()[key])
+                "".format(self._resource, req, key, self._schema[key])
             )
             raise RestMethodNotAllowed(error)
 
-    def _schema(self):
-        if self._sch is None:
-            self._sch = self._api.schema(self._resource)
-        return self._sch
-
     def _fields(self):
-        return self._schema()['fields']
+        return self._schema['fields']
 
     def _filters(self):
         try:
-            return self._schema()['filtering']
+            return self._schema['filtering']
         except KeyError:
-            raise NoFiltersInSchema(self._schema())
+            raise NoFiltersInSchema(self._schema)
 
     def _check_filter(self, field):
         # TODO Ugh! Refactor!
@@ -108,9 +102,9 @@ class TastySchema(object):
             if _ALL != allowed_filters and _ALL_WITH_RELATIONS != allowed_filters:
                 _, filter_type = field.rsplit('__', 1)
                 if filter_type in _POSSIBLE_FILTERS and filter_type not in allowed_filters:
-                    raise FilterNotAllowedForField(field, self._schema())
+                    raise FilterNotAllowedForField(field, self._schema)
         except KeyError:
-            raise FilterNotAllowedForField(field, self._schema())
+            raise FilterNotAllowedForField(field, self._schema)
         except ValueError:
             pass
 
@@ -127,7 +121,7 @@ class TastySchema(object):
         for field, desc in self._fields().items():
             if desc['unique'] and field in self._filters():
                 return field
-        error = "No unique fields can be filtered for '{0}'. Schema: {1}".format(self._resource, self._schema())
+        error = "No unique fields can be filtered for '{0}'. Schema: {1}".format(self._resource, self._schema)
         raise NoUniqueFilterableFields(error)
 
     def validate(self, field, value):
@@ -153,7 +147,7 @@ class TastySchema(object):
         try:
             return self._fields()[name]
         except KeyError:
-            raise FieldNotInSchema(name, self._schema())
+            raise FieldNotInSchema(name, self._schema)
 
     def check_list_request_allowed(self, req):
         """Check that the schema allows the given REST method for 'allowed_list_http_methods'.
@@ -230,9 +224,9 @@ class TastySchema(object):
         :rtype: unicode
         """
         related_type = lambda desc: '{0} ({1})'.format(desc['type'], desc['related_type'])
-        filtering = self._schema().get('filtering')
+        filtering = self._schema.get('filtering')
         fields = self._fields().items()
-        ordering = self._schema().get('ordering')
+        ordering = self._schema.get('ordering')
         help_text = (
             'Resource "{0}"\n'
             '================{1}\n\n'
@@ -243,9 +237,9 @@ class TastySchema(object):
             ''.format(
                 self._resource,
                 '=' * len(self._resource),
-                self._schema().get('default_format'),
-                self._help_methods(self._schema().get('allowed_list_http_methods')),
-                self._help_methods(self._schema().get('allowed_detail_http_methods')),
+                self._schema.get('default_format'),
+                self._help_methods(self._schema.get('allowed_list_http_methods')),
+                self._help_methods(self._schema.get('allowed_detail_http_methods')),
                 ordering if ordering else 'Not allowed'
             )
         )
