@@ -19,7 +19,6 @@ from .exceptions import (
     ResourceDeleted,
     CreatedResourceNotFound,
     NoFiltersInSchema,
-    FieldNotInSchema,
     BadRelatedType,
     MultipleResourcesReturned,
 )
@@ -65,11 +64,10 @@ class Resource(_BaseMetaBridge, object):
     _ALIVE = {}
 
     def __init__(self, **kwargs):
-        # TODO Refactor
-        if '_details' not in kwargs:
-            _details = self._create_new_resource(self._api(), self._resource(), self._schema(), **kwargs)
-        else:
+        try:
             _details = kwargs.pop('_details')
+        except KeyError:
+            _details = self._create_new_resource(self._api(), self._resource(), self._schema(), **kwargs)
         uri = _details['resource_uri']
         self._ALIVE[uri] = True
         self._set('_fields', _details)
@@ -122,7 +120,7 @@ class Resource(_BaseMetaBridge, object):
                 if 'limit' not in kwargs:
                     kwargs['limit'] = 2
                 fields = schema.remove_fields_not_in_filters(kwargs)
-                results = type(self)._get_resources(**fields)
+                results = type(self).get_resources(**fields)
                 resources = next(iter(results))['objects']
                 if len(resources) > 1:
                     raise MultipleResourcesReturned(fields, resources)
@@ -169,7 +167,7 @@ class Resource(_BaseMetaBridge, object):
             else:
                 return self._create_related(field)
         elif field_type == tastytypes.DATETIME:
-            # TODO This is ugly
+            # Try with milliseconds, ohterwise without.
             try:
                 field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
             except ValueError:

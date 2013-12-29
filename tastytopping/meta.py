@@ -92,7 +92,8 @@ class ResourceMeta(type):
             cls._class_schema = retrieve_from_cache(cls.api().schema, cls.resource())
         return cls._class_schema
 
-    def _get_resources(cls, **kwargs):
+    def get_resources(cls, **kwargs):
+        """Return a generator of dicts from the API."""
         for field, obj in kwargs.items():
             try:
                 if cls.schema().field(field)['type'] == tastytypes.RELATED:
@@ -116,10 +117,9 @@ class ResourceMeta(type):
         :rtype: list
         :raises: NoResourcesExist
         """
-        # TODO Refactor for generator
         exist = False
         cls.schema().check_fields_in_filters(kwargs)
-        for response in cls._get_resources(**kwargs):
+        for response in cls.get_resources(**kwargs):
             for obj in response['objects']:
                 yield cls(_details=obj)
                 exist = True
@@ -174,7 +174,7 @@ class ResourceMeta(type):
         :param create: The dicts of fields for new resources.
         :type create: list
         :param update: The Resource objects to update.
-        :type update list
+        :type update: list
         :param delete: The Resource objects to delete.
         :type delete: list
         """

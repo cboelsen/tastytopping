@@ -14,8 +14,8 @@ __all__ = ('TastySchema', )
 
 from .exceptions import (
     ReadOnlyField,
-    FieldNotNullable,
     NoUniqueFilterableFields,
+    FieldNotNullable,
     RestMethodNotAllowed,
     NoFiltersInSchema,
     FieldNotInSchema,
@@ -199,7 +199,7 @@ class TastySchema(object):
             return fields
         filters = self._filters().copy()
         filters.update({'limit': 0, 'order_by': 0})
-        for field, value in fields.items():
+        for field in fields:
             for fil in filters:
                 if field.startswith(fil):
                     self._check_filter(field)
