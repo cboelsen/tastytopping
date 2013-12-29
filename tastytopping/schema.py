@@ -170,6 +170,7 @@ class TastySchema(object):
         :type fields: dict {str: obj}
         :returns: the given fields, minus those that can't be used as filters.
         :rtype: dict {str: obj}
+        :raises: FilterNotAllowedForField
         """
         # TODO Check related fields' filters too.
         if not fields:
@@ -182,7 +183,29 @@ class TastySchema(object):
                 if field.startswith(fil):
                     self._check_filter(field)
                     result[field] = value
+                    break
         return result
+
+    def check_fields_in_filters(self, fields):
+        """Check that all fields are valid filters.
+
+        :param fields: the fields and values to filter on.
+        :type fields: dict {str: obj}
+        :raises: FilterNotAllowedForField
+        """
+        # TODO Check related fields' filters too.
+        # TODO Refactor with remove_fields_not_in_filters
+        if not fields:
+            return fields
+        filters = self._filters().copy()
+        filters.update({'limit': 0, 'order_by': 0})
+        for field, value in fields.items():
+            for fil in filters:
+                if field.startswith(fil):
+                    self._check_filter(field)
+                    break
+            else:
+                raise FilterNotAllowedForField(field, self._schema)
 
     @staticmethod
     def _help_filtering(filtering, field):

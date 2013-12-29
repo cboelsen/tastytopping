@@ -22,7 +22,19 @@ from .api import TastyApi
 from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
+    FieldNotInSchema,
 )
+
+
+# TODO In multiple locations
+class _TastyTypes(object):
+
+    RELATED = 'related'
+    DATETIME = 'datetime'
+    DATETIME_FORMAT1 = "%Y-%m-%dT%H:%M:%S.%f"
+    DATETIME_FORMAT2 = "%Y-%m-%dT%H:%M:%S"
+    TO_ONE = 'to_one'
+    TO_MANY = 'to_many'
 
 
 class ResourceMeta(type):
@@ -90,6 +102,21 @@ class ResourceMeta(type):
             cls._class_schema = retrieve_from_cache(cls.api().schema, cls.resource())
         return cls._class_schema
 
+    def _get_resources(cls, **kwargs):
+        for field, obj in kwargs.items():
+            try:
+                if cls.schema().field(field)['type'] == _TastyTypes.RELATED:
+                    del kwargs[field]
+                    try:
+                        related_field = obj.filter_field()
+                        kwargs['{0}__{1}'.format(field, related_field)] = getattr(obj, related_field)
+                    except AttributeError:
+                        related_field = obj[0].filter_field()
+                        kwargs['{0}__{1}'.format(field, related_field)] = [getattr(o, related_field) for o in obj]
+            except FieldNotInSchema:
+                pass
+        return cls.api().get(cls.resource(), cls.schema(), **kwargs)
+
     def filter(cls, **kwargs):
         """Return existing objects via the API, filtered by kwargs.
 
@@ -101,7 +128,8 @@ class ResourceMeta(type):
         """
         # TODO Refactor for generator
         exist = False
-        for response in cls._get_details(cls.api(), cls.resource(), cls.schema(), **kwargs):
+        cls.schema().check_fields_in_filters(kwargs)
+        for response in cls._get_resources(**kwargs):
             for obj in response['objects']:
                 yield cls(_details=obj)
                 exist = True
@@ -126,11 +154,14 @@ class ResourceMeta(type):
         :rtype: Resource
         :raises: NoResourcesExist, MultipleResourcesReturned
         """
+        # No more than two results are needed, so save the server's resources.
+        if 'limit' not in kwargs:
+            kwargs['limit'] = 2
         resource_iter = iter(cls.filter(**kwargs))
         result = next(resource_iter)
         try:
             next(resource_iter)
-            raise MultipleResourcesReturned(cls._derived_resource(), kwargs, list(resource_iter))
+            raise MultipleResourcesReturned(cls.resource(), kwargs, list(resource_iter))
         except StopIteration:
             pass
         return result

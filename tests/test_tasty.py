@@ -216,7 +216,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_creating_resource_that_has_no_filters___object_created_but_exception_raised(self):
         self.assertRaises(CreatedResourceNotFound, NoFilterResource, path='a')
-        self.assertEqual(NoFilterResource.get().path, 'a')
+        self.assertEqual(next(iter(NoFilterResource.all())).path, 'a')
 
     def test_more_resources_to_get_than_default_limit___api_gets_all_resources(self):
         restore_init = TastyApi.__init__
@@ -403,6 +403,23 @@ class IntegrationTest(unittest.TestCase):
         TestResource.bulk(delete=[res1, res2])
         self.assertRaises(NoResourcesExist, list, TestResource.all())
         self.assertRaises(ResourceDeleted, setattr, res1, 'rating', 50)
+
+    def test_get_with_multiple_results___throws_exception(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        res2 = TestResource(path=self.TEST_PATH2)
+        self.assertRaises(MultipleResourcesReturned, TestResource.get)
+
+    def test_queries_with_field_not_in_filters___throws_exception(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        self.assertRaises(FilterNotAllowedForField, TestResource.get, text=self.TEST_PATH1)
+
+    def test_queries_with_non_existant_fields___throws_exception(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        self.assertRaises(FilterNotAllowedForField, TestResource.get, fake=self.TEST_PATH1)
+
+    def test_queries_with_closely_related_non_existant_fields___throws_exception(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        self.assertRaises(FilterNotAllowedForField, TestResource.get, pat=self.TEST_PATH1)
 
     #def test_zzz(self):
     #    import sys

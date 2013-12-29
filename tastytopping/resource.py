@@ -21,6 +21,7 @@ from .exceptions import (
     NoFiltersInSchema,
     FieldNotInSchema,
     BadRelatedType,
+    MultipleResourcesReturned,
 )
 
 
@@ -117,7 +118,7 @@ class Resource(_BaseMetaBridge, object):
     def __bool__(self):
         return self.uri() in self._ALIVE
 
-    # TODO Remove: This is only for python2.x compatability
+    # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
@@ -125,9 +126,16 @@ class Resource(_BaseMetaBridge, object):
         details = api.add(resource, schema, **fields)
         if not details:
             try:
-                # TODO Refactor now that a generator is returned.
-                objects = next(iter(self._get_details(api, resource, schema, **kwargs)))['objects']
-                details = sorted(objects, key=lambda obj: obj['id'])[-1]
+                # No more than two results are needed, so save the server's resources.
+                # TODO This is in more than one place:
+                if 'limit' not in kwargs:
+                    kwargs['limit'] = 2
+                fields = schema.remove_fields_not_in_filters(kwargs)
+                results = type(self)._get_resources(**fields)
+                resources = next(iter(results))['objects']
+                if len(resources) > 1:
+                    raise MultipleResourcesReturned(fields, resources)
+                details = resources[0]
             except (IndexError, NoFiltersInSchema):
                 raise CreatedResourceNotFound(resource, schema, kwargs)
         return details
@@ -192,23 +200,6 @@ class Resource(_BaseMetaBridge, object):
     @staticmethod
     def _get_resource_type(details):
         return details['resource_uri'].split('/')[-3]
-
-    @staticmethod
-    def _get_details(api, resource, schema, **kwargs):
-        fields = schema.remove_fields_not_in_filters(kwargs)
-        for field, obj in fields.items():
-            try:
-                if schema.field(field)['type'] == _TastyTypes.RELATED:
-                    del fields[field]
-                    try:
-                        related_field = obj.filter_field()
-                        fields['{0}__{1}'.format(field, related_field)] = getattr(obj, related_field)
-                    except AttributeError:
-                        related_field = obj[0].filter_field()
-                        fields['{0}__{1}'.format(field, related_field)] = [getattr(o, related_field) for o in obj]
-            except FieldNotInSchema:
-                pass
-        return api.get(resource, schema, **fields)
 
     def _api(self):
         return type(self).api()
