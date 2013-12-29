@@ -23,21 +23,12 @@ from .exceptions import (
     BadRelatedType,
     MultipleResourcesReturned,
 )
+from . import tastytypes
 
 
 # Required because the syntax for metaclasses changed between python 2 and 3.
 # TODO Remove this when python2 finally dies.
 _BaseMetaBridge = ResourceMeta('_BaseMetaBridge', (object, ), {'auth': None})  # This is a class, not a constant # pylint: disable=C0103
-
-
-class _TastyTypes(object):
-
-    RELATED = 'related'
-    DATETIME = 'datetime'
-    DATETIME_FORMAT1 = "%Y-%m-%dT%H:%M:%S.%f"
-    DATETIME_FORMAT2 = "%Y-%m-%dT%H:%M:%S"
-    TO_ONE = 'to_one'
-    TO_MANY = 'to_many'
 
 
 class Resource(_BaseMetaBridge, object):
@@ -145,13 +136,13 @@ class Resource(_BaseMetaBridge, object):
         fields = kwargs.copy()
         for name, value in fields.items():
             field_type = schema.field(name)['type']
-            if field_type == _TastyTypes.RELATED:
+            if field_type == tastytypes.RELATED:
                 related_type = schema.field(name)['related_type']
-                if related_type == _TastyTypes.TO_MANY:
+                if related_type == tastytypes.TO_MANY:
                     if not hasattr(value, '__iter__') and not isinstance(value[0], Resource):
                         raise BadRelatedType('Expected a list of Resources', name, value, schema.field(name))
                     fields[name] = [v.uri() for v in value]
-                elif related_type == _TastyTypes.TO_ONE:
+                elif related_type == tastytypes.TO_ONE:
                     if not isinstance(value, Resource):
                         raise BadRelatedType('Expected a Resource', name, value, schema.field(name))
                     fields[name] = value.uri()
@@ -171,18 +162,18 @@ class Resource(_BaseMetaBridge, object):
     def _create_field_object(self, name, field, field_type):
         if field is None:
             pass
-        elif field_type == _TastyTypes.RELATED:
+        elif field_type == tastytypes.RELATED:
             related_type = self._schema().field(name)['related_type']
-            if related_type == _TastyTypes.TO_MANY:
+            if related_type == tastytypes.TO_MANY:
                 return [self._create_related(f) for f in field]
             else:
                 return self._create_related(field)
-        elif field_type == _TastyTypes.DATETIME:
+        elif field_type == tastytypes.DATETIME:
             # TODO This is ugly
             try:
-                field = datetime.strptime(field, _TastyTypes.DATETIME_FORMAT1)
+                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
             except ValueError:
-                field = datetime.strptime(field, _TastyTypes.DATETIME_FORMAT2)
+                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
         return field
 
     def _cached_field(self, name):

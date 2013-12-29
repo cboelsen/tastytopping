@@ -24,17 +24,7 @@ from .exceptions import (
     MultipleResourcesReturned,
     FieldNotInSchema,
 )
-
-
-# TODO In multiple locations
-class _TastyTypes(object):
-
-    RELATED = 'related'
-    DATETIME = 'datetime'
-    DATETIME_FORMAT1 = "%Y-%m-%dT%H:%M:%S.%f"
-    DATETIME_FORMAT2 = "%Y-%m-%dT%H:%M:%S"
-    TO_ONE = 'to_one'
-    TO_MANY = 'to_many'
+from . import tastytypes
 
 
 class ResourceMeta(type):
@@ -105,7 +95,7 @@ class ResourceMeta(type):
     def _get_resources(cls, **kwargs):
         for field, obj in kwargs.items():
             try:
-                if cls.schema().field(field)['type'] == _TastyTypes.RELATED:
+                if cls.schema().field(field)['type'] == tastytypes.RELATED:
                     del kwargs[field]
                     try:
                         related_field = obj.filter_field()

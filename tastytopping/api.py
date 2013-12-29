@@ -24,6 +24,7 @@ from .exceptions import (
     RestMethodNotAllowed,
 )
 from .schema import TastySchema
+from . import tastytypes
 
 
 class TastyApi(object):
@@ -99,9 +100,7 @@ class TastyApi(object):
             except AttributeError:
                 pass
         try:
-            # TODO This is in two places!
-            datetime_format = "%Y-%m-%dT%H:%M:%S.%f"
-            obj = obj.strftime(datetime_format)
+            obj = obj.strftime(tastytypes.DATETIME_FORMAT1)
         except AttributeError:
             pass
         try:
