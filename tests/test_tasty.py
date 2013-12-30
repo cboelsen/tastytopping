@@ -79,8 +79,8 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(resource.rating, self.TEST_RATING1)
 
     def test_create_with_factory___object_returned_with_same_fields(self):
-        auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
-        factory = ResourceFactory('http://localhost:8111/test/api/v1', auth)
+        factory = ResourceFactory('http://localhost:8111/test/api/v1')
+        factory.test_resource.auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
         resource = factory.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         self.assertEqual(resource.path, self.TEST_PATH1)
         self.assertEqual(resource.rating, self.TEST_RATING1)
@@ -420,6 +420,11 @@ class IntegrationTest(unittest.TestCase):
     def test_queries_with_closely_related_non_existant_fields___throws_exception(self):
         res1 = TestResource(path=self.TEST_PATH1)
         self.assertRaises(FilterNotAllowedForField, TestResource.get, pat=self.TEST_PATH1)
+
+    def test_related_field_creation___resource_keeps_correct_auth(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        cont = FACTORY.container(test=res1)
+        self.assertEqual(FACTORY.container.get().test.path, self.TEST_PATH1)
 
     #def test_zzz(self):
     #    import sys

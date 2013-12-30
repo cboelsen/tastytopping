@@ -33,13 +33,10 @@ class ResourceFactory(object):
 
     :param api_url: The url of the API!
     :type api_url: str
-    :param auth: The Authentication to use for the API.
-    :type auth: AuthBase
     """
 
-    def __init__(self, api_url, auth=None):
+    def __init__(self, api_url):
         self._url = api_url
-        self._auth = auth
         self._classes = {}
 
     def __getattr__(self, name):
@@ -51,7 +48,7 @@ class ResourceFactory(object):
         except KeyError:
             class _SpecificResource(Resource):
                 api_url = self._url
-                auth = self._auth
                 resource_name = resource
+                _factory = self
             self._classes[resource] = _SpecificResource
             return _SpecificResource

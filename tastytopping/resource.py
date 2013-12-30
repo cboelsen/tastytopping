@@ -62,6 +62,7 @@ class Resource(_BaseMetaBridge, object):
         class itself (TODO link to examples here)."""
 
     _ALIVE = {}
+    _factory = None
 
     def __init__(self, **kwargs):
         try:
@@ -147,15 +148,13 @@ class Resource(_BaseMetaBridge, object):
         return fields
 
     def _create_related(self, related_details):
-        if not isinstance(related_details, dict):
-            related_details = self._api().details(related_details, self._schema())
         resource_type = self._get_resource_type(related_details)
-        # TODO Refactor! This needs to be linked with the classes in the factory
-        # so that cache/auth/etc. settings are used here too.
-        class _RelatedResource(Resource):
-            api_url = self.api_url
-            resource_name = resource_type
-        return _RelatedResource(_details=related_details)
+        resource_class = getattr(self._factory, resource_type)
+        # Tastypie can either return a dict of fields for a resource, or simply
+        # its URI. We want to pass its fields to the new Resource.
+        if not isinstance(related_details, dict):
+            related_details = resource_class.api().details(related_details, resource_class.schema())
+        return resource_class(_details=related_details)
 
     def _create_field_object(self, name, field, field_type):
         if field is None:
@@ -188,7 +187,10 @@ class Resource(_BaseMetaBridge, object):
 
     @staticmethod
     def _get_resource_type(details):
-        return details['resource_uri'].split('/')[-3]
+        try:
+            return details['resource_uri'].split('/')[-3]
+        except TypeError:
+            return details.split('/')[-3]
 
     def _api(self):
         return type(self).api()

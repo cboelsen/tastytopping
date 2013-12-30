@@ -7,7 +7,7 @@ from tastypie.authorization import Authorization
 from tastypie.models import ApiKey
 from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
     
-from .models import Test, Tree
+from .models import Test, Tree, TestContainer
 
 
 # Set up the DB the first time the DB is accessed.
@@ -104,4 +104,16 @@ class TreeResource(ModelResource):
             'name': ALL,
             'parent': ALL_WITH_RELATIONS,
             'children': ALL_WITH_RELATIONS,
+        }
+
+
+class TestContainerResource(ModelResource):
+    test = fields.ToOneField(TestResource, 'test', null=True)
+    class Meta:
+        queryset = TestContainer.objects.all()
+        resource_name = 'container'
+        authorization = Authorization()
+        filtering = {
+            'id': ALL,
+            'test': ALL_WITH_RELATIONS,
         }
