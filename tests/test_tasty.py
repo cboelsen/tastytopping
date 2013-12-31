@@ -286,13 +286,12 @@ class IntegrationTest(unittest.TestCase):
         res = TestResource(path=self.TEST_PATH1, created_by=user)
         self.assertEqual(user.username, TestResource.get(path=self.TEST_PATH1).created_by.username)
 
-    # TODO Get this test working!
-    #def test_creating_resource_with_related_resource_members___related_resource_works_with_class_members(self):
-    #    user = FACTORY.user.get(username=self.TEST_USERNAME)
-    #    res = TestResource(path=self.TEST_PATH1, created_by=user)
-    #    res2 = TestResource.get(path=self.TEST_PATH1)
-    #    FACTORY.user.caching = False
-    #    self.assertFalse(res2.created_by.caching)
+    def test_creating_resource_with_related_resource_members___related_resource_works_with_class_members(self):
+        user = FACTORY.user.get(username=self.TEST_USERNAME)
+        res = TestResource(path=self.TEST_PATH1, created_by=user)
+        res2 = TestResource.get(path=self.TEST_PATH1)
+        FACTORY.user.caching = False
+        self.assertFalse(res2.created_by.caching)
 
     def test_updating_related_resource___related_resource_updated(self):
         user = FACTORY.user.get(username=self.TEST_USERNAME)
@@ -442,6 +441,15 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
 
+    def test_caching_on_set___values_updated_after_bulk_called(self):
+        TestResource.caching = True
+        res1 = TestResource(path=self.TEST_PATH1)
+        res1.rating = 40
+        res1.text = 'TEXT!'
+        TestResource.bulk(update=[res1])
+        self.assertEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
+        self.assertEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -455,10 +463,8 @@ class IntegrationTest(unittest.TestCase):
     #  - cookies ???
     # TODO Get tastypie to return resources that have ALL related resources given, so that
     # TestTreeResource.get(children=[t1, t2]) does not return the same as TestTreeResource.get(children=[t2]).
-    # TODO Only silently remove filters after construction - raise exception at other times.
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
-    # TODO Allow bulk operations (update multiple objects at once).
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
 
     # TESTING:

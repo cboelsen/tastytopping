@@ -171,6 +171,14 @@ class ResourceMeta(type):
         Resource objects passed into delete will be marked as deleted, so any
         attempt to use them afterwards will raise an exception.
 
+        Because of the potentially large size of bulk updates, the API will
+        respond with a 202 before completing the request (see `here
+        <http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#2xx_Success>_`
+        and `here <http://django-tastypie.readthedocs.org/en/latest/interacting.html#bulk-operations>_`
+        ). This means it's possible for the request to fail without us knowing.
+        So, while this method can be used for a sizeable optimization, there is
+        a pitfall: You have been warned!
+
         :param create: The dicts of fields for new resources.
         :type create: list
         :param update: The Resource objects to update.
@@ -184,7 +192,11 @@ class ResourceMeta(type):
         for resource in update + delete:
             resource.check_alive()
         # The resources to create or update are sent in a single list.
-        resources = create if create else [] + update if update else []
+        resources = create
+        for resource in update:
+            resource_fields = resource._stream_related(resource._schema(), **resource._cached_fields)
+            resource_fields['resource_uri'] = resource.uri()
+            resources.append(resource_fields)
         # Get the fields for any Resource objects given.
         resources = (
             [r for r in resources if not hasattr(r, 'uri')] +
@@ -197,7 +209,5 @@ class ResourceMeta(type):
             [d.uri() for d in delete]
         )
         # Mark each deleted resource as deleted.
-        # TODO This is not given - the server can respond with a 202, but not
-        # succeed in processing the request.
         for resource in delete:
             del cls._ALIVE[resource.uri()]
