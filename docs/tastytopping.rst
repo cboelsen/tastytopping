@@ -12,7 +12,7 @@ Resource class
 --------------
 
 .. autoclass:: tastytopping.resource.Resource
-    :members: auth, caching, uri, update, delete, set_caching, refresh, fields, help, max_results, get, filter, all, bulk, count
+    :members: auth, caching, uri, update, delete, set_caching, refresh, save, fields, help, max_results, get, filter, all, bulk, count
     :member-order: groupwise
 
 Authentication classes

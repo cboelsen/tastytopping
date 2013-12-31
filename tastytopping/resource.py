@@ -166,7 +166,7 @@ class Resource(_BaseMetaBridge, object):
             else:
                 return self._create_related(field)
         elif field_type == tastytypes.DATETIME:
-            # Try with milliseconds, ohterwise without.
+            # Try with milliseconds, otherwise without.
             try:
                 field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
             except ValueError:
@@ -257,6 +257,12 @@ class Resource(_BaseMetaBridge, object):
             self._set('_fields', fields)
         return self._fields
 
+    def _update_remote_fields(self, **kwargs):
+        # Check types for related fields and convert related types to their uris.
+        fields = self._stream_related(self._schema(), **kwargs)
+        # Update both the remote and local values.
+        self._api().update(self.uri(), self._schema(), **fields)
+
     def update(self, **kwargs):
         """Set multiple fields' values at once.
 
@@ -266,11 +272,18 @@ class Resource(_BaseMetaBridge, object):
         # Check that all the values passed in are allowed by the schema.
         for field, value in kwargs.items():
             self._schema().validate(field, value)
-        # Check types for related fields and convert related types to their uris.
-        fields = self._stream_related(self._schema(), **kwargs)
-        # Update both the remote and local values.
-        self._api().update(self.uri(), self._schema(), **fields)
+        if not self._caching:
+            self._update_remote_fields(**kwargs)
         self._cached_fields.update(kwargs)
+
+    def save(self):
+        """Save the resource remotely, via the API.
+
+        Note that this method only makes sense when the Resource is caching its
+        fields locally (default). It is still possible to call this method when
+        caching is set to False, but there won't be a noticable effect.
+        """
+        self._update_remote_fields(**self._cached_fields)
 
     def help(self, verbose=False):
         """Return a string with the help for this resource's schema."""

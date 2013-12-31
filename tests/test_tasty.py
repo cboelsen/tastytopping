@@ -21,7 +21,6 @@ NoFilterResource = FACTORY.no_filter
 ############################### GOOD RESOURCES ################################
 ApiKeyResource = FACTORY.api_key
 TestResource = FACTORY.test_resource
-TestResource2 = FACTORY.test_resource
 TestTreeResource = FACTORY.tree
 
 class TestResourceDerived(TestResource):
@@ -41,7 +40,9 @@ class IntegrationTest(unittest.TestCase):
     ################ HELPERS ###############
     def setUp(self):
         TestResource.auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
-        TestResource2.auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
+        TestResource.caching = False
+        TestTreeResource.caching = False
+        FACTORY.user.caching = False
         self._delete_all_test_objects()
         self._default_auth = TestResource.auth
 
@@ -50,7 +51,6 @@ class IntegrationTest(unittest.TestCase):
 
     def _delete_all_test_objects(self):
         self._delete_all(TestResource)
-        self._delete_all(TestResource2)
         self._delete_all(TestTreeResource)
 
     def _delete_all(self, resource_class):
@@ -186,9 +186,8 @@ class IntegrationTest(unittest.TestCase):
 
     def test_change_auth_in_one_class___only_instances_of_that_class_change_auth(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
-        resource2 = TestResource2(path=self.TEST_PATH2, rating=self.TEST_RATING1)
-        TestResource.auth = None
-        self.assertEqual(resource2.rating, self.TEST_RATING1)
+        TestTreeResource.auth = None
+        self.assertEqual(resource1.rating, self.TEST_RATING1)
 
     def test_change_auth_in_base_class___derived_class_picks_up_changes(self):
         TestResourceDerived(path=self.TEST_PATH1, rating=self.TEST_RATING1)
@@ -426,6 +425,23 @@ class IntegrationTest(unittest.TestCase):
         cont = FACTORY.container(test=res1)
         self.assertEqual(FACTORY.container.get().test.path, self.TEST_PATH1)
 
+    def test_caching_on_set___values_not_updated_before_save_called(self):
+        TestResource.caching = True
+        res1 = TestResource(path=self.TEST_PATH1)
+        res1.rating = 40
+        res1.text = 'TEXT!'
+        self.assertNotEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
+        self.assertNotEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
+
+    def test_caching_on_set___values_updated_after_save_called(self):
+        TestResource.caching = True
+        res1 = TestResource(path=self.TEST_PATH1)
+        res1.rating = 40
+        res1.text = 'TEXT!'
+        res1.save()
+        self.assertEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
+        self.assertEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -442,8 +458,8 @@ class IntegrationTest(unittest.TestCase):
     # TODO Only silently remove filters after construction - raise exception at other times.
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
-    # TODO Make resource caching also related to setting fields (ie. maybe use a 'save()' method?!?)
     # TODO Allow bulk operations (update multiple objects at once).
+    # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
 
     # TESTING:
     # TODO exceptions
@@ -461,11 +477,9 @@ class IntegrationTest(unittest.TestCase):
 
 
 TestResource.auth = HttpApiKeyAuth(IntegrationTest.TEST_USERNAME, IntegrationTest.TEST_API_KEY)
-TestResource2.auth = HttpApiKeyAuth(IntegrationTest.TEST_USERNAME, IntegrationTest.TEST_API_KEY)
 
 CACHE = (
     TestResource(path='cache1'),
-    TestResource2(path='cache2'),
     TestResourceDerived(path='cache3'),
     TestTreeResource(name='cache4'),
 )
