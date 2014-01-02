@@ -76,8 +76,12 @@ class TastyApi(object):
             response.raise_for_status()
             return response.json()
         except (ValueError, TypeError) as err:
-            if response.text:
-                raise BadJsonResponse(err, response.text, url, params, data)
+            try:
+                if response.text:
+                    raise BadJsonResponse(err, response.text, url, params, data)
+            # If it was raised before the request was sent, it wasn't a JSON error.
+            except UnboundLocalError:
+                raise err
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404:
                 raise ResourceDeleted(url)
