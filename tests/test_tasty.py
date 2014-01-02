@@ -391,10 +391,6 @@ class IntegrationTest(unittest.TestCase):
         res1 = TestResource.get(path=self.TEST_PATH1)
         res2 = TestResource.get(path=self.TEST_PATH2)
 
-    # TODO Finish this when caching applies to setting fields too.
-    #def test_bulk_updates___multiple_resources_fields_updated(self):
-    #    pass
-
     def test_bulk_delete___multiple_resources_deleted(self):
         res1 = TestResource(path=self.TEST_PATH1)
         res2 = TestResource(path=self.TEST_PATH2)
@@ -466,6 +462,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
+    # TODO Set fields on resource as self.__dict__.update(fields) => easier.
 
     # TESTING:
     # TODO exceptions

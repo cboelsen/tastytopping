@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import platform
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -61,7 +62,7 @@ WSGI_APPLICATION = 'testsite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join('/dev', 'shm', 'db.sqlite3'),
+        'NAME': os.path.join('/dev', 'shm', 'db.sqlite3') if platform.system() != 'Windows' else 'db.sqlite3',
     }
 }
 

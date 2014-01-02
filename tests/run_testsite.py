@@ -7,7 +7,7 @@ import time
 
 
 def start():
-    os.system('./manage.py runserver 8111 --noreload')
+    os.system('python manage.py runserver 8111 --noreload')
 
 
 def kill_django():
@@ -15,7 +15,7 @@ def kill_django():
     for p in psutil.process_iter():
         try:
             cmd = p.cmdline
-            if './manage.py' in cmd and 'runserver' in cmd and '8111' in cmd:
+            if 'manage.py' in cmd and 'runserver' in cmd and '8111' in cmd:
                 p.terminate()
         except:
             pass
@@ -32,11 +32,11 @@ def remove_db():
 def run():
     print('Setting up test API...')
     atexit.register(kill_django)
-    os.chdir('tests/testsite')
+    os.chdir(os.path.join('tests', 'testsite'))
     remove_db()
     t = threading.Thread(target=start)
     t.daemon = True
     t.start()
-    time.sleep(2)
+    time.sleep(1)
 
 run()
