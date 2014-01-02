@@ -53,8 +53,7 @@ class ResourceMeta(type):
         return obj
 
     def __len__(cls):
-        response = next(iter(cls.api().get(cls.resource(), cls.schema(), limit=1)))
-        return response['meta']['total_count']
+        return cls.count()
 
     def _set_api_auth(cls, auth):
         cls._auth = auth
@@ -156,9 +155,17 @@ class ResourceMeta(type):
             pass
         return result
 
-    def count(cls):
-        """Return the number of records for this resource."""
-        return len(cls)
+    def count(cls, **kwargs):
+        """Return the number of records for this resource.
+
+        :param kwargs: Keywors arguments to filter the search.
+        :type kwargs: dict
+        :returns: The number of records for this resource.
+        :rtype: int
+        """
+        kwargs['limit'] = 1
+        response = next(iter(cls.api().get(cls.resource(), cls.schema(), **kwargs)))
+        return response['meta']['total_count']
 
     def bulk(cls, create=None, update=None, delete=None):
         """Create, update, and delete to multiple resources in a single request.
