@@ -41,15 +41,21 @@ class TastyApi(object):
             self._addr += '/'
         self._baseurl = None
         self._res = None
+        self._sess = None
         self.auth = None
         self.max_results = 100
+
+    def _session(self):
+        if self._sess is None:
+            self._sess = requests.session()
+        return self._sess
 
     def _address(self):
         return self._addr
 
     def _resources(self):
         if self._res is None:
-            self._res = self._transmit(requests.get, self._address())
+            self._res = self._transmit(self._session().get, self._address())
         return self._res
 
     def _base_url(self):
@@ -145,12 +151,12 @@ class TastyApi(object):
         if 'limit' not in kwargs:
             kwargs.update({'limit': self.max_results})
             retrieve_all_results = True
-        result = self._transmit(requests.get, url, params=kwargs)
+        result = self._transmit(self._session().get, url, params=kwargs)
         yield result
         # Only continue to retrieve results if the user hasn't specified the
         # number of results to retrieve.
         while result['meta']['next'] and retrieve_all_results:
-            result = self._transmit(requests.get, url)
+            result = self._transmit(self._session().get, url)
             yield result
 
     def details(self, resource, schema):
@@ -165,7 +171,7 @@ class TastyApi(object):
         """
         url = self._resource_url(resource)
         schema.check_detail_request_allowed('get')
-        return self._transmit(requests.get, url)
+        return self._transmit(self._session().get, url)
 
     def add(self, resource_type, schema, **kwargs):
         """Add a new resource with the given fields.
@@ -182,7 +188,7 @@ class TastyApi(object):
         """
         url = self._base_url() + self._get_resource(resource_type)
         schema.check_list_request_allowed('post')
-        return self._transmit(requests.post, url, data=kwargs) or {}
+        return self._transmit(self._session().post, url, data=kwargs) or {}
 
     def update(self, resource, schema, **kwargs):
         """Update a given resource with the given fields.
@@ -200,10 +206,10 @@ class TastyApi(object):
         url = self._resource_url(resource)
         try:
             schema.check_detail_request_allowed('patch')
-            method = requests.patch
+            method = self._session().patch
         except RestMethodNotAllowed:
             schema.check_detail_request_allowed('put')
-            method = requests.put
+            method = self._session().put
         return self._transmit(method, url, data=kwargs) or {}
 
     def delete(self, resource, schema):
@@ -216,7 +222,7 @@ class TastyApi(object):
         """
         url = self._resource_url(resource)
         schema.check_detail_request_allowed('delete')
-        self._transmit(requests.delete, url)
+        self._transmit(self._session().delete, url)
 
     def bulk(self, resource_type, schema, resources, delete):
         """Create, update, and delete multiple resources.
@@ -234,7 +240,7 @@ class TastyApi(object):
         schema.check_list_request_allowed('patch')
         data = {'objects': resources, 'deleted_objects': delete}
         # No result is returned in a 202 response.
-        self._transmit(requests.patch, url, data=data)
+        self._transmit(self._session().patch, url, data=data)
 
     def schema(self, resource_type):
         """Retrieve the schema for a given resource type.
@@ -247,7 +253,7 @@ class TastyApi(object):
         """
         try:
             url = self._base_url() + self._resources()[resource_type]['schema']
-            schema_dict = self._transmit(requests.get, url)
+            schema_dict = self._transmit(self._session().get, url)
             return TastySchema(schema_dict, resource_type)
         except KeyError:
             raise NonExistantResource(resource_type)
