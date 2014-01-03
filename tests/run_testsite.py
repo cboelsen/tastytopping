@@ -34,9 +34,11 @@ def run():
     atexit.register(kill_django)
     os.chdir(os.path.join('tests', 'testsite'))
     remove_db()
+    os.system('python manage.py syncdb --noinput')
+    os.system('python manage.py createsuperuser --noinput --username=testuser --email=none@test.test')
     t = threading.Thread(target=start)
     t.daemon = True
     t.start()
-    time.sleep(1)
+    os.system('python manage.py user')
 
 run()

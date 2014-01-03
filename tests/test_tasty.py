@@ -455,18 +455,18 @@ class IntegrationTest(unittest.TestCase):
 
 
     # FEATURES:
-    # TODO Allow files to be passed (as well as other things requests allows):
-    #  - files
-    #  - cookies ???
+    # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
     # TODO Set fields on resource as self.__dict__.update(fields) => easier.
+    # TODO Add extra endpoints to resources to see how this copes.
 
     # TESTING:
     # TODO exceptions
     # TODO all branches
     # TODO Test resource without 'id' field.
+    # TODO Test cookies
 
     # DOCS
     # TODO Getting started

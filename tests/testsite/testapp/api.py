@@ -10,17 +10,6 @@ from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
 from .models import Test, Tree, TestContainer
 
 
-# Set up the DB the first time the DB is accessed.
-management.call_command('syncdb', interactive=False)
-management.call_command(
-    'createsuperuser',
-    username='testuser',
-    email='none@test.test',
-    interactive=False,
-)
-management.call_command('user')
-
-
 class ApiKeyResource(ModelResource):
     class Meta:
         resource_name = 'api_key'
