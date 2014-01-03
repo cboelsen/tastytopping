@@ -315,12 +315,13 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(TestTreeResource.get(name='parent').children, [tree1, tree2])
 
     def test_update_resource_with_multiple_resources_in_related_field___multiple_resources_accepted(self):
-        parent = TestTreeResource(name='parent')
+        parent1 = TestTreeResource(name='parent1')
+        parent2 = TestTreeResource(name='parent2')
         tree1 = TestTreeResource(name='tree1')
         tree2 = TestTreeResource(name='tree2')
-        parent.children = [tree1]
-        parent.children += [tree2]
-        self.assertEqual(TestTreeResource.get(name='parent').children, [tree1, tree2])
+        parent1.children = [tree1]
+        parent1.children += [tree2]
+        self.assertEqual(TestTreeResource.get(children=parent1.children).children, [tree1, tree2])
 
     def test_create_resource_with_same_parent_multiple_times___multiple_resources_returned_in_parent(self):
         root = TestTreeResource(name='root')
@@ -457,8 +458,6 @@ class IntegrationTest(unittest.TestCase):
     # TODO Allow files to be passed (as well as other things requests allows):
     #  - files
     #  - cookies ???
-    # TODO Get tastypie to return resources that have ALL related resources given, so that
-    # TestTreeResource.get(children=[t1, t2]) does not return the same as TestTreeResource.get(children=[t2]).
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
