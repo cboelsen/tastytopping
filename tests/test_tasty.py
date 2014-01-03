@@ -466,7 +466,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
     # TODO Set fields on resource as self.__dict__.update(fields) => easier.
     # TODO Add extra endpoints to resources to see how this copes.
-    # TODO HttpGone (410).
+    # TODO Links in bulk() not working!!!!!!
 
     # TESTING:
     # TODO exceptions
