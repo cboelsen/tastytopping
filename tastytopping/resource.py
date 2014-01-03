@@ -94,7 +94,9 @@ class Resource(_BaseMetaBridge, object):
         try:
             return self._cached_field(name)
         except KeyError:
-            raise AttributeError(name)
+            if name not in self._schema().methods():
+                raise AttributeError(name)
+            return self._resource_method(name)
 
     def __eq__(self, obj):
         try:
@@ -110,6 +112,12 @@ class Resource(_BaseMetaBridge, object):
 
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
+
+    def _resource_method(self, method_name):
+        # TODO *args and **kwargs
+        def _call_resource_method():
+            return self._api().method(self, method_name, self._schema())
+        return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
         fields = self._stream_related(schema, **kwargs)

@@ -1,11 +1,16 @@
+import json
+
+from django.conf.urls import url
 from django.contrib.auth.models import User
 from django.core import management
 
 from tastypie import fields
 from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authorization import Authorization
+from tastypie.http import HttpGone, HttpMultipleChoices
 from tastypie.models import ApiKey
 from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
+from tastypie.utils import trailing_slash
     
 from .models import Test, Tree, TestContainer
 
@@ -94,6 +99,46 @@ class TreeResource(ModelResource):
             'parent': ALL_WITH_RELATIONS,
             'children': ALL_WITH_RELATIONS,
         }
+
+    def build_schema(self):
+        data = super(TreeResource, self).build_schema()
+        data['methods'] = {
+            'depth': {
+                'fields': [],
+                'help_text': 'Return the depth of the tree node from the root.',
+            },
+        }
+        return data
+
+    def prepend_urls(self):
+        return [
+            url(
+                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/depth{1}$'.format(self._meta.resource_name, trailing_slash()),
+                self.wrap_view('calc_depth'),
+                name="api_calc_depth"
+            ),
+        ]
+
+    def calc_depth(self, request, **kwargs):
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        self.throttle_check(request)
+
+        try:
+            bundle = self.build_bundle(data={'pk': kwargs['pk']}, request=request)
+            obj = self.cached_obj_get(bundle=bundle, **self.remove_api_resource_names(kwargs))
+        except ObjectDoesNotExist:
+            return HttpGone()
+        except MultipleObjectsReturned:
+            return HttpMultipleChoices("More than one resource is found at this URI.")
+
+        depth = -1
+        while obj:
+            obj = obj.parent
+            depth += 1
+
+        self.log_throttled_access(request)
+        return self.create_response(request, depth)
 
 
 class TestContainerResource(ModelResource):

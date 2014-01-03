@@ -447,6 +447,11 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
 
+    def test_extra_endpoint_on_resource___endpoint_callable_as_a_method(self):
+        tree1 = TestTreeResource(name='tree1', parent=TestTreeResource(name='tree2'))
+        TestTreeResource(name='tree3', children=[tree1.parent])
+        self.assertEqual(tree1.depth(), 2)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -461,6 +466,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
     # TODO Set fields on resource as self.__dict__.update(fields) => easier.
     # TODO Add extra endpoints to resources to see how this copes.
+    # TODO HttpGone (410).
 
     # TESTING:
     # TODO exceptions

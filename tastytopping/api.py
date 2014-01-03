@@ -224,6 +224,23 @@ class TastyApi(object):
         schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
 
+    def method(self, resource, method_name, schema):
+        """Send a GET to an extra endpoint for this resource.
+
+        :param resource: A URI pointing to the TastyPie resource.
+        :type resource: str
+        :param method_name: The endpoint to GET.
+        :type method_name: str
+        :param schema: The schema to use for validation.
+        :type schema: TastySchema
+        :returns: The result of the method called.
+        :rtype: any
+        """
+        # TODO kwargs to method.
+        url = '{0}{1}/'.format(self._resource_url(resource), method_name)
+        schema.check_detail_request_allowed('get')
+        return self._transmit(self._session().get, url)
+
     def bulk(self, resource_type, schema, resources, delete):
         """Create, update, and delete multiple resources.
 

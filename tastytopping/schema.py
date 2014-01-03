@@ -135,6 +135,17 @@ class TastySchema(object):
         if schema_field['readonly']:
             raise ReadOnlyField(self._resource, field)
 
+    def methods(self):
+        """Return a list of all method names for this resource type.
+
+        :returns: The method names for this resource type.
+        :rtype: list
+        """
+        try:
+            return self._schema['methods'].keys()
+        except KeyError:
+            return []
+
     def field(self, name):
         """Return the description of the given field.
 
