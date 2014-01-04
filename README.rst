@@ -7,6 +7,66 @@ the client side.
 Currently in beta.
 
 
+Features
+^^^^^^^^
+
+- Django model-like ORM API allowing you to GET, POST, PUT, PATCH, and DELETE:
+
+  ::
+
+      factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
+      current_resource = factory.resource.get(field='name') # GET
+      new_resource = factory.resource(field='new_name')     # POST
+      new_resource.field = 'different_name'                 # PATCH / PUT
+      current_resource.delete()                             # DELETE
+
+- Easily work with any related resources:
+
+  ::
+
+      new_resource.children = [
+          factory.resource(field='new_name1'),
+          factory.resource(field='new_name2'),
+      ]
+
+- Simple way to set and update authentication per resource:
+
+  ::
+
+      factory.resource.auth = ApiKeyAuth('username', 'key12345')
+
+- Access custom endpoints using simple methods:
+
+  ::
+
+      new_resource.cust_endpoint('arg1', arg2=3)
+
+- Set whether the resources should be cached locally or always updated remotely
+  (per resource or per instance):
+
+  ::
+
+      factory.resource.caching = False
+      # Or per instance
+      new_resource.set_caching(False)
+
+- Basic field validation before connecting to the API.
+
+- Bulk create / update / delete to minimise API access:
+
+  ::
+
+      factory.resource.bulk(
+          create=[{field='name1'}, {field='name2'}],
+          delete=[new_resource],
+      )
+
+- Auto-generate docs for your tastypie API (in progress).
+
+Find more information on these features at `read the docs!
+<http://tastytopping.readthedocs.org/en/latest/>`_
+
+
 Requirements
 ^^^^^^^^^^^^
 
@@ -31,7 +91,8 @@ more information).
 Example
 ^^^^^^^
 
-A basic example, where the API looks like:
+A basic example of a simple workflow, using the following API on the server
+side:
 
 ::
 
@@ -57,7 +118,7 @@ A basic example, where the API looks like:
             filtering = {'path': ALL, 'rating': ALL}
             ordering = ['rating']
 
-To use tastytopping on the client side:
+Using TastyTopping on the client side would look like this:
 
 ::
 
@@ -70,7 +131,7 @@ To use tastytopping on the client side:
     ex1_copy = factory.example.get(rating=80)
     ex1.delete()
 
-For more information, `read the docs!
+Find more examples at `read the docs!
 <http://tastytopping.readthedocs.org/en/latest/>`_
 
 
@@ -80,13 +141,16 @@ Justification
 Why another one? There are some other packages around that do something similar
 (most notably tastypie-queryset-client), but they're lacking in a few areas:
 
-- Python3 support
+- Python3 support.
 
-- Support for authentication
+- Support for authentication.
+
+- Support for custom endpoints.
+
+- A thorough set of `unit tests
+  <https://github.com/cboelsen/tastytopping/blob/master/tests/test_tasty.py>`_.
 
 - Development has stagnated (none of them have released in close to a year,
   whereas tastypie has been releasing thick and fast).
 
-- I found the interfaces clunky (although that's probably personal preference).
-
-- Making another one was FUN!
+- Creating this was FUN!
