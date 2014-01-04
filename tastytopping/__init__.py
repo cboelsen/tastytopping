@@ -33,6 +33,8 @@ from .exceptions import (
     ErrorResponse,
     NonExistantResource,
     CannotConnectToAddress,
+    IncorrectEndpointArgs,
+    IncorrectEndpointKwargs,
 )
 
 from .factory import ResourceFactory

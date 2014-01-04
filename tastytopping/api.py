@@ -22,6 +22,8 @@ from .exceptions import (
     CannotConnectToAddress,
     ResourceDeleted,
     RestMethodNotAllowed,
+    IncorrectEndpointArgs,
+    IncorrectEndpointKwargs,
 )
 from .schema import TastySchema
 from . import tastytypes
@@ -84,7 +86,12 @@ class TastyApi(object):
         except (ValueError, TypeError) as err:
             try:
                 if response.text:
-                    raise BadJsonResponse(err, response.text, url, params, data)
+                    args = (response.text, url, params, data)
+                    if 'NotFound: Invalid resource' in response.text:
+                        raise NonExistantResource(*args)
+                    if 'MultiValueDictKeyError: ' in response.text:
+                        raise IncorrectEndpointKwargs(*args)
+                    raise BadJsonResponse(*args)
             # If it was raised before the request was sent, it wasn't a JSON error.
             except UnboundLocalError:
                 raise err
@@ -224,7 +231,7 @@ class TastyApi(object):
         schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
 
-    def method(self, resource, method_name, schema):
+    def method(self, resource, method_name, schema, *args, **kwargs):
         """Send a GET to an extra endpoint for this resource.
 
         :param resource: A URI pointing to the TastyPie resource.
@@ -233,13 +240,22 @@ class TastyApi(object):
         :type method_name: str
         :param schema: The schema to use for validation.
         :type schema: TastySchema
+        :param args: Args to pass to the endpoint as part of the URI.
+        :type args: tuple
+        :params kwargs: Kyeword args to pass to the endpoint as GET params.
+        :type kwargs: dict
         :returns: The result of the method called.
         :rtype: any
         """
-        # TODO kwargs to method.
-        url = '{0}{1}/'.format(self._resource_url(resource), method_name)
+        args_string = '/'.join(str(a) for a in args)
+        url = '{0}{1}/{2}'.format(self._resource_url(resource), method_name, args_string)
+        if not url.endswith('/'):
+            url += '/'
         schema.check_detail_request_allowed('get')
-        return self._transmit(self._session().get, url)
+        try:
+            return self._transmit(self._session().get, url, params=kwargs)
+        except NonExistantResource as err:
+            raise IncorrectEndpointArgs(*err.args)
 
     def bulk(self, resource_type, schema, resources, delete):
         """Create, update, and delete multiple resources.

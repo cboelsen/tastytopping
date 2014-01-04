@@ -452,6 +452,30 @@ class IntegrationTest(unittest.TestCase):
         TestTreeResource(name='tree3', children=[tree1.parent])
         self.assertEqual(tree1.depth(), 2)
 
+    def test_extra_endpoint_on_resource_with_args___endpoint_callable_as_a_method(self):
+        tree1 = TestTreeResource(name='tree1')
+        self.assertEqual(tree1.add(1, 2), 3)
+
+    def test_extra_endpoint_on_resource_with_kwargs___endpoint_callable_as_a_method(self):
+        tree1 = TestTreeResource(name='tree1')
+        self.assertEqual(tree1.mult(num1=3, num2=2), 6)
+
+    def test_extra_endpoint_on_resource_with_too_few_args___throws_exception(self):
+        tree1 = TestTreeResource(name='tree1')
+        self.assertRaises(IncorrectEndpointArgs, tree1.add, 1)
+
+    def test_extra_endpoint_on_resource_with_too_many_args___throws_exception(self):
+        tree1 = TestTreeResource(name='tree1')
+        self.assertRaises(IncorrectEndpointArgs, tree1.add, 1, 2, 3)
+
+    def test_extra_endpoint_on_resource_with_too_few_kwargs___throws_exception(self):
+        tree1 = TestTreeResource(name='tree1')
+        self.assertRaises(IncorrectEndpointKwargs, tree1.mult, num1=1)
+
+    def test_extra_endpoint_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
+        tree1 = TestTreeResource(name='tree1')
+        self.assertEqual(tree1.mult(num1=3, num2=2, num3=0), 6)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -465,9 +489,10 @@ class IntegrationTest(unittest.TestCase):
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
     # TODO Set fields on resource as self.__dict__.update(fields) => easier.
-    # TODO Add extra endpoints to resources to see how this copes.
+    # TODO Have classmethods for custom endpoints.
 
     # TESTING:
+    # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...
     # TODO exceptions
     # TODO all branches
     # TODO Test resource without 'id' field.
@@ -481,6 +506,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Caching
     # TODO Release notes.
     # TODO Cookbook
+    # TODO Custom endpoints
 
 
 TestResource.auth = HttpApiKeyAuth(IntegrationTest.TEST_USERNAME, IntegrationTest.TEST_API_KEY)

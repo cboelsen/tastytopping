@@ -103,10 +103,9 @@ class TreeResource(ModelResource):
     def build_schema(self):
         data = super(TreeResource, self).build_schema()
         data['methods'] = {
-            'depth': {
-                'fields': [],
-                'help_text': 'Return the depth of the tree node from the root.',
-            },
+            'depth': self.calc_depth.__doc__,
+            'add': self.calc_add.__doc__,
+            'mult': self.calc_mult.__doc__,
         }
         return data
 
@@ -117,9 +116,30 @@ class TreeResource(ModelResource):
                 self.wrap_view('calc_depth'),
                 name="api_calc_depth"
             ),
+            url(
+                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/add/(?P<num1>\d+)/(?P<num2>\d+){1}$'.format(self._meta.resource_name, trailing_slash()),
+                self.wrap_view('calc_add'),
+                name="api_calc_add"
+            ),
+            url(
+                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/mult{1}$'.format(self._meta.resource_name, trailing_slash()),
+                self.wrap_view('calc_mult'),
+                name="api_calc_mult"
+            ),
         ]
 
+    def calc_add(self, request, **kwargs):
+        '''Return the sum of two numbers.'''
+        total = int(kwargs['num1']) + int(kwargs['num2'])
+        return self.create_response(request, total)
+
+    def calc_mult(self, request, **kwargs):
+        '''Return the product of two numbers.'''
+        total = int(request.GET['num1']) * int(request.GET['num2'])
+        return self.create_response(request, total)
+
     def calc_depth(self, request, **kwargs):
+        '''Return the depth of the tree node from the root.'''
         self.method_check(request, allowed=['get'])
         self.is_authenticated(request)
         self.throttle_check(request)

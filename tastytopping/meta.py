@@ -179,9 +179,9 @@ class ResourceMeta(type):
         attempt to use them afterwards will raise an exception.
 
         Because of the potentially large size of bulk updates, the API will
-        respond with a 202 before completing the request (see `here
+        respond with a 202 before completing the request (see `wikipedia
         <http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#2xx_Success>`_,
-        and `here <http://django-tastypie.readthedocs.org/en/latest/interacting.html#bulk-operations>`_).
+        and `tastypie <http://django-tastypie.readthedocs.org/en/latest/interacting.html#bulk-operations>`_).
         This means it's possible for the request to fail without us knowing.
         So, while this method can be used for a sizeable optimization, there is
         a pitfall: You have been warned!

@@ -114,9 +114,8 @@ class Resource(_BaseMetaBridge, object):
     __nonzero__ = __bool__
 
     def _resource_method(self, method_name):
-        # TODO *args and **kwargs
-        def _call_resource_method():
-            return self._api().method(self, method_name, self._schema())
+        def _call_resource_method(*args, **kwargs):
+            return self._api().method(self, method_name, self._schema(), *args, **kwargs)
         return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):

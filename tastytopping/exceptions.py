@@ -91,3 +91,21 @@ class CannotConnectToAddress(PrettyException):
     """Raised when no connection was possible at the given address."""
     pass
 
+class IncorrectEndpointArgs(PrettyException):
+    """Raised when failing to GET a custom endpoint.
+
+    This is caused by tastypie raising a NotFound error in a 202 response. The
+    cause is (almost always) an incorrect number of args to the method.
+    """
+    pass
+
+class IncorrectEndpointKwargs(PrettyException):
+    """Raised when failing to GET a custom endpoint.
+
+    Specifically, a MultiValueDictKeyError was raised in the custom endpoint.
+    Since kwargs should have been passed to the Resource method, which
+    the custom endpoint should be retrieving from the request.GET dict, it is
+    assumed that kwargs were missing.
+    """
+    pass
+
