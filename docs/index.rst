@@ -65,16 +65,19 @@ Justification
 Why another one? There are some other packages around that do something similar
 (most notably tastypie-queryset-client), but they're lacking in a few areas:
 
-- Python3 support
+- Python3 support.
 
-- Support for authentication
+- Support for authentication.
+
+- Support for custom endpoints.
+
+- A thorough set of `unit tests
+  <https://github.com/cboelsen/tastytopping/blob/master/tests/tests.py>`_.
 
 - Development has stagnated (none of them have released in close to a year,
   whereas tastypie has been releasing thick and fast).
 
-- I found the interfaces clunky (although that's probably personal preference).
-
-- Making another one was FUN!
+- Creating this was FUN!
 
 
 Examples
@@ -123,8 +126,9 @@ POST, and DELETE methods on the API, using the
 
     if __name__ == "__main__":
 
+        factory = ResourceFactory('http://example.api.com:666/test/api/v1/')
         auth = ApiKeyAuth('username', '35632435657adf786c876e097f')
-        factory = ResourceFactory('http://example.api.com:666/test/api/v1/', auth)
+        factory.example.auth = auth
 
         new_resource = factory.example(title='A Title', rating=50)
         new_resource.date = datetime.now()
@@ -157,7 +161,7 @@ And to run the tests:
 
 ::
 
-    # Continued from above
+    $ # Continued from above
     $ pip install tox
     $ tox
 
