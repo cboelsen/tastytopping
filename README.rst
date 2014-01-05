@@ -148,7 +148,7 @@ Why another one? There are some other packages around that do something similar
 - Support for custom endpoints.
 
 - A thorough set of `unit tests
-  <https://github.com/cboelsen/tastytopping/blob/master/tests/test_tasty.py>`_.
+  <https://github.com/cboelsen/tastytopping/blob/master/tests/tests.py>`_.
 
 - Development has stagnated (none of them have released in close to a year,
   whereas tastypie has been releasing thick and fast).
