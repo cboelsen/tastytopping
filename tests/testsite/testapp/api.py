@@ -104,6 +104,7 @@ class TreeResource(ModelResource):
         data = super(TreeResource, self).build_schema()
         data['detail_endpoints'] = {
             'depth': self.calc_depth.__doc__,
+            'child': self.get_child.__doc__,
         }
         data['list_endpoints'] = {
             'add': self.calc_add.__doc__,
@@ -116,17 +117,22 @@ class TreeResource(ModelResource):
             url(
                 r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/depth{1}$'.format(self._meta.resource_name, trailing_slash()),
                 self.wrap_view('calc_depth'),
-                name="api_calc_depth"
+                name="api_calc_depth",
+            ),
+            url(
+                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/child{1}$'.format(self._meta.resource_name, trailing_slash()),
+                self.wrap_view('get_child'),
+                name="api_get_child",
             ),
             url(
                 r'^(?P<resource_name>{0})/add/(?P<num1>\d+)/(?P<num2>\d+){1}$'.format(self._meta.resource_name, trailing_slash()),
                 self.wrap_view('calc_add'),
-                name="api_calc_add"
+                name="api_calc_add",
             ),
             url(
                 r'^(?P<resource_name>{0})/mult{1}$'.format(self._meta.resource_name, trailing_slash()),
                 self.wrap_view('calc_mult'),
-                name="api_calc_mult"
+                name="api_calc_mult",
             ),
         ]
 
@@ -140,8 +146,22 @@ class TreeResource(ModelResource):
         total = int(request.GET['num1']) * int(request.GET['num2'])
         return self.create_response(request, total)
 
+    def get_child(self, request, **kwargs):
+        """Return the first child of this resource."""
+        try:
+            bundle = self.build_bundle(data={'pk': kwargs['pk']}, request=request)
+            obj = self.cached_obj_get(bundle=bundle, **self.remove_api_resource_names(kwargs))
+            # Warning: This smells like an ugly hack! I'm unsure of the best way to do this!
+            return self.create_response(request, self.get_resource_uri(obj.children.all()[0]))
+        except ObjectDoesNotExist:
+            return HttpGone()
+        except MultipleObjectsReturned:
+            return HttpMultipleChoices("More than one resource is found at this URI.")
+
     def calc_depth(self, request, **kwargs):
         '''Return the depth of the tree node from the root.'''
+        # This method includes the proper checks for use as a demonstration,
+        # whereas the previous ones are merely cut-down test versions.
         self.method_check(request, allowed=['get'])
         self.is_authenticated(request)
         self.throttle_check(request)

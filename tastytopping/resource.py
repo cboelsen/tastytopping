@@ -62,7 +62,6 @@ class Resource(_BaseMetaBridge, object):
         class itself (TODO link to examples here)."""
 
     _ALIVE = {}
-    _factory = None
 
     def __init__(self, **kwargs):
         try:
@@ -115,7 +114,11 @@ class Resource(_BaseMetaBridge, object):
 
     def _resource_method(self, method_name):
         def _call_resource_method(*args, **kwargs):
-            return self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
+            result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
+            try:
+                return self._new_related_resource(result)
+            except (AttributeError, IndexError):
+                return result
         return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
@@ -154,24 +157,15 @@ class Resource(_BaseMetaBridge, object):
                     fields[name] = value.uri()
         return fields
 
-    def _create_related(self, related_details):
-        resource_type = self._get_resource_type(related_details)
-        resource_class = getattr(self._factory, resource_type)
-        # Tastypie can either return a dict of fields for a resource, or simply
-        # its URI. We want to pass its fields to the new Resource.
-        if not isinstance(related_details, dict):
-            related_details = resource_class.api().details(related_details, resource_class.schema())
-        return resource_class(_details=related_details)
-
     def _create_field_object(self, name, field, field_type):
         if field is None:
             pass
         elif field_type == tastytypes.RELATED:
             related_type = self._schema().field(name)['related_type']
             if related_type == tastytypes.TO_MANY:
-                return [self._create_related(f) for f in field]
+                return [self._new_related_resource(f) for f in field]
             else:
-                return self._create_related(field)
+                return self._new_related_resource(field)
         elif field_type == tastytypes.DATETIME:
             # Try with milliseconds, otherwise without.
             try:
@@ -192,21 +186,10 @@ class Resource(_BaseMetaBridge, object):
         attr = '_Resource{0}'.format(name) if name.startswith('__') else name
         super(Resource, self).__setattr__(attr, value)
 
-    @staticmethod
-    def _get_resource_type(details):
-        try:
-            return details['resource_uri'].split('/')[-3]
-        except TypeError:
-            return details.split('/')[-3]
-
-    def _api(self):
-        return type(self).api()
-
-    def _resource(self):
-        return type(self).resource()
-
-    def _schema(self):
-        return type(self).schema()
+    _api = classmethod(lambda cls: cls.api())
+    _resource = classmethod(lambda cls: cls.resource())
+    _schema = classmethod(lambda cls: cls.schema())
+    _new_related_resource = classmethod(lambda cls, fields: cls.create_related_resource(fields))
 
     def uri(self):
         """Return the resource_uri for this object.

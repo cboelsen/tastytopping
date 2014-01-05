@@ -480,6 +480,11 @@ class IntegrationTest(unittest.TestCase):
     def test_custom_endpoint_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
         self.assertEqual(TestTreeResource.mult(num1=3, num2=2, num3=0), 6)
 
+    def test_custom_endpoint_returning_related_resource___resource_object_returned(self):
+        CHILD_NAME = 'tree2'
+        tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME)])
+        self.assertEqual(CHILD_NAME, tree1.child().name)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -489,12 +494,12 @@ class IntegrationTest(unittest.TestCase):
 
     # FEATURES:
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
+    # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
-    # TODO Set fields on resource as self.__dict__.update(fields) => easier.
-    # TODO Return Resource when an endpoint returns a URI or resource dict.
     # TODO Add ability to change auth globally.
+    # TODO Endpoints: What about lists of resources, or dates?!?!?!
 
     # TESTING:
     # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...

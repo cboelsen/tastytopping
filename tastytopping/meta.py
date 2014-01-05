@@ -31,6 +31,7 @@ class ResourceMeta(type):
     """Updates the TastyApi.auth for the class and all instances."""
 
     _classes = []
+    _factory = None
 
     def __new__(mcs, name, bases, classdict):
         try:
@@ -59,8 +60,19 @@ class ResourceMeta(type):
         if name not in cls.schema().list_endpoints():
             raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
-            return cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
+            result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
+            try:
+                return cls.create_related_resource(result)
+            except (AttributeError, IndexError):
+                return result
         return _call_resource_classmethod
+
+    @staticmethod
+    def _get_resource_type(details):
+        try:
+            return details['resource_uri'].split('/')[-3]
+        except TypeError:
+            return details.split('/')[-3]
 
     def _set_api_auth(cls, auth):
         cls._auth = auth
@@ -73,6 +85,16 @@ class ResourceMeta(type):
                 derived._set_api_auth(auth)
 
     auth = property(lambda cls: cls._auth, _set_auth)
+
+    def create_related_resource(cls, related_details):
+        """Create a new resource from the related field."""
+        resource_type = cls._get_resource_type(related_details)
+        resource_class = getattr(cls._factory, resource_type)
+        # Tastypie can either return a dict of fields for a resource, or simply
+        # its URI. We want to pass its fields to the new Resource.
+        if not isinstance(related_details, dict):
+            related_details = resource_class.api().details(related_details, resource_class.schema())
+        return resource_class(_details=related_details)
 
     def resource(cls):
         """Return the resource name of this class."""
