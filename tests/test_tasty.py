@@ -40,7 +40,6 @@ class IntegrationTest(unittest.TestCase):
     ################ HELPERS ###############
     def setUp(self):
         TestResource.auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
-        TestResource.caching = False
         TestTreeResource.caching = False
         FACTORY.user.caching = False
         self._delete_all_test_objects()
@@ -97,6 +96,7 @@ class IntegrationTest(unittest.TestCase):
     def test_set_value___value_set_in_new_get(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource1.rating = self.TEST_RATING1 + 1
+        resource1.save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource2.rating, self.TEST_RATING1 + 1)
 
@@ -124,18 +124,21 @@ class IntegrationTest(unittest.TestCase):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource2 = TestResource.get(path=self.TEST_PATH1)
         resource1.rating = 10
+        resource1.save()
         resource2.refresh()
         self.assertEqual(resource1.rating, resource2.rating)
 
     def test_datetime_objects___streams_both_ways(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource1.date = datetime.datetime(2013, 12, 6)
+        resource1.save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.date, resource2.date)
 
     def test_datetime_objects_with_ms___streams_both_ways(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource1.date = datetime.datetime(2013, 12, 6, 1, 1, 1, 500)
+        resource1.save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.date, resource2.date)
 
@@ -144,11 +147,13 @@ class IntegrationTest(unittest.TestCase):
         resource2 = TestResource.get(path=self.TEST_PATH1)
         resource2.set_caching(False)
         resource1.rating = 10
+        resource1.save()
         self.assertEqual(resource1.rating, resource2.rating)
 
     def test_switching_cache_back_on___values_become_stale(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource2 = TestResource.get(path=self.TEST_PATH1)
+        resource1.set_caching(False)
         resource2.set_caching(False)
         resource1.rating = 10
         self.assertEqual(resource1.rating, resource2.rating)
@@ -177,12 +182,14 @@ class IntegrationTest(unittest.TestCase):
     def test_change_auth_in_class___instances_change_auth(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         TestResource.auth = None
-        self.assertRaises(ErrorResponse, setattr, resource, 'rating', 20)
+        resource.rating = 20
+        self.assertRaises(ErrorResponse, resource.save)
 
     def test_change_auth_in_base_class___instances_of_derived_classes_change_auth(self):
         resource = TestResourceDerived(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         TestResource.auth = None
-        self.assertRaises(ErrorResponse, setattr, resource, 'rating', 20)
+        resource.rating = 20
+        self.assertRaises(ErrorResponse, resource.save)
 
     def test_change_auth_in_one_class___only_instances_of_that_class_change_auth(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
@@ -263,6 +270,7 @@ class IntegrationTest(unittest.TestCase):
         title = 'TITLE'
         text = 'This is some text.'
         resource = TestResource(path=self.TEST_PATH1, rating=40)
+        resource.set_caching(False)
         resource.update(rating=rating, title=title, text=text)
         res2 = TestResource.get()
         self.assertEqual(rating, res2.rating)
@@ -297,6 +305,7 @@ class IntegrationTest(unittest.TestCase):
         user = FACTORY.user.get(username=self.TEST_USERNAME)
         res = TestResource(path=self.TEST_PATH1)
         res.created_by = user
+        res.save()
         self.assertEqual(user, TestResource.get(path=self.TEST_PATH1).created_by)
 
     def test_creating_resource_with_incorrect_related_resource___exception_raised(self):
@@ -304,9 +313,9 @@ class IntegrationTest(unittest.TestCase):
         self.assertRaises(BadRelatedType, TestResource, path=self.TEST_PATH1, created_by=user)
 
     def test_updating_incorrect_related_resource___exception_raised(self):
-        user = 'user'
         res = TestResource(path=self.TEST_PATH1)
-        self.assertRaises(BadRelatedType, setattr, res, 'created_by', user)
+        res.created_by = 'user'
+        self.assertRaises(BadRelatedType, res.save)
 
     def test_create_resource_with_multiple_resources_in_related_field___multiple_resources_accepted(self):
         tree1 = TestTreeResource(name='tree1')
@@ -385,7 +394,8 @@ class IntegrationTest(unittest.TestCase):
     def test_resource_deleted_on_another_machine___exception_raised_when_updating(self):
         res = TestResource(path=self.TEST_PATH1)
         self._delete(res)
-        self.assertRaises(ResourceDeleted, setattr, res, 'rating', 50)
+        res.rating = 50
+        self.assertRaises(ResourceDeleted, res.save)
 
     def test_bulk_creation___multiple_resources_can_be_gotten(self):
         TestResource.bulk(create=[{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
@@ -447,27 +457,27 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
 
-    def test_extra_endpoint_on_resource___endpoint_callable_as_a_method(self):
+    def test_custom_endpoint_on_resource___endpoint_callable_as_a_method(self):
         tree1 = TestTreeResource(name='tree1', parent=TestTreeResource(name='tree2'))
         TestTreeResource(name='tree3', children=[tree1.parent])
         self.assertEqual(tree1.depth(), 2)
 
-    def test_extra_endpoint_on_resource_with_args___endpoint_callable_as_a_method(self):
+    def test_custom_endpoint_on_resource_with_args___endpoint_callable_as_a_method(self):
         self.assertEqual(TestTreeResource.add(1, 2), 3)
 
-    def test_extra_endpoint_on_resource_with_kwargs___endpoint_callable_as_a_method(self):
+    def test_custom_endpoint_on_resource_with_kwargs___endpoint_callable_as_a_method(self):
         self.assertEqual(TestTreeResource.mult(num1=3, num2=2), 6)
 
-    def test_extra_endpoint_on_resource_with_too_few_args___throws_exception(self):
+    def test_custom_endpoint_on_resource_with_too_few_args___throws_exception(self):
         self.assertRaises(IncorrectEndpointArgs, TestTreeResource.add, 1)
 
-    def test_extra_endpoint_on_resource_with_too_many_args___throws_exception(self):
+    def test_custom_endpoint_on_resource_with_too_many_args___throws_exception(self):
         self.assertRaises(IncorrectEndpointArgs, TestTreeResource.add, 1, 2, 3)
 
-    def test_extra_endpoint_on_resource_with_too_few_kwargs___throws_exception(self):
+    def test_custom_endpoint_on_resource_with_too_few_kwargs___throws_exception(self):
         self.assertRaises(IncorrectEndpointKwargs, TestTreeResource.mult, num1=1)
 
-    def test_extra_endpoint_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
+    def test_custom_endpoint_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
         self.assertEqual(TestTreeResource.mult(num1=3, num2=2, num3=0), 6)
 
     #def test_zzz(self):
