@@ -55,6 +55,13 @@ class ResourceMeta(type):
     def __len__(cls):
         return cls.count()
 
+    def __getattr__(cls, name):
+        if name not in cls.schema().list_endpoints():
+            raise AttributeError(name)
+        def _call_resource_classmethod(*args, **kwargs):
+            return cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
+        return _call_resource_classmethod
+
     def _set_api_auth(cls, auth):
         cls._auth = auth
         cls.api().auth = auth

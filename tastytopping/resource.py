@@ -94,7 +94,7 @@ class Resource(_BaseMetaBridge, object):
         try:
             return self._cached_field(name)
         except KeyError:
-            if name not in self._schema().methods():
+            if name not in self._schema().detail_endpoints():
                 raise AttributeError(name)
             return self._resource_method(name)
 
@@ -115,7 +115,7 @@ class Resource(_BaseMetaBridge, object):
 
     def _resource_method(self, method_name):
         def _call_resource_method(*args, **kwargs):
-            return self._api().method(self, method_name, self._schema(), *args, **kwargs)
+            return self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
         return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):

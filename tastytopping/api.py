@@ -140,6 +140,16 @@ class TastyApi(object):
             pass
         return self._base_url() + resource
 
+    def _get_endpoint(self, base_url, method_name, *args, **kwargs):
+        args_string = '/'.join(str(a) for a in args)
+        url = '{0}{1}/{2}'.format(base_url, method_name, args_string)
+        if not url.endswith('/'):
+            url += '/'
+        try:
+            return self._transmit(self._session().get, url, params=kwargs)
+        except NonExistantResource as err:
+            raise IncorrectEndpointArgs(*err.args)
+
     def get(self, resource_type, schema, **kwargs):
         """Retrieve the objects for a given resource type.
 
@@ -231,31 +241,17 @@ class TastyApi(object):
         schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
 
-    def method(self, resource, method_name, schema, *args, **kwargs):
-        """Send a GET to an extra endpoint for this resource.
+    def list_endpoint(self, resource_type, method_name, schema, *args, **kwargs):
+        """Send a GET to a custom endpoint for this resource."""
+        url = self._base_url() + self._get_resource(resource_type)
+        schema.check_list_request_allowed('get')
+        return self._get_endpoint(url, method_name, *args, **kwargs)
 
-        :param resource: A URI pointing to the TastyPie resource.
-        :type resource: str
-        :param method_name: The endpoint to GET.
-        :type method_name: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
-        :param args: Args to pass to the endpoint as part of the URI.
-        :type args: tuple
-        :params kwargs: Kyeword args to pass to the endpoint as GET params.
-        :type kwargs: dict
-        :returns: The result of the method called.
-        :rtype: any
-        """
-        args_string = '/'.join(str(a) for a in args)
-        url = '{0}{1}/{2}'.format(self._resource_url(resource), method_name, args_string)
-        if not url.endswith('/'):
-            url += '/'
+    def detail_endpoint(self, resource, method_name, schema, *args, **kwargs):
+        """Send a GET to a custom endpoint for this resource instance."""
+        url = self._resource_url(resource)
         schema.check_detail_request_allowed('get')
-        try:
-            return self._transmit(self._session().get, url, params=kwargs)
-        except NonExistantResource as err:
-            raise IncorrectEndpointArgs(*err.args)
+        return self._get_endpoint(url, method_name, *args, **kwargs)
 
     def bulk(self, resource_type, schema, resources, delete):
         """Create, update, and delete multiple resources.
