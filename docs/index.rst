@@ -31,9 +31,10 @@ Contents
 ^^^^^^^^
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   tastytopping
+    auth
+    tastytopping
 
 
 Requirements
