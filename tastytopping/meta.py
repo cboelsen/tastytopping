@@ -124,10 +124,10 @@ class ResourceMeta(type):
         if field is None:
             pass
         elif field_type == tastytypes.RELATED:
-            if hasattr(field, '__iter__'):
-                return [cls._create_related_resource(f) for f in field]
-            else:
+            if hasattr(field, 'split'):
                 return cls._create_related_resource(field)
+            else:
+                return [cls._create_related_resource(f) for f in field]
         elif field_type == tastytypes.DATETIME:
             # Try with milliseconds, otherwise without.
             try:
