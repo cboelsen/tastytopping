@@ -485,6 +485,21 @@ class IntegrationTest(unittest.TestCase):
         tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME)])
         self.assertEqual(CHILD_NAME, tree1.child().name)
 
+    def test_set_auth_on_factory___all_resources_created_in_factory_share_auth(self):
+        new_factory = ResourceFactory('http://localhost:8111/test/api/v1')
+        new_factory.auth = 4
+        self.assertEqual(new_factory.auth, new_factory.test_resource.auth)
+        self.assertEqual(new_factory.auth, new_factory.tree.auth)
+        self.assertEqual(new_factory.auth, new_factory.user.auth)
+
+    def test_change_auth_on_factory___all_resources_retrieved_from_factory_change_auth(self):
+        new_factory = ResourceFactory('http://localhost:8111/test/api/v1')
+        new_factory.test_resource.auth = 1
+        new_factory.tree.auth = 2
+        new_factory.auth = 3
+        self.assertEqual(new_factory.auth, new_factory.test_resource.auth)
+        self.assertEqual(new_factory.auth, new_factory.tree.auth)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
@@ -498,7 +513,6 @@ class IntegrationTest(unittest.TestCase):
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
-    # TODO Add ability to change auth globally.
     # TODO Endpoints: What about lists of resources, or dates?!?!?!
 
     # TESTING:

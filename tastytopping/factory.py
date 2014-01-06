@@ -38,6 +38,7 @@ class ResourceFactory(object):
     def __init__(self, api_url):
         self._url = api_url
         self._classes = {}
+        self._auth = None
 
     def __getattr__(self, name):
         return self._resource_class(name)
@@ -50,5 +51,24 @@ class ResourceFactory(object):
                 api_url = self._url
                 resource_name = resource
                 _factory = self
+            _SpecificResource.auth = self._auth
             self._classes[resource] = _SpecificResource
             return _SpecificResource
+
+    def _get_auth(self):
+        return self._auth
+
+    def _set_auth(self, auth):
+        self._auth = auth
+        for resource_class in self._classes.values():
+            resource_class.auth = auth
+
+    auth = property(
+        _get_auth,
+        _set_auth,
+        None,
+        (
+            '(AuthBase): Update the auth on all resources accessed via this API. '
+            'Any new Resources will have their auth set to this value too.'
+        ),
+    )
