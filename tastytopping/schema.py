@@ -135,27 +135,21 @@ class TastySchema(object):
         if schema_field['readonly']:
             raise ReadOnlyField(self._resource, field)
 
-    def detail_endpoints(self):
+    def detail_endpoint_type(self, endpoint):
         """Return a list of all endpoints for this resource instance.
 
         :returns: The endpoints for this resource instance.
         :rtype: list
         """
-        try:
-            return self._schema['detail_endpoints'].keys()
-        except KeyError:
-            return []
+        return self._schema['detail_endpoints'][endpoint]['type']
 
-    def list_endpoints(self):
+    def list_endpoint_type(self, endpoint):
         """Return a list of all endpoints for this resource type.
 
         :returns: The endpoints for this resource type.
         :rtype: list
         """
-        try:
-            return self._schema['list_endpoints'].keys()
-        except KeyError:
-            return []
+        return self._schema['list_endpoints'][endpoint]['type']
 
     def field(self, name):
         """Return the description of the given field.

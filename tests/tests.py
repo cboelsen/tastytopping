@@ -513,7 +513,6 @@ class IntegrationTest(unittest.TestCase):
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
     # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
-    # TODO Endpoints: What about lists of resources, or dates?!?!?!
 
     # TESTING:
     # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...

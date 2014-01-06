@@ -16,6 +16,7 @@ __all__ = ('ResourceMeta', )
 # this magic.
 # pylint: disable=W0212
 
+from datetime import datetime
 
 from .cache import retrieve_from_cache
 from .api import TastyApi
@@ -57,14 +58,13 @@ class ResourceMeta(type):
         return cls.count()
 
     def __getattr__(cls, name):
-        if name not in cls.schema().list_endpoints():
+        try:
+            return_type = cls.schema().list_endpoint_type(name)
+        except KeyError:
             raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
             result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
-            try:
-                return cls.create_related_resource(result)
-            except (AttributeError, IndexError):
-                return result
+            return cls.create_field_object(result, return_type)
         return _call_resource_classmethod
 
     @staticmethod
@@ -73,6 +73,15 @@ class ResourceMeta(type):
             return details['resource_uri'].split('/')[-3]
         except TypeError:
             return details.split('/')[-3]
+
+    def _create_related_resource(cls, related_details):
+        resource_type = cls._get_resource_type(related_details)
+        resource_class = getattr(cls._factory, resource_type)
+        # Tastypie can either return a dict of fields for a resource, or simply
+        # its URI. We want to pass its fields to the new Resource.
+        if not isinstance(related_details, dict):
+            related_details = resource_class.api().details(related_details, resource_class.schema())
+        return resource_class(_details=related_details)
 
     def _set_api_auth(cls, auth):
         cls._auth = auth
@@ -85,16 +94,6 @@ class ResourceMeta(type):
                 derived._set_api_auth(auth)
 
     auth = property(lambda cls: cls._auth, _set_auth)
-
-    def create_related_resource(cls, related_details):
-        """Create a new resource from the related field."""
-        resource_type = cls._get_resource_type(related_details)
-        resource_class = getattr(cls._factory, resource_type)
-        # Tastypie can either return a dict of fields for a resource, or simply
-        # its URI. We want to pass its fields to the new Resource.
-        if not isinstance(related_details, dict):
-            related_details = resource_class.api().details(related_details, resource_class.schema())
-        return resource_class(_details=related_details)
 
     def resource(cls):
         """Return the resource name of this class."""
@@ -119,6 +118,23 @@ class ResourceMeta(type):
         if cls._class_schema is None:
             cls._class_schema = retrieve_from_cache(cls.api().schema, cls.resource())
         return cls._class_schema
+
+    def create_field_object(cls, field, field_type):
+        """Create an expected python object for the field_type."""
+        if field is None:
+            pass
+        elif field_type == tastytypes.RELATED:
+            if hasattr(field, '__iter__'):
+                return [cls._create_related_resource(f) for f in field]
+            else:
+                return cls._create_related_resource(field)
+        elif field_type == tastytypes.DATETIME:
+            # Try with milliseconds, otherwise without.
+            try:
+                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
+            except ValueError:
+                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
+        return field
 
     def get_resources(cls, **kwargs):
         """Return a generator of dicts from the API."""

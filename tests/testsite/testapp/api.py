@@ -103,12 +103,24 @@ class TreeResource(ModelResource):
     def build_schema(self):
         data = super(TreeResource, self).build_schema()
         data['detail_endpoints'] = {
-            'depth': self.calc_depth.__doc__,
-            'child': self.get_child.__doc__,
+            'depth': {
+                'type': fields.IntegerField.dehydrated_type,
+                'help_text': self.calc_depth.__doc__,
+            },
+            'child': {
+                'type': fields.RelatedField.dehydrated_type,
+                'help_text': self.get_child.__doc__,
+            },
         }
         data['list_endpoints'] = {
-            'add': self.calc_add.__doc__,
-            'mult': self.calc_mult.__doc__,
+            'add': {
+                'type': fields.IntegerField.dehydrated_type,
+                'help_text': self.calc_add.__doc__,
+            },
+            'mult': {
+                'type': fields.IntegerField.dehydrated_type,
+                'help_text': self.calc_mult.__doc__,
+            },
         }
         return data
 

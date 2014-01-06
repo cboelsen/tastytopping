@@ -12,8 +12,6 @@
 __all__ = ('Resource', )
 
 
-from datetime import datetime
-
 from .meta import ResourceMeta
 from .exceptions import (
     ResourceDeleted,
@@ -93,9 +91,11 @@ class Resource(_BaseMetaBridge, object):
         try:
             return self._cached_field(name)
         except KeyError:
-            if name not in self._schema().detail_endpoints():
+            try:
+                return_type = self._schema().detail_endpoint_type(name)
+            except KeyError:
                 raise AttributeError(name)
-            return self._resource_method(name)
+            return self._resource_method(name, return_type)
 
     def __eq__(self, obj):
         try:
@@ -112,13 +112,10 @@ class Resource(_BaseMetaBridge, object):
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
 
-    def _resource_method(self, method_name):
+    def _resource_method(self, method_name, return_type):
         def _call_resource_method(*args, **kwargs):
             result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
-            try:
-                return self._new_related_resource(result)
-            except (AttributeError, IndexError):
-                return result
+            return type(self)._create_field_object(result, return_type)
         return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
@@ -157,28 +154,11 @@ class Resource(_BaseMetaBridge, object):
                     fields[name] = value.uri()
         return fields
 
-    def _create_field_object(self, name, field, field_type):
-        if field is None:
-            pass
-        elif field_type == tastytypes.RELATED:
-            related_type = self._schema().field(name)['related_type']
-            if related_type == tastytypes.TO_MANY:
-                return [self._new_related_resource(f) for f in field]
-            else:
-                return self._new_related_resource(field)
-        elif field_type == tastytypes.DATETIME:
-            # Try with milliseconds, otherwise without.
-            try:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
-            except ValueError:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
-        return field
-
     def _cached_field(self, name):
         if name not in self._cached_fields or not self._caching:
             field = self.fields()[name]
             field_type = self._schema().field(name)['type']
-            self._cached_fields[name] = self._create_field_object(name, field, field_type)
+            self._cached_fields[name] = self._create_field_object(field, field_type)
         return self._cached_fields[name]
 
     def _set(self, name, value):
@@ -189,7 +169,7 @@ class Resource(_BaseMetaBridge, object):
     _api = classmethod(lambda cls: cls.api())
     _resource = classmethod(lambda cls: cls.resource())
     _schema = classmethod(lambda cls: cls.schema())
-    _new_related_resource = classmethod(lambda cls, fields: cls.create_related_resource(fields))
+    _create_field_object = classmethod(lambda cls, field, field_type: cls.create_field_object(field, field_type))
 
     def uri(self):
         """Return the resource_uri for this object.
