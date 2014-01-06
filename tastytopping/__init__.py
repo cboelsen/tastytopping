@@ -27,6 +27,7 @@ from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
     FilterNotAllowedForField,
+    InvalidFieldName,
     ResourceDeleted,
     CreatedResourceNotFound,
     BadJsonResponse,

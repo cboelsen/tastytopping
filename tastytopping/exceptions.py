@@ -64,6 +64,14 @@ class FilterNotAllowedForField(PrettyException):
     """Raised when the filter used is not in the list of filters for the field in the API."""
     pass
 
+class InvalidFieldName(PrettyException):
+    """Raised when a field name will cause unexpected behaviour.
+
+    For instance, if a field is called 'limit', or 'order_by', it won't be
+    possible to order or limit the search results.
+    """
+    pass
+
 
 
 class ResourceDeleted(PrettyException):

@@ -20,6 +20,7 @@ from .exceptions import (
     NoFiltersInSchema,
     FieldNotInSchema,
     FilterNotAllowedForField,
+    InvalidFieldName,
 )
 
 
@@ -66,6 +67,7 @@ class TastySchema(object):
     def __init__(self, data, resource):
         self._resource = resource
         self._schema = data
+        self._check_schema()
 
     def __str__(self):
         return str(self._schema) if self._schema else repr(self)
@@ -107,6 +109,12 @@ class TastySchema(object):
             raise FilterNotAllowedForField(field, self._schema)
         except ValueError:
             pass
+
+    def _check_schema(self):
+        if 'limit' in self._fields():
+            raise InvalidFieldName("'limit' cannot be used as a field name.")
+        if 'order_by' in self._fields():
+            raise InvalidFieldName("'order_by' cannot be used as a field name.")
 
     def filterable_key(self):
         """Return a field that both: has unique values; and can be filtered on (defaults to 'id').
