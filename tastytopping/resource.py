@@ -123,10 +123,7 @@ class Resource(_BaseMetaBridge, object):
         details = api.add(resource, schema, **fields)
         if not details:
             try:
-                # No more than two results are needed, so save the server's resources.
-                # TODO This is in more than one place:
-                if 'limit' not in kwargs:
-                    kwargs['limit'] = 2
+                kwargs['limit'] = 2
                 fields = schema.remove_fields_not_in_filters(kwargs)
                 results = type(self).get_resources(**fields)
                 resources = next(iter(results))['objects']
