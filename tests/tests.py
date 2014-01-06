@@ -502,9 +502,10 @@ class IntegrationTest(unittest.TestCase):
 
     #def test_zzz(self):
     #    import sys
-    #    sys.stderr.write(TestResource(path=self.TEST_PATH1).help())
-    #    sys.stderr.write(FACTORY.user.get(limit=1).help())
-    #    sys.stderr.write(TestTreeResource(name='root').help(verbose=True))
+    #    sys.stderr.write('\n' + TestResource.help())
+    #    sys.stderr.write('\n' + FACTORY.user.help())
+    #    sys.stderr.write('\n' + TestTreeResource.help(verbose=True))
+    #    sys.stderr.write('\n' + TestTreeResource.help())
 
 
     # FEATURES:

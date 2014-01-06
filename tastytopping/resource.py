@@ -255,10 +255,6 @@ class Resource(_BaseMetaBridge, object):
         """
         self._update_remote_fields(**self._cached_fields)
 
-    def help(self, verbose=False):
-        """Return a string with the help for this resource's schema."""
-        return self._schema().help(verbose)
-
     def _get_max_results(self):
         return self._api().max_results
 
