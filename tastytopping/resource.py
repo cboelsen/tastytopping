@@ -115,7 +115,7 @@ class Resource(_BaseMetaBridge, object):
     def _resource_method(self, method_name, return_type):
         def _call_resource_method(*args, **kwargs):
             result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
-            return type(self)._create_field_object(result, return_type)
+            return self._create_field_object(result, return_type)
         return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
