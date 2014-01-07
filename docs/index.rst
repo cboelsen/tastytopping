@@ -33,6 +33,7 @@ Contents
 .. toctree::
     :maxdepth: 2
 
+    tutorial
     auth
     caching
     tastytopping

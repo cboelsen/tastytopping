@@ -509,6 +509,7 @@ class IntegrationTest(unittest.TestCase):
 
 
     # FEATURES:
+    # TODO Don't transmit cached entries on creation - wait for save().
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
@@ -525,7 +526,6 @@ class IntegrationTest(unittest.TestCase):
 
     # DOCS
     # TODO Getting started
-    # TODO Tutorial
     # TODO Optimizations / Bulk
     # TODO Generating API help.
     # TODO Release notes.
