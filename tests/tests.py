@@ -500,6 +500,19 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(new_factory.auth, new_factory.test_resource.auth)
         self.assertEqual(new_factory.auth, new_factory.tree.auth)
 
+    def test_delete_on_all_resources___no_resources_returned_from_all(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
+        self.assertEqual(2, len(TestResource))
+        TestResource.delete_all()
+        self.assertEqual(0, len(TestResource))
+
+    def test_delete_on_all_resources___resource_objects_marked_as_deleted(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        res2 = TestResource(path=self.TEST_PATH2)
+        TestResource.delete_all()
+        self.assertRaises(ResourceDeleted, res1.save)
+        self.assertRaises(ResourceDeleted, res2.save)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write('\n' + TestResource.help())

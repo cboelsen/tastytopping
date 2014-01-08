@@ -42,7 +42,7 @@ class TestResource(ModelResource):
     class Meta:
         queryset = Test.objects.all()
         resource_name = 'test_resource'
-        list_allowed_methods   = ['get', 'post', 'patch']
+        list_allowed_methods   = ['get', 'post', 'patch', 'delete']
         detail_allowed_methods = ['get', 'put', 'delete', 'patch']
         authentication = ApiKeyAuthentication()
         authorization = Authorization()

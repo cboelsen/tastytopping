@@ -241,6 +241,18 @@ class TastyApi(object):
         schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
 
+    def delete_all(self, resource_type, schema):
+        """Remove the collection of resources from the API.
+
+        :param resource_type: A URI pointing to the Tastypie resource type.
+        :type resource_type: str
+        :param schema: The schema to use for validation.
+        :type schema: TastySchema
+        """
+        url = self._base_url() + self._get_resource(resource_type)
+        schema.check_list_request_allowed('delete')
+        self._transmit(self._session().delete, url)
+
     def list_endpoint(self, resource_type, method_name, schema, *args, **kwargs):
         """Send a GET to a custom endpoint for this resource."""
         url = self._base_url() + self._get_resource(resource_type)

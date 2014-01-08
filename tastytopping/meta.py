@@ -32,6 +32,7 @@ class ResourceMeta(type):
     """Updates the TastyApi.auth for the class and all instances."""
 
     _classes = []
+    _alive = None
     _factory = None
 
     def __new__(mcs, name, bases, classdict):
@@ -200,6 +201,16 @@ class ResourceMeta(type):
             pass
         return result
 
+    def delete_all(cls):
+        """Delete the entire collection of resources.
+
+        Besides deleting the collection of resources remotely, all local
+        Resource objects of this type will be marked as deleted (ie. using any
+        of them will result in a ResourceDeleted exception).
+        """
+        cls.api().delete_all(cls.resource(), cls.schema())
+        cls._alive = set()
+
     def count(cls, **kwargs):
         """Return the number of records for this resource.
 
@@ -262,7 +273,7 @@ class ResourceMeta(type):
         )
         # Mark each deleted resource as deleted.
         for resource in delete:
-            del cls._ALIVE[resource.uri()]
+            cls._alive.remove(resource.uri())
 
     def help(cls, verbose=False):
         """Return a string with the help for this resource's schema."""

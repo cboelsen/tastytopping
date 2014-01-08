@@ -25,10 +25,10 @@ Installation is the usual simple affair with python nowadays:
 
         - requests 1.0+
 
-    2. Either check out TastyTopping from `github
-        <https://github.com/cboelsen/tastytopping>`_ or to pull a release off
-        `PyPI <https://pypi.python.org/pypi/TastyTopping/>`_. Or simply:
-        ``pip install tastytopping``.
+    2. Either check out TastyTopping from
+        `github <https://github.com/cboelsen/tastytopping>`_ or to pull a
+        release off `PyPI <https://pypi.python.org/pypi/TastyTopping/>`_.
+        Or preferably: ``pip install tastytopping``
 
 Usage
 -----

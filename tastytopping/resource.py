@@ -59,7 +59,7 @@ class Resource(_BaseMetaBridge, object):
         affect all instances of a Resource, as well as the derived Resource
         class itself (TODO link to examples here)."""
 
-    _ALIVE = {}
+    _alive = set()
 
     def __init__(self, **kwargs):
         try:
@@ -67,7 +67,7 @@ class Resource(_BaseMetaBridge, object):
         except KeyError:
             _details = self._create_new_resource(self._api(), self._resource(), self._schema(), **kwargs)
         uri = _details['resource_uri']
-        self._ALIVE[uri] = True
+        self._alive.add(uri)
         self._set('_fields', _details)
         self._set('_uri', uri)
         self._set('_cached_fields', {})
@@ -107,7 +107,7 @@ class Resource(_BaseMetaBridge, object):
         return hash(self.uri())
 
     def __bool__(self):
-        return self.uri() in self._ALIVE
+        return self.uri() in self._alive
 
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
@@ -195,7 +195,7 @@ class Resource(_BaseMetaBridge, object):
         """
         self.check_alive()
         self._api().delete(self.uri(), self._schema())
-        del self._ALIVE[self.uri()]
+        self._alive.remove(self.uri())
 
     def set_caching(self, caching):
         """Set whether this object should cache its fields.
@@ -250,6 +250,7 @@ class Resource(_BaseMetaBridge, object):
         fields locally (default). It is still possible to call this method when
         caching is set to False, but there won't be a noticable effect.
         """
+        self.check_alive()
         self._update_remote_fields(**self._cached_fields)
 
     def _get_max_results(self):
