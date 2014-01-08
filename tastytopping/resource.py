@@ -19,6 +19,7 @@ from .exceptions import (
     NoFiltersInSchema,
     BadRelatedType,
     MultipleResourcesReturned,
+    IncorrectEndpointArgs,
 )
 from . import tastytypes
 
@@ -91,11 +92,7 @@ class Resource(_BaseMetaBridge, object):
         try:
             return self._cached_field(name)
         except KeyError:
-            try:
-                return_type = self._schema().detail_endpoint_type(name)
-            except KeyError:
-                raise AttributeError(name)
-            return self._resource_method(name, return_type)
+            return self._resource_method(name)
 
     def __eq__(self, obj):
         try:
@@ -112,10 +109,13 @@ class Resource(_BaseMetaBridge, object):
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
 
-    def _resource_method(self, method_name, return_type):
+    def _resource_method(self, method_name):
         def _call_resource_method(*args, **kwargs):
-            result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
-            return self._create_field_object(result, return_type)
+            try:
+                result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
+                return self._create_field_object(result)
+            except ResourceDeleted:
+                raise AttributeError(method_name)
         return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
@@ -155,7 +155,7 @@ class Resource(_BaseMetaBridge, object):
         if name not in self._cached_fields or not self._caching:
             field = self.fields()[name]
             field_type = self._schema().field(name)['type']
-            self._cached_fields[name] = self._create_field_object(field, field_type)
+            self._cached_fields[name] = self._create_field_object(field)
         return self._cached_fields[name]
 
     def _set(self, name, value):
@@ -166,7 +166,7 @@ class Resource(_BaseMetaBridge, object):
     _api = classmethod(lambda cls: cls.api())
     _resource = classmethod(lambda cls: cls.resource())
     _schema = classmethod(lambda cls: cls.schema())
-    _create_field_object = classmethod(lambda cls, field, field_type: cls.create_field_object(field, field_type))
+    _create_field_object = classmethod(lambda cls, field: cls.create_field_object(field))
 
     def uri(self):
         """Return the resource_uri for this object.

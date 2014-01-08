@@ -92,7 +92,7 @@ class ErrorResponse(PrettyException):
     pass
 
 class NonExistantResource(PrettyException):
-    """Raised when a non-existant resource has been given."""
+    """Raised when a non-existent resource has been given."""
     pass
 
 class CannotConnectToAddress(PrettyException):

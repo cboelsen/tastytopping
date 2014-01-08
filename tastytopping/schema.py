@@ -143,22 +143,6 @@ class TastySchema(object):
         if schema_field['readonly']:
             raise ReadOnlyField(self._resource, field)
 
-    def detail_endpoint_type(self, endpoint):
-        """Return a list of all endpoints for this resource instance.
-
-        :returns: The endpoints for this resource instance.
-        :rtype: list
-        """
-        return self._schema['detail_endpoints'][endpoint]['type']
-
-    def list_endpoint_type(self, endpoint):
-        """Return a list of all endpoints for this resource type.
-
-        :returns: The endpoints for this resource type.
-        :rtype: list
-        """
-        return self._schema['list_endpoints'][endpoint]['type']
-
     def field(self, name):
         """Return the description of the given field.
 
@@ -262,30 +246,6 @@ class TastySchema(object):
         method_text = method_text[:-2] if method_text else ''
         return method_text
 
-    def _help_endpoints(self, endpoint_type, verbose):
-        help_text = ''
-        for endpoint, desc in self._schema[endpoint_type].items():
-            if verbose:
-                help_text += (
-                    '\n{0}\n'
-                    '{1}\n'
-                    'Description : {2}\n'
-                    'Return Type : {3}\n'
-                    ''.format(
-                        endpoint,
-                        '^' * len(endpoint),
-                        desc['help_text'],
-                        desc['type'],
-                    )
-                )
-            else:
-                help_text += '{0} [{1}] -- {2}\n'.format(
-                    endpoint,
-                    desc['type'],
-                    desc['help_text'],
-                )
-        return help_text
-
     def help(self, verbose):
         """Returns a string containing the help text for this resource.
 
@@ -345,14 +305,4 @@ class TastySchema(object):
                     desc['type'] if desc['type'] != 'related' else related_type(desc),
                     self._help_description(desc['help_text']),
                 )
-        help_text += '\nCustom List Endpoints\n---------------------\n'
-        try:
-            help_text += self._help_endpoints('list_endpoints', verbose)
-        except KeyError:
-            help_text += 'No list endpoints.\n'
-        help_text += '\nCustom Detail Endpoints\n-----------------------\n'
-        try:
-            help_text += self._help_endpoints('detail_endpoints', verbose)
-        except KeyError:
-            help_text += 'No detail_endpoints.\n'
         return unicode(help_text)

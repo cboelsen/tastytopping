@@ -24,6 +24,9 @@ from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
     FieldNotInSchema,
+    ResourceDeleted,
+    IncorrectEndpointArgs,
+    IncorrectEndpointKwargs,
 )
 from . import tastytypes
 
@@ -59,13 +62,12 @@ class ResourceMeta(type):
         return cls.count()
 
     def __getattr__(cls, name):
-        try:
-            return_type = cls.schema().list_endpoint_type(name)
-        except KeyError:
-            raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
-            result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
-            return cls.create_field_object(result, return_type)
+            try:
+                result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
+                return cls.create_field_object(result)
+            except ResourceDeleted:
+                raise AttributeError(name)
         return _call_resource_classmethod
 
     @staticmethod
@@ -120,21 +122,25 @@ class ResourceMeta(type):
             cls._class_schema = retrieve_from_cache(cls.api().schema, cls.resource())
         return cls._class_schema
 
-    def create_field_object(cls, field, field_type):
+    def create_field_object(cls, field):
         """Create an expected python object for the field_type."""
-        if field is None:
-            pass
-        elif field_type == tastytypes.RELATED:
-            if hasattr(field, 'split'):
-                return cls._create_related_resource(field)
-            else:
-                return [cls._create_related_resource(f) for f in field]
-        elif field_type == tastytypes.DATETIME:
+        if hasattr(field, 'split'):
             # Try with milliseconds, otherwise without.
+            # TODO Yuck!
             try:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
+                return datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
             except ValueError:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
+                try:
+                    return datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
+                except ValueError:
+                    pass
+        try:
+            if isinstance(field, list):
+                return [cls._create_related_resource(f) for f in field]
+            else:
+                return cls._create_related_resource(field)
+        except (IndexError, AttributeError, TypeError):
+            pass
         return field
 
     def get_resources(cls, **kwargs):

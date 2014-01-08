@@ -89,9 +89,13 @@ class IntegrationTest(unittest.TestCase):
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.rating, resource2.rating)
 
-    def test_access_non_existant_member___exception_raised(self):
+    def test_access_non_existent_member___nested_resource_method_returned(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
-        self.assertRaises(AttributeError, getattr, resource1, 'path__')
+        # Keeping this in to explicitly show that Resources WILL NOT raise an
+        # AttributeError when getting a non-existent member, but will instead
+        # return a method that will try to access a nested resource. Since the
+        # method isn't called, there's not much we can do here.
+        resource1.path__
 
     def test_set_value___value_set_in_new_get(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
@@ -418,11 +422,11 @@ class IntegrationTest(unittest.TestCase):
         res1 = TestResource(path=self.TEST_PATH1)
         self.assertRaises(FilterNotAllowedForField, TestResource.get, text=self.TEST_PATH1)
 
-    def test_queries_with_non_existant_fields___throws_exception(self):
+    def test_queries_with_non_existent_fields___throws_exception(self):
         res1 = TestResource(path=self.TEST_PATH1)
         self.assertRaises(FilterNotAllowedForField, TestResource.get, fake=self.TEST_PATH1)
 
-    def test_queries_with_closely_related_non_existant_fields___throws_exception(self):
+    def test_queries_with_closely_related_non_existent_fields___throws_exception(self):
         res1 = TestResource(path=self.TEST_PATH1)
         self.assertRaises(FilterNotAllowedForField, TestResource.get, pat=self.TEST_PATH1)
 
@@ -457,30 +461,30 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
 
-    def test_custom_endpoint_on_resource___endpoint_callable_as_a_method(self):
+    def test_nested_resource_on_resource___callable_as_a_method(self):
         tree1 = TestTreeResource(name='tree1', parent=TestTreeResource(name='tree2'))
         TestTreeResource(name='tree3', children=[tree1.parent])
         self.assertEqual(tree1.depth(), 2)
 
-    def test_custom_endpoint_on_resource_with_args___endpoint_callable_as_a_method(self):
+    def test_nested_resource_with_args___callable_as_a_method(self):
         self.assertEqual(TestTreeResource.add(1, 2), 3)
 
-    def test_custom_endpoint_on_resource_with_kwargs___endpoint_callable_as_a_method(self):
+    def test_nested_resource_with_kwargs___callable_as_a_method(self):
         self.assertEqual(TestTreeResource.mult(num1=3, num2=2), 6)
 
-    def test_custom_endpoint_on_resource_with_too_few_args___throws_exception(self):
+    def test_nested_resource_with_too_few_args___throws_exception(self):
         self.assertRaises(IncorrectEndpointArgs, TestTreeResource.add, 1)
 
-    def test_custom_endpoint_on_resource_with_too_many_args___throws_exception(self):
+    def test_nested_resource_with_too_many_args___throws_exception(self):
         self.assertRaises(IncorrectEndpointArgs, TestTreeResource.add, 1, 2, 3)
 
-    def test_custom_endpoint_on_resource_with_too_few_kwargs___throws_exception(self):
+    def test_nested_resource_with_too_few_kwargs___throws_exception(self):
         self.assertRaises(IncorrectEndpointKwargs, TestTreeResource.mult, num1=1)
 
-    def test_custom_endpoint_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
+    def test_nested_resource_with__too_manykwargs___callable_as_a_method(self):
         self.assertEqual(TestTreeResource.mult(num1=3, num2=2, num3=0), 6)
 
-    def test_custom_endpoint_returning_related_resource___resource_object_returned(self):
+    def test_nested_resource_returning_related_resource___resource_object_returned(self):
         CHILD_NAME = 'tree2'
         tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME)])
         self.assertEqual(CHILD_NAME, tree1.child().name)
@@ -522,7 +526,7 @@ class IntegrationTest(unittest.TestCase):
 
 
     # FEATURES:
-    # TODO Don't transmit cached entries on creation - wait for save().
+    # TODO POST/PUT/PATCH/DELETE nested resources?!?!
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
@@ -543,7 +547,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Generating API help.
     # TODO Release notes.
     # TODO Cookbook
-    # TODO Custom endpoints
+    # TODO Nested Resources.
 
 
 TestResource.auth = HttpApiKeyAuth(IntegrationTest.TEST_USERNAME, IntegrationTest.TEST_API_KEY)

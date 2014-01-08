@@ -138,14 +138,14 @@ Find more examples at `read the docs!
 Justification
 ^^^^^^^^^^^^^
 
-Why another one? There are some other packages around that do something similar
-(most notably tastypie-queryset-client), but they're lacking in a few areas:
+Why another one? There are some other packages around that do something
+similar, but they're lacking in one or more of these areas:
 
 - Python3 support.
 
 - Support for authentication.
 
-- Support for custom endpoints.
+- Support for nested resources.
 
 - A thorough set of `unit tests
   <https://github.com/cboelsen/tastytopping/blob/master/tests/tests.py>`_.
