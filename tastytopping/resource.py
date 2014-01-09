@@ -94,6 +94,9 @@ class Resource(_BaseMetaBridge, object):
         except KeyError:
             return self._resource_method(name)
 
+    def __dir__(self):
+        return sorted(set(dir(type(self)) + self.__dict__.keys() + self.fields().keys()))
+
     def __eq__(self, obj):
         try:
             return self.uri() == obj.uri()
