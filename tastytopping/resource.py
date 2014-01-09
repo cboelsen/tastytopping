@@ -62,23 +62,19 @@ class Resource(_BaseMetaBridge, object):
     _alive = set()
 
     def __init__(self, **kwargs):
-        try:
-            _details = kwargs.pop('_details')
-        except KeyError:
-            _details = self._create_new_resource(self._api(), self._resource(), self._schema(), **kwargs)
-        uri = _details['resource_uri']
-        self._alive.add(uri)
-        self._set('_fields', _details)
-        self._set('_uri', uri)
+        fields, uri = self._get_fields_and_uri_if_in_kwargs(**kwargs)
+        self._set_uri(uri)
+        self._set('_init_kwargs', kwargs)
+        self._set('_fields', fields)
         self._set('_cached_fields', {})
         self._set('_caching', self.caching)
         self._set('filter_field', self._schema().filterable_key)
 
     def __str__(self):
-        return 'Resource "{0}" with fields: {1}'.format(self.uri(), self.fields())
+        return '<"{0}": {1}>'.format(self.uri(), self.fields())
 
     def __repr__(self):
-        return '<{0} {1}>'.format(self._resource(), self.uri())
+        return '<{0} {1} @ {2}>'.format(self._resource(), self.uri(), id(self))
 
     def __setattr__(self, name, value):
         if name not in self.fields():
@@ -114,6 +110,25 @@ class Resource(_BaseMetaBridge, object):
 
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
+
+    def _set_uri(self, uri):
+        if uri:
+            self._alive.add(uri)
+        self._set('_uri', uri)
+
+    def _get_fields_and_uri_if_in_kwargs(self, **kwargs):
+        try:
+            fields = kwargs['_fields']
+            if isinstance(fields, dict):
+                uri = fields['resource_uri']
+                kwargs = {'_fields': fields['resource_uri']}
+            else:
+                uri = fields
+                fields = None
+        except KeyError:
+            uri = None
+            fields = None
+        return fields, uri
 
     def _resource_method(self, method_name, return_type):
         def _call_resource_method(*args, **kwargs):
@@ -177,6 +192,8 @@ class Resource(_BaseMetaBridge, object):
         :returns: resource_uri
         :rtype: str
         """
+        if self._uri is None:
+            self._set_uri(self.fields()['resource_uri'])
         return self._uri
 
     def check_alive(self):
@@ -223,7 +240,14 @@ class Resource(_BaseMetaBridge, object):
         :rtype: list
         """
         if self._fields is None or not self._caching:
-            fields = self._api().details(self.uri(), self._schema())
+            if self._uri:
+                fields = self._api().details(self._uri, self._schema())
+            else:
+                # TODO This is a new Resource - the fields should be written on
+                # a save(), not an access!
+                fields = self._create_new_resource(self._api(), self._resource(), self._schema(), **self._init_kwargs)
+                self._set_uri(fields['resource_uri'])
+            self._set('_init_kwargs', {})
             self._set('_fields', fields)
         return self._fields
 
@@ -254,7 +278,12 @@ class Resource(_BaseMetaBridge, object):
         caching is set to False, but there won't be a noticable effect.
         """
         self.check_alive()
-        self._update_remote_fields(**self._cached_fields)
+        # TODO Remove reference to fields() when new resource creation moves
+        # to here!
+        self.fields()
+        if self._cached_fields:
+            self._update_remote_fields(**self._cached_fields)
+        return self
 
     def _get_max_results(self):
         return self._api().max_results

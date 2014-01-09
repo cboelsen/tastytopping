@@ -78,11 +78,7 @@ class ResourceMeta(type):
     def _create_related_resource(cls, related_details):
         resource_type = cls._get_resource_type(related_details)
         resource_class = getattr(cls._factory, resource_type)
-        # Tastypie can either return a dict of fields for a resource, or simply
-        # its URI. We want to pass its fields to the new Resource.
-        if not isinstance(related_details, dict):
-            related_details = resource_class.api().details(related_details, resource_class.schema())
-        return resource_class(_details=related_details)
+        return resource_class(_fields=related_details)
 
     def _set_api_auth(cls, auth):
         cls._auth = auth
@@ -166,7 +162,7 @@ class ResourceMeta(type):
         cls.schema().check_fields_in_filters(kwargs)
         for response in cls.get_resources(**kwargs):
             for obj in response['objects']:
-                yield cls(_details=obj)
+                yield cls(_fields=obj)
                 exist = True
         if not exist:
             raise NoResourcesExist(cls.resource(), kwargs)
