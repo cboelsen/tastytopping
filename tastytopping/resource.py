@@ -97,6 +97,9 @@ class Resource(_BaseMetaBridge, object):
                 raise AttributeError(name)
             return self._resource_method(name, return_type)
 
+    def __dir__(self):
+        return sorted(set(dir(type(self)) + self.__dict__.keys() + self.fields().keys()))
+
     def __eq__(self, obj):
         try:
             return self.uri() == obj.uri()

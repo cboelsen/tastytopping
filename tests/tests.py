@@ -513,6 +513,12 @@ class IntegrationTest(unittest.TestCase):
         self.assertRaises(ResourceDeleted, res1.save)
         self.assertRaises(ResourceDeleted, res2.save)
 
+    def test_dir_on_resource_instance___fields_returned_in_addition(self):
+        tree1 = TestTreeResource(name='tree1')
+        self.assertTrue('name' in dir(tree1))
+        self.assertTrue('parent' in dir(tree1))
+        self.assertTrue('children' in dir(tree1))
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write('\n' + TestResource.help())
