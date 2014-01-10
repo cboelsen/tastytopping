@@ -25,7 +25,6 @@ from .exceptions import (
     IncorrectEndpointArgs,
     IncorrectEndpointKwargs,
 )
-from .schema import TastySchema
 from . import tastytypes
 
 
@@ -53,16 +52,13 @@ class TastyApi(object):
     def _address(self):
         return self._addr
 
-    def _resources(self):
-        if self._res is None:
-            self._res = self._transmit(self._session().get, self._address())
-        return self._res
-
     def _base_url(self):
         if self._baseurl is None:
-            any_endpoint = next(iter(self._resources().values()))['list_endpoint']
-            excess = any_endpoint.rsplit('/', 2)[0] + '/'
-            self._baseurl = self._address().replace(excess, '')
+            if self._address().startswith('http://'):
+                # TODO Redo!
+                self._baseurl = 'http://' + self._address()[7:].split('/', 1)[0]
+            else:
+                self._baseurl = self._address()
         return self._baseurl
 
     def _transmit(self, tx_func, url, params=None, data=None):
@@ -100,12 +96,6 @@ class TastyApi(object):
         except requests.exceptions.ConnectionError as err:
             raise CannotConnectToAddress(self._address())
 
-    def _get_resource(self, resource_type):
-        try:
-            return self._resources()[resource_type]['list_endpoint']
-        except KeyError:
-            raise NonExistantResource(resource_type)
-
     @staticmethod
     def _encode_for_transmit(obj):
         # TODO This is getting out of control...
@@ -138,30 +128,22 @@ class TastyApi(object):
             pass
         return self._base_url() + resource
 
-    def _get_endpoint(self, base_url, method_name, *args, **kwargs):
+    def _get_endpoint(self, base_url, *args, **kwargs):
         args_string = '/'.join(str(a) for a in args)
-        url = '{0}{1}/{2}'.format(base_url, method_name, args_string)
-        if not url.endswith('/'):
-            url += '/'
-        try:
-            return self._transmit(self._session().get, url, params=kwargs)
-        except NonExistantResource as err:
-            raise IncorrectEndpointArgs(*err.args)
+        url = '{0}/{1}'.format(base_url, args_string)
+        return self._transmit(self._session().get, url, params=kwargs)
 
-    def get(self, resource_type, schema, **kwargs):
+    def get(self, resource_type, **kwargs):
         """Retrieve the objects for a given resource type.
 
         The search can be filtered by passing field=value as kwargs.
 
         :param resource_type: The TastyPie resource name.
         :type resource_type: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
         :returns: A generator object that yields dicts.
         :rtype dict
         """
-        url = self._base_url() + self._get_resource(resource_type)
-        schema.check_list_request_allowed('get')
+        url = self._address() + resource_type + '/'
         retrieve_all_results = False
         if 'limit' not in kwargs:
             retrieve_all_results = True
@@ -174,125 +156,88 @@ class TastyApi(object):
             result = self._transmit(self._session().get, url)
             yield result
 
-    def details(self, resource, schema):
+    def details(self, resource):
         """Retrieve the fields for a given URI.
 
         :param resource: A URI pointing to the TastyPie resource.
         :type resource: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
         :returns: The resource's fields.
         :rtype: dict
         """
         url = self._resource_url(resource)
-        schema.check_detail_request_allowed('get')
         return self._transmit(self._session().get, url)
 
-    def add(self, resource_type, schema, **kwargs):
+    def add(self, resource_type, **kwargs):
         """Add a new resource with the given fields.
 
         The fields can be set by passing in field=value as kwargs.
 
         :param resource_type: The TastyPie resource name.
         :type resource_type: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
         :returns: Either the resource fields or an empty dict, depending on how
             the Resource was defined in the tastypie API (always_return_data).
         :rtype: dict
         """
         url = self._base_url() + self._get_resource(resource_type)
-        schema.check_list_request_allowed('post')
         return self._transmit(self._session().post, url, data=kwargs) or {}
 
-    def update(self, resource, schema, **kwargs):
+    def update(self, resource, **kwargs):
         """Update a given resource with the given fields.
 
         The fields can be set by passing in field=value as kwargs.
 
         :param resource: A URI pointing to the TastyPie resource.
         :type resource: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
         :returns: Either the resource fields or an empty dict, depending on how
             the Resource was defined in the tastypie API (always_return_data).
         :rtype: dict
         """
         url = self._resource_url(resource)
         try:
-            schema.check_detail_request_allowed('patch')
             method = self._session().patch
         except RestMethodNotAllowed:
-            schema.check_detail_request_allowed('put')
             method = self._session().put
         return self._transmit(method, url, data=kwargs) or {}
 
-    def delete(self, resource, schema):
+    def delete(self, resource):
         """Remove a given resource from the API.
 
         :param resource: A URI pointing to the TastyPie resource.
         :type resource: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
         """
         url = self._resource_url(resource)
-        schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
 
-    def delete_all(self, resource_type, schema):
+    def delete_all(self, resource_type):
         """Remove the collection of resources from the API.
 
         :param resource_type: A URI pointing to the Tastypie resource type.
         :type resource_type: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
         """
-        url = self._base_url() + self._get_resource(resource_type)
-        schema.check_list_request_allowed('delete')
+        url = self._address() + resource_type + '/'
         self._transmit(self._session().delete, url)
 
-    def list_endpoint(self, resource_type, method_name, schema, *args, **kwargs):
+    def list_endpoint(self, resource_type, *args, **kwargs):
         """Send a GET to a custom endpoint for this resource."""
-        url = self._base_url() + self._get_resource(resource_type)
-        schema.check_list_request_allowed('get')
-        return self._get_endpoint(url, method_name, *args, **kwargs)
+        url = self._address() + resource_type + '/'
+        return self._get_endpoint(url, *args, **kwargs)
 
-    def detail_endpoint(self, resource, method_name, schema, *args, **kwargs):
+    def detail_endpoint(self, resource, *args, **kwargs):
         """Send a GET to a custom endpoint for this resource instance."""
         url = self._resource_url(resource)
-        schema.check_detail_request_allowed('get')
-        return self._get_endpoint(url, method_name, *args, **kwargs)
+        return self._get_endpoint(url, *args, **kwargs)
 
-    def bulk(self, resource_type, schema, resources, delete):
+    def bulk(self, resource_type, resources, delete):
         """Create, update, and delete multiple resources.
 
         :param resource_type: The TastyPie resource name.
         :type resource_type: str
-        :param schema: The schema to use for validation.
-        :type schema: TastySchema
         :param resources: Dicts of fields to create or update.
         :type resources: list
         :param delete: URIs of resources to delete.
         :type delete: list
         """
-        url = self._base_url() + self._get_resource(resource_type)
-        schema.check_list_request_allowed('patch')
+        url = self._address() + resource_type + '/'
         data = {'objects': resources, 'deleted_objects': delete}
         # No result is returned in a 202 response.
         self._transmit(self._session().patch, url, data=data)
-
-    def schema(self, resource_type):
-        """Retrieve the schema for a given resource type.
-
-        :param resource_type: The TastyPie resource name.
-        :type resource: str
-        :returns: A wrapper around the resource's schema.
-        :rtype: TastySchema
-        :raises: NonExistantResource
-        """
-        try:
-            url = self._base_url() + self._resources()[resource_type]['schema']
-            schema_dict = self._transmit(self._session().get, url)
-            return TastySchema(schema_dict, resource_type)
-        except KeyError:
-            raise NonExistantResource(resource_type)

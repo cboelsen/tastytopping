@@ -52,20 +52,15 @@ class ResourceMeta(type):
         obj._auth = auth_value
         obj._class_api = None
         obj._class_resource = None
-        obj._class_schema = None
         return obj
 
     def __len__(cls):
         return cls.count()
 
     def __getattr__(cls, name):
-        try:
-            return_type = cls.schema().list_endpoint_type(name)
-        except KeyError:
-            raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
-            result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
-            return cls.create_field_object(result, return_type)
+            result = cls.api().list_endpoint(cls.resource() + name, *args, **kwargs)
+            return cls.create_field_object(result)
         return _call_resource_classmethod
 
     @staticmethod
@@ -110,44 +105,26 @@ class ResourceMeta(type):
                 cls._class_api.auth = cls.auth
         return cls._class_api
 
-    def schema(cls):
-        """Return the schema used by this class."""
-        if cls._class_schema is None:
-            cls._class_schema = retrieve_from_cache(cls.api().schema, cls.resource())
-        return cls._class_schema
-
-    def create_field_object(cls, field, field_type):
+    def create_field_object(cls, field):
         """Create an expected python object for the field_type."""
-        if field is None:
-            pass
-        elif field_type == tastytypes.RELATED:
-            if hasattr(field, 'split'):
-                return cls._create_related_resource(field)
-            else:
-                return [cls._create_related_resource(f) for f in field]
-        elif field_type == tastytypes.DATETIME:
+        if hasattr(field, 'split'):
             # Try with milliseconds, otherwise without.
+            # TODO Yuck!
             try:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
+                return datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
             except ValueError:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
+                try:
+                    return datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
+                except ValueError:
+                    pass
+        try:
+            if isinstance(field, list):
+                return [cls._create_related_resource(f) for f in field]
+            else:
+                return cls._create_related_resource(field)
+        except (IndexError, AttributeError, TypeError):
+            pass
         return field
-
-    def get_resources(cls, **kwargs):
-        """Return a generator of dicts from the API."""
-        for field, obj in kwargs.items():
-            try:
-                if cls.schema().field(field)['type'] == tastytypes.RELATED:
-                    del kwargs[field]
-                    try:
-                        related_field = obj.filter_field()
-                        kwargs['{0}__{1}'.format(field, related_field)] = getattr(obj, related_field)
-                    except AttributeError:
-                        related_field = obj[0].filter_field()
-                        kwargs['{0}__{1}'.format(field, related_field)] = [getattr(o, related_field) for o in obj]
-            except FieldNotInSchema:
-                pass
-        return cls.api().get(cls.resource(), cls.schema(), **kwargs)
 
     def filter(cls, **kwargs):
         """Return existing objects via the API, filtered by kwargs.
@@ -159,8 +136,7 @@ class ResourceMeta(type):
         :raises: NoResourcesExist
         """
         exist = False
-        cls.schema().check_fields_in_filters(kwargs)
-        for response in cls.get_resources(**kwargs):
+        for response in cls.api().get(cls.resource(), **kwargs):
             for obj in response['objects']:
                 yield cls(_fields=obj)
                 exist = True
@@ -204,7 +180,7 @@ class ResourceMeta(type):
         Resource objects of this type will be marked as deleted (ie. using any
         of them will result in a ResourceDeleted exception).
         """
-        cls.api().delete_all(cls.resource(), cls.schema())
+        cls.api().delete_all(cls.resource())
         cls._alive = set()
 
     def count(cls, **kwargs):
@@ -216,7 +192,7 @@ class ResourceMeta(type):
         :rtype: int
         """
         kwargs['limit'] = 1
-        response = next(iter(cls.api().get(cls.resource(), cls.schema(), **kwargs)))
+        response = next(iter(cls.api().get(cls.resource(), **kwargs)))
         return response['meta']['total_count']
 
     def bulk(cls, create=None, update=None, delete=None):
@@ -253,7 +229,7 @@ class ResourceMeta(type):
         # The resources to create or update are sent in a single list.
         resources = create
         for resource in update:
-            resource_fields = resource._stream_related(resource._schema(), **resource._cached_fields)
+            resource_fields = resource._stream_related(**resource._cached_fields)
             resource_fields['resource_uri'] = resource.uri()
             resources.append(resource_fields)
         # Get the fields for any Resource objects given.
@@ -263,14 +239,9 @@ class ResourceMeta(type):
         )
         cls.api().bulk(
             cls.resource(),
-            cls.schema(),
             resources,
             [d.uri() for d in delete]
         )
         # Mark each deleted resource as deleted.
         for resource in delete:
             cls._alive.remove(resource.uri())
-
-    def help(cls, verbose=False):
-        """Return a string with the help for this resource's schema."""
-        return cls.schema().help(verbose)
