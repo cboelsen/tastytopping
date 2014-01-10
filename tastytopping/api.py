@@ -32,7 +32,6 @@ from . import tastytypes
 class TastyApi(object):
     """Wrap the TastyPie API providing basic get/add/update/delete methods.
 
-    :var max_results: initial value: 100
     :param address: URL of the TastyPie API.
     :type address: str
     """
@@ -45,7 +44,6 @@ class TastyApi(object):
         self._res = None
         self._sess = None
         self.auth = None
-        self.max_results = 100
 
     def _session(self):
         if self._sess is None:
@@ -166,13 +164,13 @@ class TastyApi(object):
         schema.check_list_request_allowed('get')
         retrieve_all_results = False
         if 'limit' not in kwargs:
-            kwargs.update({'limit': self.max_results})
             retrieve_all_results = True
         result = self._transmit(self._session().get, url, params=kwargs)
         yield result
         # Only continue to retrieve results if the user hasn't specified the
         # number of results to retrieve.
         while result['meta']['next'] and retrieve_all_results:
+            url = self._base_url() + result['meta']['next']
             result = self._transmit(self._session().get, url)
             yield result
 

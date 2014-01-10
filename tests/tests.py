@@ -65,12 +65,6 @@ class IntegrationTest(unittest.TestCase):
     def _delete(self, res):
         res._api().delete(res.uri(), res._schema())
 
-    def _api_init_with_max_results(self, fn, num):
-        def init(self, *args, **kwargs):
-            fn(self, *args, **kwargs)
-            self.max_results = num
-        return init
-
     ################# TESTS ################
     def test_create___object_returned_with_same_fields(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
@@ -225,22 +219,19 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(next(iter(NoFilterResource.all())).path, 'a')
 
     def test_more_resources_to_get_than_default_limit___api_gets_all_resources(self):
-        restore_init = TastyApi.__init__
-        TastyApi.__init__ = self._api_init_with_max_results(TastyApi.__init__, 5)
-        NUM_RESOURCES = 10
+        NUM_RESOURCES = 22
         resources = [{'path': self.TEST_PATH1 + str(i), 'rating': self.TEST_RATING1} for i in range(NUM_RESOURCES)]
         TestResource.bulk(create=resources)
         resources = TestResource.all()
-        TastyApi.__init__ = restore_init
-        self.assertEqual(len(list(resources)), NUM_RESOURCES)
+        self.assertEqual(len(set(resources)), NUM_RESOURCES)
 
     def test_more_resources_to_get_than_given_limit___api_only_retrieve_up_to_limit(self):
-        NUM_RESOURCES = 10
+        NUM_RESOURCES = 8
         LIMIT = 5
         resources = [{'path': self.TEST_PATH1 + str(i), 'rating': self.TEST_RATING1} for i in range(NUM_RESOURCES)]
         TestResource.bulk(create=resources)
         resources = TestResource.filter(limit=LIMIT)
-        self.assertEqual(len(list(resources)), LIMIT)
+        self.assertEqual(len(set(resources)), LIMIT)
 
     def test_order_by___resources_returned_in_order(self):
         TestResource(path=self.TEST_PATH1 + '1', rating=50).save()

@@ -284,16 +284,3 @@ class Resource(_BaseMetaBridge, object):
         if self._cached_fields:
             self._update_remote_fields(**self._cached_fields)
         return self
-
-    def _get_max_results(self):
-        return self._api().max_results
-
-    def _set_max_results(self, value):
-        self._api().max_results = value
-
-    max_results = property(
-                      _get_max_results,
-                      _set_max_results,
-                      None,
-                      """(int): The maximum number of results to return in a GET request."""
-                  )
