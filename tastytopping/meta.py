@@ -18,12 +18,18 @@ __all__ = ('ResourceMeta', )
 
 from datetime import datetime
 
-from .cache import retrieve_from_cache
 from .api import TastyApi
+from .cache import retrieve_from_cache
 from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
     FieldNotInSchema,
+)
+from .fields import (
+    Field,
+    DateTimeField,
+    ResourceField,
+    ResourceListField,
 )
 from . import tastytypes
 
@@ -65,20 +71,8 @@ class ResourceMeta(type):
             raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
             result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
-            return cls.create_field_object(result, return_type)
+            return cls.create_field_object(result, return_type).value()
         return _call_resource_classmethod
-
-    @staticmethod
-    def _get_resource_type(details):
-        try:
-            return details['resource_uri'].split('/')[-3]
-        except TypeError:
-            return details.split('/')[-3]
-
-    def _create_related_resource(cls, related_details):
-        resource_type = cls._get_resource_type(related_details)
-        resource_class = getattr(cls._factory, resource_type)
-        return resource_class(_fields=related_details)
 
     def _set_api_auth(cls, auth):
         cls._auth = auth
@@ -121,17 +115,13 @@ class ResourceMeta(type):
         if field is None:
             pass
         elif field_type == tastytypes.RELATED:
-            if hasattr(field, 'split'):
-                return cls._create_related_resource(field)
+            if hasattr(field, 'split') or hasattr(field, 'uri'):
+                return ResourceField(field, cls._factory)
             else:
-                return [cls._create_related_resource(f) for f in field]
+                return ResourceListField(field, cls._factory)
         elif field_type == tastytypes.DATETIME:
-            # Try with milliseconds, otherwise without.
-            try:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
-            except ValueError:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
-        return field
+            return DateTimeField(field)
+        return Field(field)
 
     def get_resources(cls, **kwargs):
         """Return a generator of dicts from the API."""

@@ -305,8 +305,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_updating_incorrect_related_resource___exception_raised(self):
         res = TestResource(path=self.TEST_PATH1).save()
-        res.created_by = 'user'
-        self.assertRaises(BadRelatedType, res.save)
+        self.assertRaises(BadRelatedType, setattr, res, 'created_by', 'user')
 
     def test_create_resource_with_multiple_resources_in_related_field___multiple_resources_accepted(self):
         tree1 = TestTreeResource(name='tree1').save()
