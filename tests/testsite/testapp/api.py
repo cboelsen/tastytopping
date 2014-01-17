@@ -44,7 +44,7 @@ class TestResource(ModelResource):
         resource_name = 'test_resource'
         list_allowed_methods   = ['get', 'post', 'patch', 'delete']
         detail_allowed_methods = ['get', 'put', 'delete', 'patch']
-        authentication = ApiKeyAuthentication()
+        #authentication = ApiKeyAuthentication()
         authorization = Authorization()
         filtering = {
             'path': [
