@@ -27,7 +27,7 @@ class IntegrationTest(unittest.TestCase):
 
     ################ HELPERS ###############
     def setUp(self):
-        requests.delete('http://localhost:8111/test/api/v1/test_resource/')
+        FACTORY.test_resource.delete()
 
     def tearDown(self):
         pass
@@ -58,6 +58,63 @@ class IntegrationTest(unittest.TestCase):
         res.rating = 12
         res.save()
         self.assertEqual(FACTORY.test_resource.get(path=self.TEST_PATH1).rating, 12)
+
+    def test_count_list_resource___number_of_resources_returned(self):
+        FACTORY.test_resource(path=self.TEST_PATH1).save()
+        self.assertEqual(1, FACTORY.test_resource.count())
+        FACTORY.test_resource(path=self.TEST_PATH2).save()
+        self.assertEqual(2, FACTORY.test_resource.count())
+
+    def test_count_list_resource___number_of_specified_resources_returned(self):
+        FACTORY.test_resource(path=self.TEST_PATH1).save()
+        FACTORY.test_resource(path=self.TEST_PATH2).save()
+        self.assertEqual(1, FACTORY.test_resource.count(path=self.TEST_PATH1))
+
+    def test_delete_resource___resource_removed_from_api(self):
+        res = FACTORY.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        self.assertEqual(1, FACTORY.test_resource.count())
+        res.delete()
+        self.assertEqual(0, FACTORY.test_resource.count())
+
+    def test_delete_resource___resource_not_usable_after1(self):
+        res = FACTORY.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res.delete()
+        self.assertRaises(ResourceDeleted, res.save)
+
+    def test_delete_resource___resource_not_usable_after2(self):
+        res = FACTORY.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res.delete()
+        self.assertRaises(ResourceDeleted, getattr, res, 'path')
+
+    def test_delete_resource___resource_not_usable_after3(self):
+        res = FACTORY.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res.delete()
+        self.assertRaises(ResourceDeleted, setattr, res, 'path', 'blah')
+
+    def test_delete_resource___resource_not_usable_after4(self):
+        res = FACTORY.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res.delete()
+        self.assertRaises(ResourceDeleted, res.delete)
+
+    def test_delete_resource_list___all_resources_removed_from_collection(self):
+        FACTORY.test_resource(path=self.TEST_PATH1).save()
+        FACTORY.test_resource(path=self.TEST_PATH2).save()
+        FACTORY.test_resource.delete()
+        self.assertEqual(0, FACTORY.test_resource.count())
+
+    def test_delete_resource_list___exception_raised_on_get(self):
+        FACTORY.test_resource(path=self.TEST_PATH1).save()
+        FACTORY.test_resource(path=self.TEST_PATH2).save()
+        FACTORY.test_resource.delete()
+        self.assertRaises(NoResourcesExist, FACTORY.test_resource.get)
+
+    def test_refresh_fields___fields_updated_from_api(self):
+        res1 = FACTORY.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res2 = FACTORY.test_resource.get(path=self.TEST_PATH1)
+        res1.rating = 10
+        res1.save()
+        res2.refresh()
+        self.assertEqual(res1.rating, res2.rating)
 
 
 if __name__ == "__main__":
