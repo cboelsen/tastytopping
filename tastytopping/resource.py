@@ -85,7 +85,7 @@ class Resource(_BaseMetaBridge, object):
     def __getattr__(self, name):
         self.check_alive()
         try:
-            return self._cached_field(name).value()
+            return self._cached_field(name)
         except KeyError:
             try:
                 return_type = self._schema().detail_endpoint_type(name)
@@ -133,13 +133,11 @@ class Resource(_BaseMetaBridge, object):
     def _resource_method(self, method_name, return_type):
         def _call_resource_method(*args, **kwargs):
             result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
-            return self._create_field_object(result, return_type).value()
+            return self._create_field_object(result, return_type)
         return _call_resource_method
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
-        # Convert all the fields to Field objects. 
-        fields = {n: self._create_field_object(f, self._schema().field(n)['type']) for n, f in kwargs.items()}
-        fields = {n: f.stream() for n, f in fields.items()}
+        fields = self._stream_related(schema, **kwargs)
         details = api.add(resource, schema, **fields)
         if not details:
             try:
@@ -153,6 +151,23 @@ class Resource(_BaseMetaBridge, object):
             except (IndexError, NoFiltersInSchema):
                 raise CreatedResourceNotFound(resource, schema, kwargs)
         return details
+
+    @staticmethod
+    def _stream_related(schema, **kwargs):
+        fields = kwargs.copy()
+        for name, value in fields.items():
+            field_type = schema.field(name)['type']
+            if field_type == tastytypes.RELATED:
+                related_type = schema.field(name)['related_type']
+                if related_type == tastytypes.TO_MANY:
+                    if not hasattr(value, '__iter__') and not isinstance(value[0], Resource):
+                        raise BadRelatedType('Expected a list of Resources', name, value, schema.field(name))
+                    fields[name] = [v.uri() for v in value]
+                elif related_type == tastytypes.TO_ONE:
+                    if not isinstance(value, Resource):
+                        raise BadRelatedType('Expected a Resource', name, value, schema.field(name))
+                    fields[name] = value.uri()
+        return fields
 
     def _cached_field(self, name):
         if name not in self._cached_fields or not self._caching:
@@ -237,7 +252,8 @@ class Resource(_BaseMetaBridge, object):
         return self._fields
 
     def _update_remote_fields(self, **kwargs):
-        fields = {n: f.stream() for n, f in kwargs.items()}
+        # Check types for related fields and convert related types to their uris.
+        fields = self._stream_related(self._schema(), **kwargs)
         # Update both the remote and local values.
         self._api().update(self.uri(), self._schema(), **fields)
 
@@ -250,11 +266,9 @@ class Resource(_BaseMetaBridge, object):
         # Check that all the values passed in are allowed by the schema.
         for field, value in kwargs.items():
             self._schema().validate(field, value)
-        # Convert all the fields to Field objects. 
-        fields = {n: self._create_field_object(f, self._schema().field(n)['type']) for n, f in kwargs.items()}
         if not self._caching:
-            self._update_remote_fields(**fields)
-        self._cached_fields.update(fields)
+            self._update_remote_fields(**kwargs)
+        self._cached_fields.update(kwargs)
 
     def save(self):
         """Save the resource remotely, via the API.
