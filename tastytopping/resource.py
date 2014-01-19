@@ -94,7 +94,7 @@ class Resource(_BaseMetaBridge, object):
             return self._resource_method(name, return_type)
 
     def __dir__(self):
-        return sorted(set(dir(type(self)) + self.__dict__.keys() + self.fields().keys()))
+        return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self.fields().keys())))
 
     def __eq__(self, obj):
         try:
