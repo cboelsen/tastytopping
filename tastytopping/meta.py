@@ -25,6 +25,7 @@ from .exceptions import (
     MultipleResourcesReturned,
     FieldNotInSchema,
 )
+from .field import create_field
 from . import tastytypes
 
 
@@ -65,20 +66,8 @@ class ResourceMeta(type):
             raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
             result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
-            return cls.create_field_object(result, return_type)
+            return cls.create_field_object(result, return_type).value()
         return _call_resource_classmethod
-
-    @staticmethod
-    def _get_resource_type(details):
-        try:
-            return details['resource_uri'].split('/')[-3]
-        except TypeError:
-            return details.split('/')[-3]
-
-    def _create_related_resource(cls, related_details):
-        resource_type = cls._get_resource_type(related_details)
-        resource_class = getattr(cls._factory, resource_type)
-        return resource_class(_fields=related_details)
 
     def _set_api_auth(cls, auth):
         cls._auth = auth
@@ -118,20 +107,7 @@ class ResourceMeta(type):
 
     def create_field_object(cls, field, field_type):
         """Create an expected python object for the field_type."""
-        if field is None:
-            pass
-        elif field_type == tastytypes.RELATED:
-            if hasattr(field, 'split'):
-                return cls._create_related_resource(field)
-            else:
-                return [cls._create_related_resource(f) for f in field]
-        elif field_type == tastytypes.DATETIME:
-            # Try with milliseconds, otherwise without.
-            try:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT1)
-            except ValueError:
-                field = datetime.strptime(field, tastytypes.DATETIME_FORMAT2)
-        return field
+        return create_field(field, field_type, cls._factory)
 
     def get_resources(cls, **kwargs):
         """Return a generator of dicts from the API."""
@@ -253,7 +229,7 @@ class ResourceMeta(type):
         # The resources to create or update are sent in a single list.
         resources = create
         for resource in update:
-            resource_fields = resource._stream_related(resource._schema(), **resource._cached_fields)
+            resource_fields = {n: v.stream() for n, v in resource._cached_fields.items()}
             resource_fields['resource_uri'] = resource.uri()
             resources.append(resource_fields)
         # Get the fields for any Resource objects given.

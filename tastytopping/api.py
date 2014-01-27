@@ -66,10 +66,7 @@ class TastyApi(object):
         return self._baseurl
 
     def _transmit(self, tx_func, url, params=None, data=None):
-        if params:
-            params = {k: self._encode_for_transmit(v) for k, v in params.items()}
         if data:
-            data = {k: self._encode_for_transmit(v) for k, v in data.items()}
             data = json.dumps(data)
         try:
             response = tx_func(
@@ -105,24 +102,6 @@ class TastyApi(object):
             return self._resources()[resource_type]['list_endpoint']
         except KeyError:
             raise NonExistantResource(resource_type)
-
-    @staticmethod
-    def _encode_for_transmit(obj):
-        # TODO This is getting out of control...
-        if isinstance(obj, list):
-            try:
-                obj = [o.uri() for o in obj]
-            except AttributeError:
-                pass
-        try:
-            obj = obj.strftime(tastytypes.DATETIME_FORMAT1)
-        except AttributeError:
-            pass
-        try:
-            obj = obj.uri()
-        except AttributeError:
-            pass
-        return obj
 
     @staticmethod
     def _headers():
