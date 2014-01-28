@@ -15,6 +15,9 @@ class Field(object):
     def value(self):
         return self._value
 
+    def filter(self, field):
+        return field, self._str
+
 
 class DateTimeField(Field):
 
@@ -51,6 +54,10 @@ class ResourceField(Field):
     def stream(self):
         return self._value.uri()
 
+    def filter(self, field):
+        related_field = self._value.filter_field()
+        return '{0}__{1}'.format(field, related_field), getattr(self._value, related_field)
+
 
 class ResourceListField(Field):
 
@@ -63,16 +70,23 @@ class ResourceListField(Field):
     def value(self):
         return [v.value() for v in self._value]
 
+    def filter(self, field):
+        related_field = self._value[0].value().filter_field()
+        return '{0}__{1}'.format(field, related_field), [getattr(v.value(), related_field) for v in self._value]
+
 # TODO Add a method for streaming GET requests (no uri allowed).
 
 def create_field(field, field_type, factory):
+    if field is None:
+        return Field(None)
+
     if field_type == tastytypes.RELATED:
         if hasattr(field, 'split') or hasattr(field, 'uri'):
             result = ResourceField(field, factory)
         else:
             result = ResourceListField(field, factory)
     elif field_type == tastytypes.DATETIME:
-        return DateTimeField(field)
+        result = DateTimeField(field)
     else:
         result = Field(field)
     return result

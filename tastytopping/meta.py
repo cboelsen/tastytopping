@@ -111,18 +111,6 @@ class ResourceMeta(type):
 
     def get_resources(cls, **kwargs):
         """Return a generator of dicts from the API."""
-        for field, obj in kwargs.items():
-            try:
-                if cls.schema().field(field)['type'] == tastytypes.RELATED:
-                    del kwargs[field]
-                    try:
-                        related_field = obj.filter_field()
-                        kwargs['{0}__{1}'.format(field, related_field)] = getattr(obj, related_field)
-                    except AttributeError:
-                        related_field = obj[0].filter_field()
-                        kwargs['{0}__{1}'.format(field, related_field)] = [getattr(o, related_field) for o in obj]
-            except FieldNotInSchema:
-                pass
         return cls.api().get(cls.resource(), cls.schema(), **kwargs)
 
     def filter(cls, **kwargs):
@@ -136,7 +124,17 @@ class ResourceMeta(type):
         """
         exist = False
         cls.schema().check_fields_in_filters(kwargs)
-        for response in cls.get_resources(**kwargs):
+
+        fields = {}
+        for name, value in kwargs.items():
+            try:
+                field_type = cls.schema().field(name)['type']
+                relate_name, relate_field = cls.create_field_object(value, field_type).filter(name)
+                fields[relate_name] = relate_field
+            except FieldNotInSchema:
+                fields[name] = value
+
+        for response in cls.get_resources(**fields):
             for obj in response['objects']:
                 yield cls(_fields=obj)
                 exist = True
@@ -229,7 +227,7 @@ class ResourceMeta(type):
         # The resources to create or update are sent in a single list.
         resources = create
         for resource in update:
-            resource_fields = {n: v.stream() for n, v in resource._cached_fields.items()}
+            resource_fields = {n: v.stream() for n, v in resource.fields().items()}
             resource_fields['resource_uri'] = resource.uri()
             resources.append(resource_fields)
         # Get the fields for any Resource objects given.
