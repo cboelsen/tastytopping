@@ -39,7 +39,7 @@ class Field(object):
         This method is exposed primarily because uris cannot be used for
         resources in GET requests in tastypie.
         """
-        return field, self._str
+        return field, self.stream()
 
 
 class DateTimeField(Field):

@@ -215,7 +215,7 @@ class Resource(_BaseMetaBridge, object):
         :rtype: str
         """
         if self._uri is None:
-            self._set_uri(self._fields()['resource_uri'].value())
+            self._fields()
         return self._uri
 
     def check_alive(self):
