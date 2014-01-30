@@ -204,10 +204,10 @@ class IntegrationTest(unittest.TestCase):
 
     def test_bad_address___exception_raised(self):
         factory = ResourceFactory('http://localhost:8888/test/api/v1')
-        self.assertRaises(CannotConnectToAddress, factory.test_resource)
+        self.assertRaises(CannotConnectToAddress, factory.test_resource._schema)
 
     def test_bad_resource___exception_raised(self):
-        self.assertRaises(NonExistantResource, FACTORY.not_exist)
+        self.assertRaises(NonExistantResource, FACTORY.not_exist._schema)
 
     def test_creating_with_fields_that_arent_filterable___fields_excluded_from_get(self):
         test_text = 'Text.'

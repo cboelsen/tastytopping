@@ -16,17 +16,13 @@ __all__ = ('ResourceMeta', )
 # this magic.
 # pylint: disable=W0212
 
-from datetime import datetime
 
-from .cache import retrieve_from_cache
-from .api import TastyApi
 from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
     FieldNotInSchema,
 )
 from .field import create_field
-from . import tastytypes
 
 
 class ResourceMeta(type):
@@ -61,57 +57,24 @@ class ResourceMeta(type):
 
     def __getattr__(cls, name):
         try:
-            return_type = cls.schema().list_endpoint_type(name)
+            return_type = cls._schema().list_endpoint_type(name)
         except KeyError:
             raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
-            result = cls.api().list_endpoint(cls.resource(), name, cls.schema(), *args, **kwargs)
-            return cls.create_field_object(result, return_type).value()
+            result = cls._api().list_endpoint(cls._name(), name, cls._schema(), *args, **kwargs)
+            return create_field(result, return_type, cls._factory).value()
         return _call_resource_classmethod
 
-    def _set_api_auth(cls, auth):
-        cls._auth = auth
-        cls.api().auth = auth
-
     def _set_auth(cls, auth):
-        cls._set_api_auth(auth)
+        def _set_api_auth(cls, auth):
+            cls._auth = auth
+            cls._api().auth = auth
+        _set_api_auth(cls, auth)
         for derived in ResourceMeta._classes:
             if issubclass(derived, cls):
-                derived._set_api_auth(auth)
+                _set_api_auth(derived, auth)
 
     auth = property(lambda cls: cls._auth, _set_auth)
-
-    def resource(cls):
-        """Return the resource name of this class."""
-        if cls._class_resource is None:
-            if cls.resource_name is None:
-                raise NotImplementedError('"resource_name" needs to be defined in a derived class.')
-            cls._class_resource = cls.resource_name
-        return cls._class_resource
-
-    def api(cls):
-        """Return the API used by this class."""
-        if cls._class_api is None:
-            if cls.api_url is None:
-                raise NotImplementedError('"api_url" needs to be defined in a derived class.')
-            cls._class_api = retrieve_from_cache(TastyApi, cls.api_url, id=cls)
-            if cls.auth:
-                cls._class_api.auth = cls.auth
-        return cls._class_api
-
-    def schema(cls):
-        """Return the schema used by this class."""
-        if cls._class_schema is None:
-            cls._class_schema = retrieve_from_cache(cls.api().schema, cls.resource())
-        return cls._class_schema
-
-    def create_field_object(cls, field, field_type):
-        """Create an expected python object for the field_type."""
-        return create_field(field, field_type, cls._factory)
-
-    def get_resources(cls, **kwargs):
-        """Return a generator of dicts from the API."""
-        return cls.api().get(cls.resource(), cls.schema(), **kwargs)
 
     def filter(cls, **kwargs):
         """Return existing objects via the API, filtered by kwargs.
@@ -123,23 +86,23 @@ class ResourceMeta(type):
         :raises: NoResourcesExist
         """
         exist = False
-        cls.schema().check_fields_in_filters(kwargs)
+        cls._schema().check_fields_in_filters(kwargs)
 
         fields = {}
         for name, value in kwargs.items():
             try:
-                field_type = cls.schema().field(name)['type']
-                relate_name, relate_field = cls.create_field_object(value, field_type).filter(name)
+                field_type = cls._schema().field(name)['type']
+                relate_name, relate_field = create_field(value, field_type, cls._factory).filter(name)
                 fields[relate_name] = relate_field
             except FieldNotInSchema:
                 fields[name] = value
 
-        for response in cls.get_resources(**fields):
+        for response in cls._api().get(cls._name(), cls._schema(), **fields):
             for obj in response['objects']:
                 yield cls(_fields=obj)
                 exist = True
         if not exist:
-            raise NoResourcesExist(cls.resource(), kwargs)
+            raise NoResourcesExist(cls._name(), kwargs)
 
     def all(cls):
         """Return all existing objects via the API.
@@ -166,7 +129,7 @@ class ResourceMeta(type):
         result = next(resource_iter)
         try:
             next(resource_iter)
-            raise MultipleResourcesReturned(cls.resource(), kwargs, list(resource_iter))
+            raise MultipleResourcesReturned(cls._name(), kwargs, list(resource_iter))
         except StopIteration:
             pass
         return result
@@ -178,7 +141,7 @@ class ResourceMeta(type):
         Resource objects of this type will be marked as deleted (ie. using any
         of them will result in a ResourceDeleted exception).
         """
-        cls.api().delete_all(cls.resource(), cls.schema())
+        cls._api().delete_all(cls._name(), cls._schema())
         cls._alive = set()
 
     def count(cls, **kwargs):
@@ -190,7 +153,7 @@ class ResourceMeta(type):
         :rtype: int
         """
         kwargs['limit'] = 1
-        response = next(iter(cls.api().get(cls.resource(), cls.schema(), **kwargs)))
+        response = next(iter(cls._api().get(cls._name(), cls._schema(), **kwargs)))
         return response['meta']['total_count']
 
     def bulk(cls, create=None, update=None, delete=None):
@@ -227,7 +190,7 @@ class ResourceMeta(type):
         # The resources to create or update are sent in a single list.
         resources = create
         for resource in update:
-            resource_fields = {n: v.stream() for n, v in resource.fields().items()}
+            resource_fields = {n: v.stream() for n, v in resource._fields().items()}
             resource_fields['resource_uri'] = resource.uri()
             resources.append(resource_fields)
         # Get the fields for any Resource objects given.
@@ -235,9 +198,9 @@ class ResourceMeta(type):
             [r for r in resources if not hasattr(r, 'uri')] +
             [r.fields() for r in resources if hasattr(r, 'uri')]
         )
-        cls.api().bulk(
-            cls.resource(),
-            cls.schema(),
+        cls._api().bulk(
+            cls._name(),
+            cls._schema(),
             resources,
             [d.uri() for d in delete]
         )
@@ -247,4 +210,4 @@ class ResourceMeta(type):
 
     def help(cls, verbose=False):
         """Return a string with the help for this resource's schema."""
-        return cls.schema().help(verbose)
+        return cls._schema().help(verbose)

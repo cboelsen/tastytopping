@@ -12,16 +12,16 @@
 __all__ = ('Resource', )
 
 
+from .api import TastyApi
+from .cache import retrieve_from_cache
 from .meta import ResourceMeta
 from .exceptions import (
     ResourceDeleted,
     CreatedResourceNotFound,
     NoFiltersInSchema,
-    BadRelatedType,
     MultipleResourcesReturned,
 )
 from .field import create_field
-from . import tastytypes
 
 
 # Required because the syntax for metaclasses changed between python 2 and 3.
@@ -65,18 +65,17 @@ class Resource(_BaseMetaBridge, object):
     def __init__(self, **kwargs):
         fields, uri = self._get_fields_and_uri_if_in_kwargs(**kwargs)
         self._set_uri(uri)
-        self._set('_fields', fields)
+        self._set('_resource_fields', fields)
         self._set('_caching', self.caching)
-        self._set('filter_field', self._schema().filterable_key)
 
     def __str__(self):
-        return '<"{0}": {1}>'.format(self.uri(), self.fields())
+        return '<"{0}": {1}>'.format(self.uri(), self._fields())
 
     def __repr__(self):
-        return '<{0} {1} @ {2}>'.format(self._resource(), self.uri(), id(self))
+        return '<{0} {1} @ {2}>'.format(self._name(), self.uri(), id(self))
 
     def __setattr__(self, name, value):
-        if name not in self.fields():
+        if name not in self._fields():
             super(Resource, self).__setattr__(name, value)
         self.check_alive()
         self.update(**{name: value})
@@ -84,7 +83,7 @@ class Resource(_BaseMetaBridge, object):
     def __getattr__(self, name):
         self.check_alive()
         try:
-            return self.fields()[name].value()
+            return self._fields()[name].value()
         except KeyError:
             try:
                 return_type = self._schema().detail_endpoint_type(name)
@@ -93,7 +92,7 @@ class Resource(_BaseMetaBridge, object):
             return self._resource_method(name, return_type)
 
     def __dir__(self):
-        return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self.fields().keys())))
+        return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self._fields().keys())))
 
     def __eq__(self, obj):
         try:
@@ -109,6 +108,20 @@ class Resource(_BaseMetaBridge, object):
 
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
+
+    def _fields(self):
+        if not self._uri or not self._resource_fields or not self._caching:
+            if self._uri:
+                fields = self._api().details(self._uri, self._schema())
+            else:
+                # TODO This is a new Resource - the fields should be written on
+                # a save(), not an access!
+                fields = self._stream_fields(self._resource_fields)
+                fields = self._create_new_resource(self._api(), self._name(), self._schema(), **fields)
+                self._set_uri(fields['resource_uri'])
+            fields = self._create_fields(**fields)
+            self._set('_resource_fields', fields)
+        return self._resource_fields
 
     def _set_uri(self, uri):
         if uri:
@@ -132,17 +145,18 @@ class Resource(_BaseMetaBridge, object):
     def _resource_method(self, method_name, return_type):
         def _call_resource_method(*args, **kwargs):
             result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
-            return self._create_field_object(result, return_type).value()
+            return create_field(result, return_type, self._factory).value()
         return _call_resource_method
 
     def _create_fields(self, **kwargs):
         fields = {}
         for name, value in kwargs.items():
             field_type = self._schema().field(name)['type']
-            fields[name] = self._create_field_object(value, field_type)
+            fields[name] = create_field(value, field_type, self._factory)
         return fields
 
-    def _stream_fields(self, fields):
+    @staticmethod
+    def _stream_fields(fields):
         return {n: v.stream() for n, v in fields.items()}
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
@@ -153,7 +167,7 @@ class Resource(_BaseMetaBridge, object):
                 kwargs['limit'] = 2
                 fields = dict([f.filter(n) for n, f in fields.items()])
                 fields = schema.remove_fields_not_in_filters(fields)
-                results = type(self).get_resources(**fields)
+                results = self._api().get(self._name(), self._schema(), **fields)
                 resources = next(iter(results))['objects']
                 if len(resources) > 1:
                     raise MultipleResourcesReturned(fields, resources)
@@ -167,10 +181,32 @@ class Resource(_BaseMetaBridge, object):
         attr = '_Resource{0}'.format(name) if name.startswith('__') else name
         super(Resource, self).__setattr__(attr, value)
 
-    _api = classmethod(lambda cls: cls.api())
-    _resource = classmethod(lambda cls: cls.resource())
-    _schema = classmethod(lambda cls: cls.schema())
-    _create_field_object = classmethod(lambda cls, field, field_type: cls.create_field_object(field, field_type))
+    @classmethod
+    def _api(cls):
+        """Return the API used by this class."""
+        if cls._class_api is None:
+            if cls.api_url is None:
+                raise NotImplementedError('"api_url" needs to be defined in a derived class.')
+            cls._class_api = retrieve_from_cache(TastyApi, cls.api_url, id=cls)
+            if cls.auth:
+                cls._class_api.auth = cls.auth
+        return cls._class_api
+
+    @classmethod
+    def _name(cls):
+        """Return the resource name of this class."""
+        if cls._class_resource is None:
+            if cls.resource_name is None:
+                raise NotImplementedError('"resource_name" needs to be defined in a derived class.')
+            cls._class_resource = cls.resource_name
+        return cls._class_resource
+
+    @classmethod
+    def _schema(cls):
+        """Return the schema used by this class."""
+        if cls._class_schema is None:
+            cls._class_schema = retrieve_from_cache(cls._api().schema, cls._name())
+        return cls._class_schema
 
     def uri(self):
         """Return the resource_uri for this object.
@@ -179,7 +215,7 @@ class Resource(_BaseMetaBridge, object):
         :rtype: str
         """
         if self._uri is None:
-            self._set_uri(self.fields()['resource_uri'].value())
+            self._set_uri(self._fields()['resource_uri'].value())
         return self._uri
 
     def check_alive(self):
@@ -216,27 +252,15 @@ class Resource(_BaseMetaBridge, object):
 
         Note that this is only useful if the Resource is caching its fields.
         """
-        self._set('_fields', None)
-        self._set('_cached_fields', {})
+        self._set('_resource_fields', None)
 
     def fields(self):
         """Return the fields according to the API.
 
-        :returns: The resource's fields.
-        :rtype: list
+        :returns: The resource's fields as {name (str): value (object)}.
+        :rtype: dict
         """
-        if not self._uri or not self._fields or not self._caching:
-            if self._uri:
-                fields = self._api().details(self._uri, self._schema())
-            else:
-                # TODO This is a new Resource - the fields should be written on
-                # a save(), not an access!
-                fields = self._stream_fields(self._fields)
-                fields = self._create_new_resource(self._api(), self._resource(), self._schema(), **fields)
-                self._set_uri(fields['resource_uri'])
-            fields = self._create_fields(**fields)
-            self._set('_fields', fields)
-        return self._fields
+        return {n: v.value() for n, v in self._fields().items()}
 
     def _update_remote_fields(self, **kwargs):
         # Update both the remote and local values.
@@ -255,7 +279,7 @@ class Resource(_BaseMetaBridge, object):
         fields = self._create_fields(**kwargs)
         if not self._caching:
             self._update_remote_fields(**fields)
-        self._fields.update(fields)
+        self._fields().update(fields)
 
     def save(self):
         """Save the resource remotely, via the API.
@@ -265,9 +289,13 @@ class Resource(_BaseMetaBridge, object):
         caching is set to False, but there won't be a noticable effect.
         """
         self.check_alive()
-        # TODO Remove reference to fields() when new resource creation moves
+        # TODO Remove reference to _fields() when new resource creation moves
         # to here!
-        self.fields()
+        self._fields()
         # TODO Track changed fields!
-        self._update_remote_fields(**self.fields())
+        self._update_remote_fields(**self._fields())
         return self
+
+    def filter_field(self):
+        """Return a field that can be used as a unique key for this Resource."""
+        return self._schema().filterable_key()

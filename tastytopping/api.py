@@ -26,7 +26,6 @@ from .exceptions import (
     IncorrectEndpointKwargs,
 )
 from .schema import TastySchema
-from . import tastytypes
 
 
 class TastyApi(object):
