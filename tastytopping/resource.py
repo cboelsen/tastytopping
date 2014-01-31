@@ -71,6 +71,7 @@ class Resource(_BaseMetaBridge, object):
         self._set('_resource_fields', fields)
         self._set('_cached_fields', {})
         self._set('_caching', self.caching)
+        self._set('_full_uri_', None)
         if not self._caching and not self._uri:
             self.save()
 
@@ -121,7 +122,7 @@ class Resource(_BaseMetaBridge, object):
 
     def _fields(self):
         if not self._resource_fields or not self._caching:
-            fields = self._api().details(self.uri(), self._schema())
+            fields = self._api().details(self._full_uri(), self._schema())
             fields = self._create_fields(**fields)
             self._set('_resource_fields', fields)
         return self._resource_fields
@@ -147,7 +148,7 @@ class Resource(_BaseMetaBridge, object):
 
     def _resource_method(self, method_name, return_type):
         def _call_resource_method(*args, **kwargs):
-            result = self._api().detail_endpoint(self, method_name, self._schema(), *args, **kwargs)
+            result = self._api().endpoint(self._full_uri(), method_name, self._schema(), *args, **kwargs)
             return create_field(result, return_type, self._factory).value()
         return _call_resource_method
 
@@ -162,27 +163,51 @@ class Resource(_BaseMetaBridge, object):
     def _stream_fields(fields):
         return {n: v.stream() for n, v in fields.items()}
 
-    def _create_new_resource(self, api, resource, schema, **kwargs):
+    def _get_this_resource(self, fields):
+        fields = dict([f.filter(n) for n, f in fields.items()])
+        fields = self._schema().remove_fields_not_in_filters(fields)
+        fields['limit'] = 2
+        results = self._api().get(self._full_name(), self._schema(), **fields)
+        resources = next(iter(results))['objects']
+        if len(resources) > 1:
+            raise MultipleResourcesReturned(fields, resources)
+        return resources[0]
+
+    def _create_new_resource(self, **kwargs):
         fields = self._create_fields(**kwargs)
-        details = api.post(resource, schema, **self._stream_fields(fields))
+        details = self._api().post(self._full_name(), self._schema(), **self._stream_fields(fields))
         if not details:
             try:
-                kwargs['limit'] = 2
-                fields = dict([f.filter(n) for n, f in fields.items()])
-                fields = schema.remove_fields_not_in_filters(fields)
-                results = self._api().get(self._name(), self._schema(), **fields)
-                resources = next(iter(results))['objects']
-                if len(resources) > 1:
-                    raise MultipleResourcesReturned(fields, resources)
-                details = resources[0]
+                details = self._get_this_resource(fields)
             except (IndexError, NoFiltersInSchema):
-                raise CreatedResourceNotFound(resource, schema, kwargs)
+                raise CreatedResourceNotFound(self._name(), kwargs)
         return details
+
+    def _update_remote_fields(self, **kwargs):
+        # Update both the remote and local values.
+        fields = self._stream_fields(kwargs)
+        try:
+            self._api().patch(self._full_uri(), self._schema(), **fields)
+        except RestMethodNotAllowed:
+            # TODO Why does this not work?!?
+            #fields = self._stream_fields(self._fields())
+            self._api().put(self._full_uri(), self._schema(), **fields)
 
     def _set(self, name, value):
         #Avoiding python's normal __setattr__ behaviour to avoid infinite recursion.
         attr = '_Resource{0}'.format(name) if name.startswith('__') else name
         super(Resource, self).__setattr__(attr, value)
+
+    def _full_uri(self):
+        if self._full_uri_ is None:
+            self._set('_full_uri_', self._api().create_full_uri(self.uri()))
+        return self._full_uri_
+
+    @classmethod
+    def _full_name(cls):
+        if cls._full_name_ is None:
+            cls._full_name_ = cls._api().address() + cls._name() + '/'
+        return cls._full_name_
 
     @classmethod
     def _api(cls):
@@ -208,7 +233,7 @@ class Resource(_BaseMetaBridge, object):
     def _schema(cls):
         """Return the schema used by this class."""
         if cls._class_schema is None:
-            cls._class_schema = retrieve_from_cache(cls._api().schema, cls._name())
+            cls._class_schema = retrieve_from_cache(cls._api().schema, cls._full_name())
         return cls._class_schema
 
     def uri(self):
@@ -242,7 +267,7 @@ class Resource(_BaseMetaBridge, object):
         :raises: ResourceDeleted
         """
         self.check_alive()
-        self._api().delete(self.uri(), self._schema())
+        self._api().delete(self._full_uri(), self._schema())
         self._alive.remove(self.uri())
 
     def set_caching(self, caching):
@@ -269,16 +294,6 @@ class Resource(_BaseMetaBridge, object):
         """
         return {n: v.value() for n, v in self._fields().items()}
 
-    def _update_remote_fields(self, **kwargs):
-        # Update both the remote and local values.
-        fields = self._stream_fields(kwargs)
-        try:
-            self._api().patch(self.uri(), self._schema(), **fields)
-        except RestMethodNotAllowed:
-            # TODO Why does this not work?!?
-            #fields = self._stream_fields(self._fields())
-            self._api().put(self.uri(), self._schema(), **fields)
-
     def update(self, **kwargs):
         """Set multiple fields' values at once.
 
@@ -303,12 +318,14 @@ class Resource(_BaseMetaBridge, object):
         caching is set to False, but there won't be a noticable effect.
         """
         try:
+            # Attempt to update the resource.
             self.check_alive()
             self._update_remote_fields(**self._cached_fields)
             self._set('_cached_fields', {})
         except ResourceHasNoUri:
+            # No uri was found, so the resource needs to be created.
             fields = self._stream_fields(self._resource_fields)
-            fields = self._create_new_resource(self._api(), self._name(), self._schema(), **fields)
+            fields = self._create_new_resource(**fields)
             self._set_uri(fields['resource_uri'])
             fields = self._create_fields(**fields)
             self._set('_resource_fields', fields)

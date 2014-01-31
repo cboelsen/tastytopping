@@ -135,6 +135,7 @@ POST, and DELETE methods on the API, using the
 
         new_resource = factory.example(title='A Title', rating=50)
         new_resource.date = datetime.now()
+        new_resource.save()
 
         # Get any user from the list of users and set it to created_by:
         user = factory.user.get(limit=1)

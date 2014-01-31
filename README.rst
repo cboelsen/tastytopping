@@ -15,18 +15,18 @@ Features
   ::
 
       factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
-      current_resource = factory.resource.get(field='name') # GET
-      new_resource = factory.resource(field='new_name')     # POST
-      new_resource.field = 'different_name'                 # PATCH / PUT
-      current_resource.delete()                             # DELETE
+      current_resource = factory.resource.get(field='name')    # GET
+      new_resource = factory.resource(field='new_name').save() # POST
+      new_resource.field = 'different_name'                    # PATCH / PUT
+      current_resource.delete()                                # DELETE
 
 - Easily work with any related resources:
 
   ::
 
       new_resource.children = [
-          factory.resource(field='new_name1'),
-          factory.resource(field='new_name2'),
+          factory.resource(field='new_name1').save(),
+          factory.resource(field='new_name2').save(),
       ]
 
 - Simple way to set and update authentication per resource:
@@ -35,11 +35,11 @@ Features
 
       factory.resource.auth = ApiKeyAuth('username', 'key12345')
 
-- Access custom endpoints using simple methods:
+- Access nested resources using simple methods (currently in dev branch):
 
   ::
 
-      new_resource.cust_endpoint('arg1', arg2=3)
+      new_resource.nested_resource('arg1', arg2=3)
 
 - Set whether the resources should be cached locally or always updated remotely
   (per resource or per instance):
@@ -58,6 +58,7 @@ Features
 
       factory.resource.bulk(
           create=[{field='name1'}, {field='name2'}],
+          update=[current_resource, new_resource],
           delete=[new_resource],
       )
 
@@ -126,7 +127,7 @@ Using TastyTopping on the client side would look like this:
     from tastytopping import ResourceFactory
 
     factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
-    ex1 = factory.example(path='any text', rating=80)
+    ex1 = factory.example(path='any text', rating=80).save()
     ex1.date = datetime.now()
     ex1_copy = factory.example.get(rating=80)
     ex1.delete()

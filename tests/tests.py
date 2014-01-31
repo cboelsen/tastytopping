@@ -63,7 +63,7 @@ class IntegrationTest(unittest.TestCase):
             pass
 
     def _delete(self, res):
-        res._api().delete(res.uri(), res._schema())
+        res._api().delete(res._full_uri(), res._schema())
 
     ################# TESTS ################
     def test_create___object_returned_with_same_fields(self):
@@ -207,7 +207,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertRaises(CannotConnectToAddress, factory.test_resource._schema)
 
     def test_bad_resource___exception_raised(self):
-        self.assertRaises(NonExistantResource, FACTORY.not_exist._schema)
+        self.assertRaises(NonExistantResource, FACTORY.not_exist, blah=1)
 
     def test_creating_with_fields_that_arent_filterable___fields_excluded_from_get(self):
         test_text = 'Text.'

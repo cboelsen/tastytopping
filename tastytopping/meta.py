@@ -50,6 +50,7 @@ class ResourceMeta(type):
         obj._class_api = None
         obj._class_resource = None
         obj._class_schema = None
+        obj._full_name_ = None
         return obj
 
     def __len__(cls):
@@ -61,7 +62,7 @@ class ResourceMeta(type):
         except KeyError:
             raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
-            result = cls._api().list_endpoint(cls._name(), name, cls._schema(), *args, **kwargs)
+            result = cls._api().endpoint(cls._full_name(), name, cls._schema(), *args, **kwargs)
             return create_field(result, return_type, cls._factory).value()
         return _call_resource_classmethod
 
@@ -97,7 +98,7 @@ class ResourceMeta(type):
             except FieldNotInSchema:
                 fields[name] = value
 
-        for response in cls._api().get(cls._name(), cls._schema(), **fields):
+        for response in cls._api().get(cls._full_name(), cls._schema(), **fields):
             for obj in response['objects']:
                 yield cls(_fields=obj)
                 exist = True
@@ -141,7 +142,7 @@ class ResourceMeta(type):
         Resource objects of this type will be marked as deleted (ie. using any
         of them will result in a ResourceDeleted exception).
         """
-        cls._api().delete_all(cls._name(), cls._schema())
+        cls._api().delete(cls._full_name(), cls._schema())
         cls._alive = set()
 
     def count(cls, **kwargs):
@@ -153,7 +154,7 @@ class ResourceMeta(type):
         :rtype: int
         """
         kwargs['limit'] = 1
-        response = next(iter(cls._api().get(cls._name(), cls._schema(), **kwargs)))
+        response = next(iter(cls._api().get(cls._full_name(), cls._schema(), **kwargs)))
         return response['meta']['total_count']
 
     def bulk(cls, create=None, update=None, delete=None):
@@ -199,7 +200,7 @@ class ResourceMeta(type):
             [r.fields() for r in resources if hasattr(r, 'uri')]
         )
         cls._api().bulk(
-            cls._name(),
+            cls._full_name(),
             cls._schema(),
             resources,
             [d.uri() for d in delete]
