@@ -21,7 +21,6 @@ from .exceptions import (
     NonExistantResource,
     CannotConnectToAddress,
     ResourceDeleted,
-    RestMethodNotAllowed,
     IncorrectEndpointArgs,
     IncorrectEndpointKwargs,
 )
@@ -166,7 +165,7 @@ class TastyApi(object):
         schema.check_detail_request_allowed('get')
         return self._transmit(self._session().get, url)
 
-    def add(self, resource_type, schema, **kwargs):
+    def post(self, resource_type, schema, **kwargs):
         """Add a new resource with the given fields.
 
         The fields can be set by passing in field=value as kwargs.
@@ -183,8 +182,8 @@ class TastyApi(object):
         schema.check_list_request_allowed('post')
         return self._transmit(self._session().post, url, data=kwargs) or {}
 
-    def update(self, resource, schema, **kwargs):
-        """Update a given resource with the given fields.
+    def put(self, resource, schema, **kwargs):
+        """Put a given resource with the given fields.
 
         The fields can be set by passing in field=value as kwargs.
 
@@ -197,13 +196,25 @@ class TastyApi(object):
         :rtype: dict
         """
         url = self._resource_url(resource)
-        try:
-            schema.check_detail_request_allowed('patch')
-            method = self._session().patch
-        except RestMethodNotAllowed:
-            schema.check_detail_request_allowed('put')
-            method = self._session().put
-        return self._transmit(method, url, data=kwargs) or {}
+        schema.check_detail_request_allowed('put')
+        return self._transmit(self._session().put, url, data=kwargs) or {}
+
+    def patch(self, resource, schema, **kwargs):
+        """Patch a given resource with the given fields.
+
+        The fields can be set by passing in field=value as kwargs.
+
+        :param resource: A URI pointing to the TastyPie resource.
+        :type resource: str
+        :param schema: The schema to use for validation.
+        :type schema: TastySchema
+        :returns: Either the resource fields or an empty dict, depending on how
+            the Resource was defined in the tastypie API (always_return_data).
+        :rtype: dict
+        """
+        url = self._resource_url(resource)
+        schema.check_detail_request_allowed('patch')
+        return self._transmit(self._session().patch, url, data=kwargs) or {}
 
     def delete(self, resource, schema):
         """Remove a given resource from the API.

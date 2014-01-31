@@ -101,8 +101,11 @@ class ResourceListField(Field):
         return [v.value() for v in self._value]
 
     def filter(self, field):
-        related_field = self._value[0].value().filter_field()
-        return '{0}__{1}'.format(field, related_field), [getattr(v.value(), related_field) for v in self._value]
+        try:
+            related_field = self._value[0].value().filter_field()
+            return '{0}__{1}'.format(field, related_field), [getattr(v.value(), related_field) for v in self._value]
+        except IndexError:
+            return field, []
 
 
 def create_field(field, field_type, factory):

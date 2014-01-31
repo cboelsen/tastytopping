@@ -22,6 +22,7 @@ from .exceptions import (
     MultipleResourcesReturned,
     FieldNotInSchema,
     ResourceHasNoUri,
+    RestMethodNotAllowed,
 )
 from .field import create_field
 
@@ -68,6 +69,7 @@ class Resource(_BaseMetaBridge, object):
         fields, uri = self._get_fields_and_uri_if_in_kwargs(**kwargs)
         self._set_uri(uri)
         self._set('_resource_fields', fields)
+        self._set('_cached_fields', {})
         self._set('_caching', self.caching)
         if not self._caching and not self._uri:
             self.save()
@@ -162,7 +164,7 @@ class Resource(_BaseMetaBridge, object):
 
     def _create_new_resource(self, api, resource, schema, **kwargs):
         fields = self._create_fields(**kwargs)
-        details = api.add(resource, schema, **self._stream_fields(fields))
+        details = api.post(resource, schema, **self._stream_fields(fields))
         if not details:
             try:
                 kwargs['limit'] = 2
@@ -257,6 +259,7 @@ class Resource(_BaseMetaBridge, object):
         Note that this is only useful if the Resource is caching its fields.
         """
         self._set('_resource_fields', None)
+        self._set('_cached_fields', {})
 
     def fields(self):
         """Return the fields according to the API.
@@ -269,7 +272,12 @@ class Resource(_BaseMetaBridge, object):
     def _update_remote_fields(self, **kwargs):
         # Update both the remote and local values.
         fields = self._stream_fields(kwargs)
-        self._api().update(self.uri(), self._schema(), **fields)
+        try:
+            self._api().patch(self.uri(), self._schema(), **fields)
+        except RestMethodNotAllowed:
+            # TODO Why does this not work?!?
+            #fields = self._stream_fields(self._fields())
+            self._api().put(self.uri(), self._schema(), **fields)
 
     def update(self, **kwargs):
         """Set multiple fields' values at once.
@@ -281,9 +289,11 @@ class Resource(_BaseMetaBridge, object):
         for field, value in kwargs.items():
             self._schema().validate(field, value)
         fields = self._create_fields(**kwargs)
+        self._fields().update(fields)
         if not self._caching:
             self._update_remote_fields(**fields)
-        self._fields().update(fields)
+        else:
+            self._cached_fields.update(fields)
 
     def save(self):
         """Save the resource remotely, via the API.
@@ -294,8 +304,8 @@ class Resource(_BaseMetaBridge, object):
         """
         try:
             self.check_alive()
-            # TODO Track changed fields!
-            self._update_remote_fields(**self._fields())
+            self._update_remote_fields(**self._cached_fields)
+            self._set('_cached_fields', {})
         except ResourceHasNoUri:
             fields = self._stream_fields(self._resource_fields)
             fields = self._create_new_resource(self._api(), self._name(), self._schema(), **fields)
