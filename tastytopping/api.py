@@ -98,16 +98,6 @@ class TastyApi(object):
             'content-type': 'application/json',
         }
 
-    def _get_endpoint(self, base_url, method_name, *args, **kwargs):
-        args_string = '/'.join(str(a) for a in args)
-        url = '{0}{1}/{2}'.format(base_url, method_name, args_string)
-        if not url.endswith('/'):
-            url += '/'
-        try:
-            return self._transmit(self._session().get, url, params=kwargs)
-        except NonExistantResource as err:
-            raise IncorrectEndpointArgs(*err.args)
-
     def address(self):
         """Return the address of the API."""
         return self._addr
@@ -221,7 +211,14 @@ class TastyApi(object):
     def endpoint(self, url, method_name, schema, *args, **kwargs):
         """Send a GET to a custom endpoint for this resource instance."""
         schema.check_detail_request_allowed('get')
-        return self._get_endpoint(url, method_name, *args, **kwargs)
+        args_string = '/'.join(str(a) for a in args)
+        url = '{0}{1}/{2}'.format(url, method_name, args_string)
+        if not url.endswith('/'):
+            url += '/'
+        try:
+            return self._transmit(self._session().get, url, params=kwargs)
+        except NonExistantResource as err:
+            raise IncorrectEndpointArgs(*err.args)
 
     def bulk(self, url, schema, resources, delete):
         """Create, update, and delete multiple resources.

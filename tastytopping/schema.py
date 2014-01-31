@@ -231,19 +231,10 @@ class TastySchema(object):
         :type fields: dict {str: obj}
         :raises: FilterNotAllowedForField
         """
-        # TODO Check related fields' filters too.
-        # TODO Refactor with remove_fields_not_in_filters
-        if not fields:
-            return fields
-        filters = self._filters().copy()
-        filters.update({'limit': 0, 'order_by': 0})
-        for field in fields:
-            for fil in filters:
-                if field.startswith(fil):
-                    self._check_filter(field)
-                    break
-            else:
-                raise FilterNotAllowedForField(field, self._schema)
+        allowed_fields = self.remove_fields_not_in_filters(fields)
+        bad_fields = set(fields.keys()) - set(allowed_fields.keys())
+        if bad_fields:
+            raise FilterNotAllowedForField(bad_fields, self._schema)
 
     @staticmethod
     def _help_filtering(filtering, field):
