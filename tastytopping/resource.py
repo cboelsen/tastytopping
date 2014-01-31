@@ -24,6 +24,10 @@ from .exceptions import (
 from .field import create_field
 
 
+class ResourceHasNoUri(Exception):
+    pass
+
+
 # Required because the syntax for metaclasses changed between python 2 and 3.
 # TODO Remove this when python2 finally dies.
 _BaseMetaBridge = ResourceMeta('_BaseMetaBridge', (object, ), {'auth': None})  # This is a class, not a constant # pylint: disable=C0103
@@ -67,6 +71,8 @@ class Resource(_BaseMetaBridge, object):
         self._set_uri(uri)
         self._set('_resource_fields', fields)
         self._set('_caching', self.caching)
+        if not self._caching and not self._uri:
+            self.save()
 
     def __str__(self):
         return '<"{0}": {1}>'.format(self.uri(), self._fields())
@@ -81,7 +87,11 @@ class Resource(_BaseMetaBridge, object):
         self.update(**{name: value})
 
     def __getattr__(self, name):
-        self.check_alive()
+        # TODO Wow... needs help...
+        try:
+            self.check_alive()
+        except ResourceHasNoUri:
+            pass
         try:
             return self._fields()[name].value()
         except KeyError:
@@ -110,15 +120,8 @@ class Resource(_BaseMetaBridge, object):
     __nonzero__ = __bool__
 
     def _fields(self):
-        if not self._uri or not self._resource_fields or not self._caching:
-            if self._uri:
-                fields = self._api().details(self._uri, self._schema())
-            else:
-                # TODO This is a new Resource - the fields should be written on
-                # a save(), not an access!
-                fields = self._stream_fields(self._resource_fields)
-                fields = self._create_new_resource(self._api(), self._name(), self._schema(), **fields)
-                self._set_uri(fields['resource_uri'])
+        if not self._resource_fields or not self._caching:
+            fields = self._api().details(self.uri(), self._schema())
             fields = self._create_fields(**fields)
             self._set('_resource_fields', fields)
         return self._resource_fields
@@ -215,7 +218,7 @@ class Resource(_BaseMetaBridge, object):
         :rtype: str
         """
         if self._uri is None:
-            self._fields()
+            raise ResourceHasNoUri()
         return self._uri
 
     def check_alive(self):
@@ -288,12 +291,16 @@ class Resource(_BaseMetaBridge, object):
         fields locally (default). It is still possible to call this method when
         caching is set to False, but there won't be a noticable effect.
         """
-        self.check_alive()
-        # TODO Remove reference to _fields() when new resource creation moves
-        # to here!
-        self._fields()
-        # TODO Track changed fields!
-        self._update_remote_fields(**self._fields())
+        try:
+            self.check_alive()
+            # TODO Track changed fields!
+            self._update_remote_fields(**self._fields())
+        except ResourceHasNoUri:
+            fields = self._stream_fields(self._resource_fields)
+            fields = self._create_new_resource(self._api(), self._name(), self._schema(), **fields)
+            self._set_uri(fields['resource_uri'])
+            fields = self._create_fields(**fields)
+            self._set('_resource_fields', fields)
         return self
 
     def filter_field(self):

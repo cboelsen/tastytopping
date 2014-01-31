@@ -67,14 +67,14 @@ class IntegrationTest(unittest.TestCase):
 
     ################# TESTS ################
     def test_create___object_returned_with_same_fields(self):
-        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         self.assertEqual(resource.path, self.TEST_PATH1)
         self.assertEqual(resource.rating, self.TEST_RATING1)
 
     def test_create_with_factory___object_returned_with_same_fields(self):
         factory = ResourceFactory('http://localhost:8111/test/api/v1')
         factory.test_resource.auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
-        resource = factory.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource = factory.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         self.assertEqual(resource.path, self.TEST_PATH1)
         self.assertEqual(resource.rating, self.TEST_RATING1)
 
@@ -95,22 +95,22 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(resource2.rating, self.TEST_RATING1 + 1)
 
     def test_delete_object___no_object_to_get(self):
-        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource.delete()
         self.assertRaises(NoResourcesExist, list, TestResource.filter(path=self.TEST_PATH1))
 
     def test_delete_object_twice___exception_raised(self):
-        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource.delete()
         self.assertRaises(ResourceDeleted, resource.delete)
 
     def test_delete_then_access_member___exception_raised(self):
-        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource.delete()
         self.assertRaises(ResourceDeleted, getattr, resource, 'path')
 
     def test_delete_then_set_member___exception_raised(self):
-        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource.delete()
         self.assertRaises(ResourceDeleted, setattr, resource, 'path', self.TEST_PATH2)
 
@@ -186,7 +186,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertRaises(ErrorResponse, resource.save)
 
     def test_change_auth_in_one_class___only_instances_of_that_class_change_auth(self):
-        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         TestTreeResource.auth = None
         self.assertEqual(resource1.rating, self.TEST_RATING1)
 
@@ -195,10 +195,10 @@ class IntegrationTest(unittest.TestCase):
 
     def test_change_auth_in_derived_class___base_classes_do_not_change_auth(self):
         TestResourceDerived.auth = None
-        TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
 
     def test_change_auth_in_derived_class___instances_of_base_classes_do_not_change_auth(self):
-        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         TestResourceDerived.auth = None
         resource.rating = 20
 
@@ -211,7 +211,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_creating_with_fields_that_arent_filterable___fields_excluded_from_get(self):
         test_text = 'Text.'
-        resource1 = TestResource(path=self.TEST_PATH1, text=test_text)
+        resource1 = TestResource(path=self.TEST_PATH1, text=test_text).save()
         self.assertEqual(test_text, resource1.text)
 
     def test_creating_resource_that_has_no_filters___object_created_but_exception_raised(self):
@@ -250,7 +250,7 @@ class IntegrationTest(unittest.TestCase):
         rating = 60
         title = 'TITLE'
         text = 'This is some text.'
-        resource = TestResource(path=self.TEST_PATH1, rating=40)
+        resource = TestResource(path=self.TEST_PATH1, rating=40).save()
         resource.update(rating=rating, title=title, text=text)
         self.assertEqual(rating, resource.rating)
         self.assertEqual(title, resource.title)
@@ -260,7 +260,7 @@ class IntegrationTest(unittest.TestCase):
         rating = 60
         title = 'TITLE'
         text = 'This is some text.'
-        resource = TestResource(path=self.TEST_PATH1, rating=40)
+        resource = TestResource(path=self.TEST_PATH1, rating=40).save()
         resource.set_caching(False)
         resource.update(rating=rating, title=title, text=text)
         res2 = TestResource.get()
@@ -278,7 +278,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(user, TestResource.get(path=self.TEST_PATH1).created_by)
 
     def test_post_resource_when_not_allowed___exception_raised(self):
-        self.assertRaises(RestMethodNotAllowed, FACTORY.user(username='bob').save)
+        self.assertRaises(RestMethodNotAllowed, FACTORY.user, username='bob')
 
     def test_creating_resource_with_related_resource_members___accessed_via_tasty_objects(self):
         user = FACTORY.user.get(username=self.TEST_USERNAME)
