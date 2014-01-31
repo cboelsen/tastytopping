@@ -72,6 +72,19 @@ class InvalidFieldName(PrettyException):
     """
     pass
 
+class NoDefaultValueInSchema(PrettyException):
+    """Raised when a field has no default value, but the user asked for one.
+
+    Note that this can happen if you haven't yet saved a Resource, and you're
+    using a field that you haven't provided a value for. For instance:
+
+    ::
+
+        res = factory.test_resource(path='test/path')
+        print(res.rating)   # Exception raised if rating has no default value.
+    """
+    pass
+
 
 
 class ResourceDeleted(PrettyException):
@@ -80,6 +93,15 @@ class ResourceDeleted(PrettyException):
 
 class CreatedResourceNotFound(PrettyException):
     """Raised when no resource can be found matching the resource created."""
+    pass
+
+class ResourceHasNoUri(Exception):
+    """Raised when trying to use a not-yet-created Resource's uri().
+
+    This can almost always be solved by saving the Resource first.
+    """
+    pass
+
 
 
 

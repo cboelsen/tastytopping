@@ -20,12 +20,10 @@ from .exceptions import (
     CreatedResourceNotFound,
     NoFiltersInSchema,
     MultipleResourcesReturned,
+    FieldNotInSchema,
+    ResourceHasNoUri,
 )
 from .field import create_field
-
-
-class ResourceHasNoUri(Exception):
-    pass
 
 
 # Required because the syntax for metaclasses changed between python 2 and 3.
@@ -88,18 +86,18 @@ class Resource(_BaseMetaBridge, object):
 
     def __getattr__(self, name):
         # TODO Wow... needs help...
-        try:
-            self.check_alive()
-        except ResourceHasNoUri:
-            pass
+        self.check_alive()
         try:
             return self._fields()[name].value()
         except KeyError:
             try:
-                return_type = self._schema().detail_endpoint_type(name)
-            except KeyError:
-                raise AttributeError(name)
-            return self._resource_method(name, return_type)
+                return self._schema().default(name)
+            except FieldNotInSchema:
+                try:
+                    return_type = self._schema().detail_endpoint_type(name)
+                except KeyError:
+                    raise AttributeError(name)
+                return self._resource_method(name, return_type)
 
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self._fields().keys())))
@@ -227,8 +225,11 @@ class Resource(_BaseMetaBridge, object):
         Note that this only checks locally, so if another client deletes the
         resource elsewhere it won't be picked up.
         """
-        if not self:
-            raise ResourceDeleted(self.uri())
+        try:
+            if not self:
+                raise ResourceDeleted(self.uri())
+        except ResourceHasNoUri:
+            pass
 
     def delete(self):
         """Delete the object through the API.

@@ -21,6 +21,7 @@ from .exceptions import (
     FieldNotInSchema,
     FilterNotAllowedForField,
     InvalidFieldName,
+    NoDefaultValueInSchema,
 )
 
 
@@ -172,6 +173,19 @@ class TastySchema(object):
             return self._fields()[name]
         except KeyError:
             raise FieldNotInSchema(name, self._schema)
+
+    def default(self, field):
+        """Return the default value for this field."""
+        field_desc = self.field(field)
+        value = field_desc['default']
+        if value == "No default provided.":
+            if field_desc['blank']:
+                value = ""
+            elif field_desc['nullable']:
+                value = None
+            else:
+                raise NoDefaultValueInSchema(field)
+        return value
 
     def check_list_request_allowed(self, req):
         """Check that the schema allows the given REST method for 'allowed_list_http_methods'.

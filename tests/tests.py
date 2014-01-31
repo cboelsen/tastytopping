@@ -123,14 +123,14 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(resource1.rating, resource2.rating)
 
     def test_datetime_objects___streams_both_ways(self):
-        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource1.date = datetime.datetime(2013, 12, 6)
         resource1.save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.date, resource2.date)
 
     def test_datetime_objects_with_ms___streams_both_ways(self):
-        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         resource1.date = datetime.datetime(2013, 12, 6, 1, 1, 1, 500)
         resource1.save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
@@ -311,24 +311,24 @@ class IntegrationTest(unittest.TestCase):
     ##    self.assertRaises(BadRelatedType, res.save)
 
     def test_create_resource_with_multiple_resources_in_related_field___multiple_resources_accepted(self):
-        tree1 = TestTreeResource(name='tree1').save()
-        tree2 = TestTreeResource(name='tree2').save()
-        parent = TestTreeResource(name='parent', children=[tree1, tree2]).save()
+        tree1 = TestTreeResource(name='tree1')
+        tree2 = TestTreeResource(name='tree2')
+        parent = TestTreeResource(name='parent', children=[tree1, tree2])
         self.assertEqual(TestTreeResource.get(name='parent').children, [tree1, tree2])
 
     def test_update_resource_with_multiple_resources_in_related_field___multiple_resources_accepted(self):
-        parent1 = TestTreeResource(name='parent1').save()
-        parent2 = TestTreeResource(name='parent2').save()
-        tree1 = TestTreeResource(name='tree1').save()
-        tree2 = TestTreeResource(name='tree2').save()
+        parent1 = TestTreeResource(name='parent1')
+        parent2 = TestTreeResource(name='parent2')
+        tree1 = TestTreeResource(name='tree1')
+        tree2 = TestTreeResource(name='tree2')
         parent1.children = [tree1]
         parent1.children += [tree2]
         self.assertEqual(TestTreeResource.get(children=parent1.children).children, [tree1, tree2])
 
     def test_create_resource_with_same_parent_multiple_times___multiple_resources_returned_in_parent(self):
-        root = TestTreeResource(name='root').save()
-        tree1 = TestTreeResource(name='tree1', parent=root).save()
-        tree2 = TestTreeResource(name='tree2').save()
+        root = TestTreeResource(name='root')
+        tree1 = TestTreeResource(name='tree1', parent=root)
+        tree2 = TestTreeResource(name='tree2')
         tree2.parent = root
         root.refresh()
         self.assertEqual(root.children, [tree1, tree2])
@@ -452,7 +452,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_custom_endpoint_on_resource___endpoint_callable_as_a_method(self):
         tree1 = TestTreeResource(name='tree1', parent=TestTreeResource(name='tree2'))
-        TestTreeResource(name='tree3', children=[tree1.parent]).save()
+        TestTreeResource(name='tree3', children=[tree1.parent])
         self.assertEqual(tree1.depth(), 2)
 
     def test_custom_endpoint_on_resource_with_args___endpoint_callable_as_a_method(self):
@@ -511,6 +511,25 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue('name' in dir(tree1))
         self.assertTrue('parent' in dir(tree1))
         self.assertTrue('children' in dir(tree1))
+
+    def test_default_value_in_field___value_set_from_schema1(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        self.assertEqual(res1.rating, 50)
+
+    def test_default_value_in_field___value_set_from_schema2(self):
+        res1 = TestResource(path=self.TEST_PATH1)
+        self.assertEqual(res1.date, None)
+
+    def test_default_value_in_field___exception_raised_if_value_required(self):
+        res1 = TestResource(rating=self.TEST_RATING1)
+        self.assertRaises(NoDefaultValueInSchema, getattr, res1, 'path')
+
+    def test_setting_value_before_saving___value_cached_to_save(self):
+        res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        res1.rating = self.TEST_RATING1 + 1
+        res1.save()
+        res2 = TestResource.get(path=self.TEST_PATH1)
+        self.assertEqual(res2.rating, self.TEST_RATING1 + 1)
 
     #def test_zzz(self):
     #    import sys
