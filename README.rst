@@ -142,11 +142,15 @@ Justification
 Why another one? There are some other packages around that do something similar
 (most notably tastypie-queryset-client), but they're lacking in a few areas:
 
+- `ORM <http://en.wikipedia.org/wiki/Object-relational_mapping>`_. A lot of
+  other packages need both the resource data and the API wrapper to work with
+  a resource, instead of just a resource-type object (which is more pythonic).
+
 - Python3 support.
 
 - Support for authentication.
 
-- Support for custom endpoints.
+- Support for nested resources.
 
 - A thorough set of `unit tests
   <https://github.com/cboelsen/tastytopping/blob/master/tests/tests.py>`_.

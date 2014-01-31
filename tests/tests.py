@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # pylint: skip-file
 
+import copy
 import datetime
 import requests
 import unittest
@@ -531,6 +532,17 @@ class IntegrationTest(unittest.TestCase):
         res2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(res2.rating, self.TEST_RATING1 + 1)
 
+    def test_copying_resources___shallow_copy_works(self):
+        res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res2 = copy.copy(res1)
+        self.assertEqual(res1, res2)
+
+    def test_copying_resources___deep_copy_works(self):
+        res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res1.set_caching(False)
+        res2 = copy.deepcopy(res1)
+        self.assertFalse(res2._caching)
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write('\n' + TestResource.help())
@@ -540,13 +552,11 @@ class IntegrationTest(unittest.TestCase):
 
 
     # FEATURES:
-    # TODO Don't transmit cached entries on creation - wait for save().
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
-    # TODO Optimization - keep track of changed fields to save, instead of sending all cached fields.
-    # TODO Copy and deepcopy
+    # TODO Pickle
 
     # TESTING:
     # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...
@@ -561,7 +571,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Generating API help.
     # TODO Release notes.
     # TODO Cookbook
-    # TODO Custom endpoints
+    # TODO Nested resources.
 
 
 TestResource.auth = HttpApiKeyAuth(IntegrationTest.TEST_USERNAME, IntegrationTest.TEST_API_KEY)

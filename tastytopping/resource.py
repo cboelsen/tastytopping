@@ -12,6 +12,9 @@
 __all__ = ('Resource', )
 
 
+import copy
+
+
 from .api import TastyApi
 from .cache import retrieve_from_cache
 from .meta import ResourceMeta
@@ -114,6 +117,16 @@ class Resource(_BaseMetaBridge, object):
     def __hash__(self):
         return hash(self.uri())
 
+    def __copy__(self):
+        new_obj = type(self)(_fields=self.fields())
+        new_obj.set_caching(self._caching)
+        return new_obj
+
+    def __deepcopy__(self, memo):
+        new_obj = type(self)(_fields=copy.deepcopy(self.fields(), memo))
+        new_obj.set_caching(self._caching)
+        return new_obj
+
     def __bool__(self):
         return self.uri() in self._alive
 
@@ -136,7 +149,7 @@ class Resource(_BaseMetaBridge, object):
         try:
             fields = kwargs['_fields']
             if isinstance(fields, dict):
-                uri = fields['resource_uri']
+                uri = fields.get('resource_uri')
             else:
                 uri = fields
                 fields = {}
