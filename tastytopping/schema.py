@@ -89,27 +89,29 @@ class TastySchema(object):
     def _fields(self):
         return self._schema['fields']
 
-    def _filters(self):
+    def _all_filters(self):
         try:
             return self._schema['filtering']
         except KeyError:
             raise NoFiltersInSchema(self._schema)
 
-    def _check_filter(self, field):
-        # TODO Ugh! Refactor!
-        field_name = field.split('__')[0]
-        if field_name in ['limit', 'order_by']:
-            return
+    def _filters(self, field):
         try:
-            allowed_filters = self._filters()[field_name]
-            if _ALL != allowed_filters and _ALL_WITH_RELATIONS != allowed_filters:
-                _, filter_type = field.rsplit('__', 1)
-                if filter_type in _POSSIBLE_FILTERS and filter_type not in allowed_filters:
-                    raise FilterNotAllowedForField(field, self._schema)
+            return self._all_filters()[field]
         except KeyError:
             raise FilterNotAllowedForField(field, self._schema)
-        except ValueError:
-            pass
+
+    def _check_filter(self, field):
+        if field in ['limit', 'order_by']:
+            return
+        try:
+            field_name, filter_type = field.split('__')
+            allowed_filters = self._filters(field_name)
+            if _ALL != allowed_filters and _ALL_WITH_RELATIONS != allowed_filters:
+                if filter_type in _POSSIBLE_FILTERS and filter_type not in allowed_filters:
+                    raise FilterNotAllowedForField(field, self._schema)
+        except ValueError:  # No filter_type to check.
+            self._filters(field)
 
     def _check_schema(self):
         if 'limit' in self._fields():
@@ -124,11 +126,11 @@ class TastySchema(object):
         :rtype: str
         :raises: NoUniqueFilterableFields
         """
-        if 'id' in self._filters():
+        if 'id' in self._all_filters():
             return 'id'
         # Try to find any other unique field that can be filtered on.
         for field, desc in self._fields().items():
-            if desc['unique'] and field in self._filters():
+            if desc['unique'] and field in self._all_filters():
                 return field
         error = "No unique fields can be filtered for '{0}'. Schema: {1}".format(self._resource, self._schema)
         raise NoUniqueFilterableFields(error)
@@ -143,6 +145,7 @@ class TastySchema(object):
             raise FieldNotNullable(self._resource, field)
         if schema_field['readonly']:
             raise ReadOnlyField(self._resource, field)
+        # TODO Blank
 
     def detail_endpoint_type(self, endpoint):
         """Return a list of all endpoints for this resource instance.
@@ -210,10 +213,9 @@ class TastySchema(object):
         :rtype: dict {str: obj}
         :raises: FilterNotAllowedForField
         """
-        # TODO Check related fields' filters too.
         if not fields:
             return fields
-        filters = self._filters().copy()
+        filters = self._all_filters().copy()
         filters.update({'limit': 0, 'order_by': 0})
         result = {}
         for field, value in fields.items():

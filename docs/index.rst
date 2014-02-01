@@ -65,8 +65,8 @@ more information).
 Justification
 ^^^^^^^^^^^^^
 
-Why another one? There are some other packages around that do something similar
-(most notably tastypie-queryset-client), but they're lacking in a few areas:
+Why another one? There are some other packages around that do something
+similar, but they're lacking in a few areas:
 
 - `ORM <http://en.wikipedia.org/wiki/Object-relational_mapping>`_. A lot of
   other packages need both the resource data and the API wrapper to work with

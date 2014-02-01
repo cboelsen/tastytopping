@@ -4,6 +4,7 @@
 
 import copy
 import datetime
+import pickle
 import requests
 import unittest
 
@@ -543,6 +544,13 @@ class IntegrationTest(unittest.TestCase):
         res2 = copy.deepcopy(res1)
         self.assertFalse(res2._caching)
 
+    # TODO Pickle
+    #def test_pickling_resource___resource_useable(self):
+    #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+    #    res2 = pickle.loads(pickle.dumps(res1))
+    #    res2.rating = 11
+    #    res2.save()
+
     #def test_zzz(self):
     #    import sys
     #    sys.stderr.write('\n' + TestResource.help())
@@ -556,7 +564,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
     # TODO Check related fields' filters too in remove_fields_not_in_filters
-    # TODO Pickle
+    # TODO Redo nested resource so that POSt, PUT, etc. work.
 
     # TESTING:
     # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...
