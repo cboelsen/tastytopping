@@ -563,14 +563,12 @@ class IntegrationTest(unittest.TestCase):
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
-    # TODO Check related fields' filters too in remove_fields_not_in_filters
-    # TODO Redo nested resource so that POSt, PUT, etc. work.
+    # TODO Redo nested resource so that POST, PUT, etc. work.
 
     # TESTING:
     # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...
     # TODO exceptions
     # TODO all branches
-    # TODO Test resource without 'id' field.
     # TODO Test cookies
 
     # DOCS

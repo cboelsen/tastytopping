@@ -95,6 +95,7 @@ class TreeResource(ModelResource):
         authorization = Authorization()
         always_return_data = True
         filtering = {
+            'number': ALL,
             'name': ALL,
             'parent': ALL_WITH_RELATIONS,
             'children': ALL_WITH_RELATIONS,

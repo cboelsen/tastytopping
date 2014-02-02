@@ -12,6 +12,7 @@ class Test(models.Model):
 
 
 class Tree(models.Model):
+    number = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
 

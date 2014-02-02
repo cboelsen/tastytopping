@@ -75,14 +75,16 @@ The following needs to be installed locally to run TastyTopping:
 
 - Python 2.7+ or Python 3.3+
 
-- requests (`link <http://requests.readthedocs.org/en/latest/>`_) >= 1.0.0
+- `requests <http://requests.readthedocs.org/en/latest/>`_ >= 1.0.0
 
 
-Tested against:
+Tested with / against:
 
-- django >= 1.5.0
+- `django <https://docs.djangoproject.com/en/1.6/>`_ >= 1.5.0
 
-- django-tastypie >= 0.9.14
+- `django-tastypie <http://django-tastypie.readthedocs.org/en/latest/>`_ >= 0.9.14
+
+- `requests <http://requests.readthedocs.org/en/latest/>`_ >= 1.0.0
 
 (see the `tox.ini
 <https://github.com/cboelsen/tastytopping/blob/master/tox.ini>`_ file for

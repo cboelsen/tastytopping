@@ -145,7 +145,6 @@ class TastySchema(object):
             raise FieldNotNullable(self._resource, field)
         if schema_field['readonly']:
             raise ReadOnlyField(self._resource, field)
-        # TODO Blank
 
     def detail_endpoint_type(self, endpoint):
         """Return a list of all endpoints for this resource instance.
