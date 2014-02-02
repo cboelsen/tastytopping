@@ -544,6 +544,17 @@ class IntegrationTest(unittest.TestCase):
         res2 = copy.deepcopy(res1)
         self.assertFalse(res2._caching)
 
+    def test_repr_str___doesnt_crash(self):
+        res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        repr(res1)
+        str(res1)
+        repr(res1._schema())
+        str(res1._schema())
+
+    def test_help___doesnt_crash(self):
+        FACTORY.test_resource.help()
+        FACTORY.test_resource.help(verbose=True)
+
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
     #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
@@ -568,7 +579,6 @@ class IntegrationTest(unittest.TestCase):
     # TESTING:
     # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...
     # TODO exceptions
-    # TODO all branches
     # TODO Test cookies
 
     # DOCS

@@ -48,11 +48,6 @@ class TastyApi(object):
             self._sess = requests.session()
         return self._sess
 
-    def _resources(self):
-        if self._res is None:
-            self._res = self._transmit(self._session().get, self.address())
-        return self._res
-
     def _transmit(self, tx_func, url, params=None, data=None):
         if data:
             data = json.dumps(data)
@@ -84,12 +79,6 @@ class TastyApi(object):
             raise ErrorResponse(err, response.text, url, params, data)
         except requests.exceptions.ConnectionError as err:
             raise CannotConnectToAddress(self.address())
-
-    def _get_resource(self, resource_type):
-        try:
-            return self._resources()[resource_type]['list_endpoint']
-        except KeyError:
-            raise NonExistantResource(resource_type)
 
     @staticmethod
     def _headers():
