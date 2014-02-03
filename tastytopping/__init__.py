@@ -23,7 +23,7 @@ from .exceptions import (
     RestMethodNotAllowed,
     NoFiltersInSchema,
     FieldNotInSchema,
-    BadRelatedType,
+    InvalidFieldValue,
     NoResourcesExist,
     MultipleResourcesReturned,
     FilterNotAllowedForField,

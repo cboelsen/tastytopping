@@ -48,8 +48,8 @@ class FieldNotInSchema(PrettyException):
     """Raised when a field should be part of the resource's schema, but isn't."""
     pass
 
-class BadRelatedType(PrettyException):
-    """Raised when a related field contains the wrong type."""
+class InvalidFieldValue(PrettyException):
+    """Raised when a field has been passed the wrong type."""
     pass
 
 class NoResourcesExist(PrettyException):

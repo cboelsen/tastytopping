@@ -14,6 +14,7 @@ __all__ = ('create_field', )
 
 from datetime import datetime
 
+from .exceptions import InvalidFieldValue
 from . import tastytypes
 
 
@@ -114,13 +115,19 @@ def create_field(field, field_type, factory):
     if field is None:
         return Field(None)
 
-    if field_type == tastytypes.RELATED:
-        if hasattr(field, 'split') or hasattr(field, 'uri'):
-            result = ResourceField(field, factory)
+    try:
+        if field_type == tastytypes.RELATED:
+            if hasattr(field, 'split') or hasattr(field, 'uri'):
+                result = ResourceField(field, factory)
+            else:
+                result = ResourceListField(field, factory)
+        elif field_type == tastytypes.DATETIME:
+            result = DateTimeField(field)
         else:
-            result = ResourceListField(field, factory)
-    elif field_type == tastytypes.DATETIME:
-        result = DateTimeField(field)
-    else:
-        result = Field(field)
+            result = Field(field)
+    except Exception as error:
+        raise InvalidFieldValue(
+            error,
+            'Encountered "{0}" while creating a "{1}" Field with the value "{2}"'.format(error, field_type, field)
+        )
     return result
