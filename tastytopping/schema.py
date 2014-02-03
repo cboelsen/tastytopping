@@ -89,35 +89,30 @@ class TastySchema(object):
     def _fields(self):
         return self._schema['fields']
 
-    def _all_filters(self):
+    def _filters(self):
         try:
             return self._schema['filtering']
         except KeyError:
             raise NoFiltersInSchema(self._schema)
-
-    def _filters(self, field):
-        try:
-            return self._all_filters()[field]
-        except KeyError:
-            raise FilterNotAllowedForField(field, self._schema)
 
     def _check_filter(self, field):
         if field in ['limit', 'order_by']:
             return
         try:
             field_name, filter_type = field.split('__')
-            allowed_filters = self._filters(field_name)
+            allowed_filters = self._filters()[field_name]
             if _ALL != allowed_filters and _ALL_WITH_RELATIONS != allowed_filters:
                 if filter_type in _POSSIBLE_FILTERS and filter_type not in allowed_filters:
                     raise FilterNotAllowedForField(field, self._schema)
         except ValueError:  # No filter_type to check.
-            self._filters(field)
+            self._filters()[field]  # Check that the field can be filtered on. # pylint: disable=W0106
 
     def _check_schema(self):
-        if 'limit' in self._fields():
-            raise InvalidFieldName("'limit' cannot be used as a field name.")
-        if 'order_by' in self._fields():
-            raise InvalidFieldName("'order_by' cannot be used as a field name.")
+        invalid_names = set(['limit', 'order_by'])
+        field_names = set(self._fields().keys())
+        invalid_field_names = field_names & invalid_names
+        if invalid_field_names:
+            raise InvalidFieldName(list(invalid_field_names))
 
     def filterable_key(self):
         """Return a field that both: has unique values; and can be filtered on (defaults to 'id').
@@ -126,11 +121,11 @@ class TastySchema(object):
         :rtype: str
         :raises: NoUniqueFilterableFields
         """
-        if 'id' in self._all_filters():
+        if 'id' in self._filters():
             return 'id'
         # Try to find any other unique field that can be filtered on.
         for field, desc in self._fields().items():
-            if desc['unique'] and field in self._all_filters():
+            if desc['unique'] and field in self._filters():
                 return field
         error = "No unique fields can be filtered for '{0}'. Schema: {1}".format(self._resource, self._schema)
         raise NoUniqueFilterableFields(error)
@@ -214,7 +209,7 @@ class TastySchema(object):
         """
         if not fields:
             return fields
-        filters = self._all_filters().copy()
+        filters = self._filters().copy()
         filters.update({'limit': 0, 'order_by': 0})
         result = {}
         for field, value in fields.items():

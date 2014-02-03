@@ -19,3 +19,8 @@ class Tree(models.Model):
 
 class TestContainer(models.Model):
     test = models.OneToOneField(Test, null=True)
+
+
+class InvalidField(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    limit = models.IntegerField()

@@ -32,10 +32,10 @@ from .field import create_field
 
 # Required because the syntax for metaclasses changed between python 2 and 3.
 # TODO Remove this when python2 finally dies.
-_BaseMetaBridge = ResourceMeta('_BaseMetaBridge', (object, ), {'auth': None})  # This is a class, not a constant # pylint: disable=C0103
+_BASE_META_BRIDGE = ResourceMeta('_BaseMetaBridge', (object, ), {'auth': None})
 
 
-class Resource(_BaseMetaBridge, object):
+class Resource(_BASE_META_BRIDGE, object):
     """A base class to inherit from, to wrap a TastyPie resource.
 
     To wrap a TastyPie resource, a class must be defined that inherits from
@@ -128,7 +128,10 @@ class Resource(_BaseMetaBridge, object):
         return new_obj
 
     def __bool__(self):
-        return self.uri() in self._alive
+        try:
+            return self.uri() in self._alive
+        except ResourceHasNoUri:
+            return True
 
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
@@ -265,11 +268,8 @@ class Resource(_BaseMetaBridge, object):
         Note that this only checks locally, so if another client deletes the
         resource elsewhere it won't be picked up.
         """
-        try:
-            if not self:
-                raise ResourceDeleted(self.uri())
-        except ResourceHasNoUri:
-            pass
+        if not self:
+            raise ResourceDeleted(self.uri())
 
     def delete(self):
         """Delete the object through the API.

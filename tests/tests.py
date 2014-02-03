@@ -533,6 +533,24 @@ class IntegrationTest(unittest.TestCase):
         res2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(res2.rating, self.TEST_RATING1 + 1)
 
+    def test_resource_with_invalid_field_name___exception_raised(self):
+        self.assertRaises(InvalidFieldName, FACTORY.invalid_field, limit=1)
+
+    def test_resource_with_readonly_field___setting_field_raises_exception(self):
+        res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        self.assertRaises(ReadOnlyField, setattr, res1, 'reviewed', True)
+
+    def test_resource_with_not_nullable_field___setting_field_to_null_raises_exception(self):
+        res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        self.assertRaises(FieldNotNullable, setattr, res1, 'rating', None)
+
+    def test_misuse_of_resource_class___exceptions_raised(self):
+        from tastytopping.resource import Resource
+        self.assertRaises(NotImplementedError, Resource, path=self.TEST_PATH1)
+        class NoNameResource(Resource):
+            api_url = TestResource.api_url
+        self.assertRaises(NotImplementedError, NoNameResource, path=self.TEST_PATH1)
+
     def test_copying_resources___shallow_copy_works(self):
         res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         res2 = copy.copy(res1)
@@ -544,12 +562,13 @@ class IntegrationTest(unittest.TestCase):
         res2 = copy.deepcopy(res1)
         self.assertFalse(res2._caching)
 
-    def test_repr_str___doesnt_crash(self):
+    def test_string_representations___doesnt_crash(self):
         res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         repr(res1)
         str(res1)
         repr(res1._schema())
         str(res1._schema())
+        str(ReadOnlyField('text', 1))
 
     def test_help___doesnt_crash(self):
         FACTORY.test_resource.help()

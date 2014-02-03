@@ -8,6 +8,7 @@ from .api import (
     NoFilterResource,
     TreeResource,
     TestContainerResource,
+    InvalidFieldResource,
 )
 
 
@@ -18,6 +19,7 @@ api_v1.register(ApiKeyResource())
 api_v1.register(NoFilterResource())
 api_v1.register(TreeResource())
 api_v1.register(TestContainerResource())
+api_v1.register(InvalidFieldResource())
 
 
 urlpatterns = patterns('',

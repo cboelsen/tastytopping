@@ -12,7 +12,7 @@ from tastypie.models import ApiKey
 from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
 from tastypie.utils import trailing_slash
     
-from .models import Test, Tree, TestContainer
+from .models import Test, Tree, TestContainer, InvalidField
 
 
 class ApiKeyResource(ModelResource):
@@ -39,6 +39,7 @@ class UserResource(ModelResource):
          
 class TestResource(ModelResource):
     created_by = fields.ToOneField(UserResource, 'created_by', null=True)
+    reviewed = fields.BooleanField(default=False, readonly=True)
     class Meta:
         queryset = Test.objects.all()
         resource_name = 'test_resource'
@@ -206,3 +207,10 @@ class TestContainerResource(ModelResource):
             'id': ALL,
             'test': ALL_WITH_RELATIONS,
         }
+
+
+class InvalidFieldResource(ModelResource):
+    class Meta:
+        queryset = InvalidField.objects.all()
+        resource_name = 'invalid_field'
+        authorization = Authorization()
