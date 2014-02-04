@@ -52,13 +52,9 @@ class ResourceMeta(type):
         return cls.count()
 
     def __getattr__(cls, name):
-        try:
-            return_type = cls._schema().list_endpoint_type(name)
-        except KeyError:
-            raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
             result = cls._api().nested(cls._full_name(), name, cls._schema(), *args, **kwargs)
-            return create_field(result, return_type, cls._factory).value()
+            return create_field(result, None, cls._factory).value()
         return _call_resource_classmethod
 
     def _set_auth(cls, auth):

@@ -85,10 +85,6 @@ class IntegrationTest(unittest.TestCase):
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.rating, resource2.rating)
 
-    def test_access_non_existant_member___exception_raised(self):
-        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
-        self.assertRaises(AttributeError, getattr, resource1, 'path__')
-
     def test_set_value___value_set_in_new_get(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource1.rating = self.TEST_RATING1 + 1

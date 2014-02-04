@@ -109,8 +109,27 @@ class ResourceListField(Field):
             return field, []
 
 
+def _guess_field_type(field):
+    is_uri = lambda f: hasattr(f, 'format') and f.startswith('/') and f.endswith('/')
+    is_field_dict = lambda f: isinstance(f, dict) and 'resource_uri' in f
+    is_to_many = lambda f: isinstance(f, list) and (is_uri(f[0]) or is_field_dict(f[0]))
+    is_datetime = lambda f: hasattr(f, 'format') and f.count(':') == 2 and f.count('-') == 2 and f.count('T') == 1
+    type_map = {
+        is_datetime: tastytypes.DATETIME,
+        is_field_dict: tastytypes.RELATED,
+        is_to_many: tastytypes.RELATED,
+        is_uri: tastytypes.RELATED,
+    }
+    for is_field_type, field_type in type_map.items():
+        if is_field_type(field):
+            return field_type
+
+
 def create_field(field, field_type, factory):
     """Create an appropriate Field based on the field_type."""
+
+    if field_type is None:
+        field_type = _guess_field_type(field)
 
     if field is None:
         return Field(None)
