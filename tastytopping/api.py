@@ -142,7 +142,7 @@ class TastyApi(object):
         schema.check_detail_request_allowed('get')
         return self._transmit(self._session().get, url)
 
-    def post(self, url, schema, **kwargs):
+    def post(self, url, **kwargs):
         """Add a new resource with the given fields.
 
         The fields can be set by passing in field=value as kwargs.
@@ -155,7 +155,6 @@ class TastyApi(object):
             the Resource was defined in the tastypie API (always_return_data).
         :rtype: dict
         """
-        schema.check_list_request_allowed('post')
         return self._transmit(self._session().post, url, data=kwargs) or {}
 
     def put(self, url, schema, **kwargs):
@@ -202,13 +201,8 @@ class TastyApi(object):
         schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
 
-    def nested(self, url, method_name, schema, *args, **kwargs):
+    def nested(self, url, **kwargs):
         """Send a GET to a nested resource for this resource instance."""
-        schema.check_detail_request_allowed('get')
-        args_string = '/'.join(str(a) for a in args)
-        url = '{0}{1}/{2}'.format(url, method_name, args_string)
-        if not url.endswith('/'):
-            url += '/'
         try:
             return self._transmit(self._session().get, url, params=kwargs)
         except NonExistantResource as err:

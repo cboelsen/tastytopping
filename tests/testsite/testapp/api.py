@@ -110,7 +110,7 @@ class TreeResource(ModelResource):
                 name="api_calc_depth",
             ),
             url(
-                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/child{1}$'.format(self._meta.resource_name, trailing_slash()),
+                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/chained/nested/child{1}$'.format(self._meta.resource_name, trailing_slash()),
                 self.wrap_view('get_child'),
                 name="api_get_child",
             ),
@@ -138,6 +138,7 @@ class TreeResource(ModelResource):
 
     def get_child(self, request, **kwargs):
         """Return the first child of this resource."""
+        self.method_check(request, allowed=['get'])
         try:
             bundle = self.build_bundle(data={'pk': kwargs['pk']}, request=request)
             obj = self.cached_obj_get(bundle=bundle, **self.remove_api_resource_names(kwargs))

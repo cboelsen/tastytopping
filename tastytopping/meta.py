@@ -23,6 +23,7 @@ from .exceptions import (
     FieldNotInSchema,
 )
 from .field import create_field
+from .nested import NestedResource
 
 
 class ResourceMeta(type):
@@ -52,10 +53,7 @@ class ResourceMeta(type):
         return cls.count()
 
     def __getattr__(cls, name):
-        def _call_resource_classmethod(*args, **kwargs):
-            result = cls._api().nested(cls._full_name(), name, cls._schema(), *args, **kwargs)
-            return create_field(result, None, cls._factory).value()
-        return _call_resource_classmethod
+        return NestedResource(cls._full_name() + name, cls._api(), cls._schema(), cls._factory)
 
     def _set_auth(cls, auth):
         def _set_api_auth(cls, auth):

@@ -17,7 +17,6 @@ import copy
 
 from .api import TastyApi
 from .cache import retrieve_from_cache
-from .meta import ResourceMeta
 from .exceptions import (
     ResourceDeleted,
     CreatedResourceNotFound,
@@ -28,6 +27,8 @@ from .exceptions import (
     RestMethodNotAllowed,
 )
 from .field import create_field
+from .meta import ResourceMeta
+from .nested import NestedResource
 
 
 # Required because the syntax for metaclasses changed between python 2 and 3.
@@ -99,7 +100,7 @@ class Resource(_BASE_META_BRIDGE, object):
             try:
                 return self._schema().default(name)
             except FieldNotInSchema:
-                return self._resource_method(name, None)
+                return NestedResource(self._full_uri() + name, self._api(), self._schema(), self._factory)
 
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self._fields().keys())))
@@ -158,12 +159,6 @@ class Resource(_BASE_META_BRIDGE, object):
         fields = self._create_fields(**fields)
         return fields, uri
 
-    def _resource_method(self, method_name, return_type):
-        def _call_resource_method(*args, **kwargs):
-            result = self._api().nested(self._full_uri(), method_name, self._schema(), *args, **kwargs)
-            return create_field(result, return_type, self._factory).value()
-        return _call_resource_method
-
     def _create_fields(self, **kwargs):
         fields = {}
         for name, value in kwargs.items():
@@ -187,7 +182,8 @@ class Resource(_BASE_META_BRIDGE, object):
 
     def _create_new_resource(self, **kwargs):
         fields = self._create_fields(**kwargs)
-        details = self._api().post(self._full_name(), self._schema(), **self._stream_fields(fields))
+        self._schema().check_list_request_allowed('post')
+        details = self._api().post(self._full_name(), **self._stream_fields(fields))
         if not details:
             try:
                 details = self._get_this_resource(fields)
