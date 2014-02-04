@@ -23,6 +23,7 @@ from .exceptions import (
     ResourceDeleted,
     IncorrectNestedResourceArgs,
     IncorrectNestedResourceKwargs,
+    BadUri,
 )
 from .schema import TastySchema
 
@@ -94,11 +95,11 @@ class TastyApi(object):
     def create_full_uri(self, uri):
         """Return the full address of the given URI."""
         uri_cutoff = len(uri)
-        while uri_cutoff:
+        while uri_cutoff > 2:
             uri_cutoff -= 1
             if self.address().endswith(uri[:uri_cutoff]):
                 return self.address() + uri[uri_cutoff:]
-        raise StandardError('Could not find full uri. Address = "{0}", URI = "{1}"'.format(self.address(), uri))
+        raise BadUri('Could not find full uri. Address = "{0}", URI = "{1}"'.format(self.address(), uri))
 
     def get(self, url, schema, **kwargs):
         """Retrieve the objects for a given resource type.

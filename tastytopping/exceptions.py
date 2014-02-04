@@ -102,6 +102,10 @@ class ResourceHasNoUri(PrettyException):
     """
     pass
 
+class BadUri(PrettyException):
+    """Raised when the URI given does not belong to the API."""
+    pass
+
 
 
 

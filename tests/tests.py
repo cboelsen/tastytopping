@@ -14,7 +14,7 @@ from tastytopping.api import TastyApi
 from . import run_testsite
 
 
-FACTORY = ResourceFactory('http://localhost:8111/test/api/v1')
+FACTORY = ResourceFactory('http://localhost:8111/test/api/v1/')
 
 ################################ BAD RESOURCES ################################
 NoFilterResource = FACTORY.no_filter
@@ -165,7 +165,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_equality___objects_not_equal_when_object_type_differ(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
-        self.assertNotEqual(resource1, 11)
+        self.assertFalse(resource1 == 1)
 
     def test_unset_auth___exception_raised(self):
         TestResource.auth = None
@@ -323,6 +323,11 @@ class IntegrationTest(unittest.TestCase):
         tree2.parent = root
         root.refresh()
         self.assertEqual(root.children, [tree1, tree2])
+
+    def test_create_resource_with_explicitly_no_children___empty_list_accepted(self):
+        root = TestTreeResource(name='root')
+        root.children = []
+        self.assertEqual(TestTreeResource.get(children=[]).name, 'root')
 
     def test_filter_types___gt_accepted(self):
         res1 = TestResource(path=self.TEST_PATH1, rating=40).save()
@@ -562,6 +567,10 @@ class IntegrationTest(unittest.TestCase):
     def test_help___doesnt_crash(self):
         FACTORY.test_resource.help()
         FACTORY.test_resource.help(verbose=True)
+
+    def test_resource_with_malformed_uri___api_cannot_create_full_uri(self):
+        res1 = FACTORY.test_resource(_fields='/something/that/wont/merge/')
+        self.assertRaises(BadUri, getattr, res1, 'rating')
 
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
