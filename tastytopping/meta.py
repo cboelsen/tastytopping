@@ -36,12 +36,7 @@ class ResourceMeta(type):
         try:
             auth_value = classdict.pop('auth')
         except KeyError:
-            for base in bases:
-                try:
-                    auth_value = base._auth
-                    break
-                except AttributeError:
-                    pass
+            auth_value = bases[0]._auth
         # Keep track classes to update auth in property.
         obj = super(ResourceMeta, mcs).__new__(mcs, name, bases, classdict)
         mcs._classes.append(obj)
@@ -124,8 +119,7 @@ class ResourceMeta(type):
         :raises: NoResourcesExist, MultipleResourcesReturned
         """
         # No more than two results are needed, so save the server's resources.
-        if 'limit' not in kwargs:
-            kwargs['limit'] = 2
+        kwargs['limit'] = 2
         resource_iter = iter(cls.filter(**kwargs))
         result = next(resource_iter)
         try:
