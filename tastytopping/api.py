@@ -21,8 +21,8 @@ from .exceptions import (
     NonExistantResource,
     CannotConnectToAddress,
     ResourceDeleted,
-    IncorrectEndpointArgs,
-    IncorrectEndpointKwargs,
+    IncorrectNestedResourceArgs,
+    IncorrectNestedResourceKwargs,
 )
 from .schema import TastySchema
 
@@ -68,7 +68,7 @@ class TastyApi(object):
                     if 'NotFound: Invalid resource' in response.text:
                         raise NonExistantResource(*args)
                     if 'MultiValueDictKeyError: ' in response.text:
-                        raise IncorrectEndpointKwargs(*args)
+                        raise IncorrectNestedResourceKwargs(*args)
                     raise BadJsonResponse(*args)
             # If it was raised before the request was sent, it wasn't a JSON error.
             except UnboundLocalError:
@@ -194,11 +194,12 @@ class TastyApi(object):
         :param schema: The schema to use for validation.
         :type schema: TastySchema
         """
+        # TODO Put the schema checking elsewhere: Can't know whether detailed or list here!
         schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
 
-    def endpoint(self, url, method_name, schema, *args, **kwargs):
-        """Send a GET to a custom endpoint for this resource instance."""
+    def nested(self, url, method_name, schema, *args, **kwargs):
+        """Send a GET to a nested resource for this resource instance."""
         schema.check_detail_request_allowed('get')
         args_string = '/'.join(str(a) for a in args)
         url = '{0}{1}/{2}'.format(url, method_name, args_string)
@@ -207,7 +208,7 @@ class TastyApi(object):
         try:
             return self._transmit(self._session().get, url, params=kwargs)
         except NonExistantResource as err:
-            raise IncorrectEndpointArgs(*err.args)
+            raise IncorrectNestedResourceArgs(*err.args)
 
     def bulk(self, url, schema, resources, delete):
         """Create, update, and delete multiple resources.

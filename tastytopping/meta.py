@@ -57,7 +57,7 @@ class ResourceMeta(type):
         except KeyError:
             raise AttributeError(name)
         def _call_resource_classmethod(*args, **kwargs):
-            result = cls._api().endpoint(cls._full_name(), name, cls._schema(), *args, **kwargs)
+            result = cls._api().nested(cls._full_name(), name, cls._schema(), *args, **kwargs)
             return create_field(result, return_type, cls._factory).value()
         return _call_resource_classmethod
 

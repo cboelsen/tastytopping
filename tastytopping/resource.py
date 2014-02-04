@@ -164,7 +164,7 @@ class Resource(_BASE_META_BRIDGE, object):
 
     def _resource_method(self, method_name, return_type):
         def _call_resource_method(*args, **kwargs):
-            result = self._api().endpoint(self._full_uri(), method_name, self._schema(), *args, **kwargs)
+            result = self._api().nested(self._full_uri(), method_name, self._schema(), *args, **kwargs)
             return create_field(result, return_type, self._factory).value()
         return _call_resource_method
 

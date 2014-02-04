@@ -445,30 +445,30 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).rating, 40)
         self.assertEqual(TestResource.get(path=self.TEST_PATH1).text, 'TEXT!')
 
-    def test_custom_endpoint_on_resource___endpoint_callable_as_a_method(self):
+    def test_nested_resource_on_resource___endpoint_callable_as_a_method(self):
         tree1 = TestTreeResource(name='tree1', parent=TestTreeResource(name='tree2'))
         TestTreeResource(name='tree3', children=[tree1.parent])
         self.assertEqual(tree1.depth(), 2)
 
-    def test_custom_endpoint_on_resource_with_args___endpoint_callable_as_a_method(self):
+    def test_nested_resource_on_resource_with_args___endpoint_callable_as_a_method(self):
         self.assertEqual(TestTreeResource.add(1, 2), 3)
 
-    def test_custom_endpoint_on_resource_with_kwargs___endpoint_callable_as_a_method(self):
+    def test_nested_resource_on_resource_with_kwargs___endpoint_callable_as_a_method(self):
         self.assertEqual(TestTreeResource.mult(num1=3, num2=2), 6)
 
-    def test_custom_endpoint_on_resource_with_too_few_args___throws_exception(self):
-        self.assertRaises(IncorrectEndpointArgs, TestTreeResource.add, 1)
+    def test_nested_resource_on_resource_with_too_few_args___throws_exception(self):
+        self.assertRaises(IncorrectNestedResourceArgs, TestTreeResource.add, 1)
 
-    def test_custom_endpoint_on_resource_with_too_many_args___throws_exception(self):
-        self.assertRaises(IncorrectEndpointArgs, TestTreeResource.add, 1, 2, 3)
+    def test_nested_resource_on_resource_with_too_many_args___throws_exception(self):
+        self.assertRaises(IncorrectNestedResourceArgs, TestTreeResource.add, 1, 2, 3)
 
-    def test_custom_endpoint_on_resource_with_too_few_kwargs___throws_exception(self):
-        self.assertRaises(IncorrectEndpointKwargs, TestTreeResource.mult, num1=1)
+    def test_nested_resource_on_resource_with_too_few_kwargs___throws_exception(self):
+        self.assertRaises(IncorrectNestedResourceKwargs, TestTreeResource.mult, num1=1)
 
-    def test_custom_endpoint_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
+    def test_nested_resource_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
         self.assertEqual(TestTreeResource.mult(num1=3, num2=2, num3=0), 6)
 
-    def test_custom_endpoint_returning_related_resource___resource_object_returned(self):
+    def test_nested_resource_returning_related_resource___resource_object_returned(self):
         CHILD_NAME = 'tree2'
         tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME)])
         self.assertEqual(CHILD_NAME, tree1.child().name)

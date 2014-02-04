@@ -95,7 +95,7 @@ class CreatedResourceNotFound(PrettyException):
     """Raised when no resource can be found matching the resource created."""
     pass
 
-class ResourceHasNoUri(Exception):
+class ResourceHasNoUri(PrettyException):
     """Raised when trying to use a not-yet-created Resource's uri().
 
     This can almost always be solved by saving the Resource first.
@@ -121,20 +121,20 @@ class CannotConnectToAddress(PrettyException):
     """Raised when no connection was possible at the given address."""
     pass
 
-class IncorrectEndpointArgs(PrettyException):
-    """Raised when failing to GET a custom endpoint.
+class IncorrectNestedResourceArgs(PrettyException):
+    """Raised when failing to GET a nested resource.
 
     This is caused by tastypie raising a NotFound error in a 202 response. The
     cause is (almost always) an incorrect number of args to the method.
     """
     pass
 
-class IncorrectEndpointKwargs(PrettyException):
-    """Raised when failing to GET a custom endpoint.
+class IncorrectNestedResourceKwargs(PrettyException):
+    """Raised when failing to GET a nested resource.
 
-    Specifically, a MultiValueDictKeyError was raised in the custom endpoint.
+    Specifically, a MultiValueDictKeyError was raised in the nested resource.
     Since kwargs should have been passed to the Resource method, which
-    the custom endpoint should be retrieving from the request.GET dict, it is
+    the nested resource should be retrieving from the request.GET dict, it is
     assumed that kwargs were missing.
     """
     pass

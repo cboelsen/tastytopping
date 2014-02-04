@@ -36,8 +36,8 @@ from .exceptions import (
     ErrorResponse,
     NonExistantResource,
     CannotConnectToAddress,
-    IncorrectEndpointArgs,
-    IncorrectEndpointKwargs,
+    IncorrectNestedResourceArgs,
+    IncorrectNestedResourceKwargs,
 )
 
 from .factory import ResourceFactory
