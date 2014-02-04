@@ -24,6 +24,7 @@ from .exceptions import (
     IncorrectNestedResourceArgs,
     IncorrectNestedResourceKwargs,
     BadUri,
+    RestMethodNotAllowed,
 )
 from .schema import TastySchema
 
@@ -77,6 +78,8 @@ class TastyApi(object):
         except requests.exceptions.HTTPError as err:
             if response.status_code == 404 or response.status_code == 410:
                 raise ResourceDeleted(url)
+            if response.status_code == 405:
+                raise RestMethodNotAllowed(url, tx_func)
             raise ErrorResponse(err, response.text, url, params, data)
         except requests.exceptions.ConnectionError as err:
             raise CannotConnectToAddress(self.address())
