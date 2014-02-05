@@ -87,7 +87,8 @@ class ResourceMeta(type):
             except FieldNotInSchema:
                 fields[name] = value
 
-        for response in cls._api().get(cls._full_name(), cls._schema(), **fields):
+        cls._schema().check_list_request_allowed('get')
+        for response in cls._api().paginate(cls._full_name(), **fields):
             for obj in response['objects']:
                 yield cls(_fields=obj)
                 exist = True
@@ -130,7 +131,8 @@ class ResourceMeta(type):
         Resource objects of this type will be marked as deleted (ie. using any
         of them will result in a ResourceDeleted exception).
         """
-        cls._api().delete(cls._full_name(), cls._schema())
+        cls._schema().check_list_request_allowed('delete')
+        cls._api().delete(cls._full_name())
         cls._alive = set()
 
     def count(cls, **kwargs):
@@ -142,7 +144,8 @@ class ResourceMeta(type):
         :rtype: int
         """
         kwargs['limit'] = 1
-        response = next(iter(cls._api().get(cls._full_name(), cls._schema(), **kwargs)))
+        cls._schema().check_list_request_allowed('get')
+        response = cls._api().get(cls._full_name(), **kwargs)
         return response['meta']['total_count']
 
     def bulk(cls, create=None, update=None, delete=None):

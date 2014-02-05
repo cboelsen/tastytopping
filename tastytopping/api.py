@@ -104,7 +104,7 @@ class TastyApi(object):
                 return self.address() + uri[uri_cutoff:]
         raise BadUri('Could not find full uri. Address = "{0}", URI = "{1}"'.format(self.address(), uri))
 
-    def get(self, url, schema, **kwargs):
+    def paginate(self, url, **kwargs):
         """Retrieve the objects for a given resource type.
 
         The search can be filtered by passing field=value as kwargs.
@@ -116,7 +116,6 @@ class TastyApi(object):
         :returns: A generator object that yields dicts.
         :rtype dict
         """
-        schema.check_list_request_allowed('get')
         retrieve_all_results = False
         if 'limit' not in kwargs:
             retrieve_all_results = True
@@ -129,7 +128,7 @@ class TastyApi(object):
             result = self._transmit(self._session().get, url)
             yield result
 
-    def details(self, url, schema):
+    def get(self, url, **kwargs):
         """Retrieve the fields for a given URI.
 
         :param url: The URL of the TastyPie resource.
@@ -139,8 +138,7 @@ class TastyApi(object):
         :returns: The resource's fields.
         :rtype: dict
         """
-        schema.check_detail_request_allowed('get')
-        return self._transmit(self._session().get, url)
+        return self._transmit(self._session().get, url, params=kwargs)
 
     def post(self, url, **kwargs):
         """Add a new resource with the given fields.
@@ -187,7 +185,7 @@ class TastyApi(object):
         """
         return self._transmit(self._session().patch, url, data=kwargs) or {}
 
-    def delete(self, url, schema):
+    def delete(self, url):
         """Remove a given resource from the API.
 
         :param url: The URL of the TastyPie resource.
@@ -195,16 +193,7 @@ class TastyApi(object):
         :param schema: The schema to use for validation.
         :type schema: TastySchema
         """
-        # TODO Put the schema checking elsewhere: Can't know whether detailed or list here!
-        schema.check_detail_request_allowed('delete')
         self._transmit(self._session().delete, url)
-
-    def nested(self, url, **kwargs):
-        """Send a GET to a nested resource for this resource instance."""
-        try:
-            return self._transmit(self._session().get, url, params=kwargs)
-        except NonExistantResource as err:
-            raise IncorrectNestedResourceArgs(*err.args)
 
     def bulk(self, url, schema, resources, delete):
         """Create, update, and delete multiple resources.

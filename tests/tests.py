@@ -65,7 +65,7 @@ class IntegrationTest(unittest.TestCase):
             pass
 
     def _delete(self, res):
-        res._api().delete(res._full_uri(), res._schema())
+        res._api().delete(res._full_uri())
 
     ################# TESTS ################
     def test_create___object_returned_with_same_fields(self):

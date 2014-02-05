@@ -135,7 +135,8 @@ class Resource(_BASE_META_BRIDGE, object):
 
     def _fields(self):
         if not self._resource_fields or not self._caching:
-            fields = self._api().details(self._full_uri(), self._schema())
+            self._schema().check_detail_request_allowed('get')
+            fields = self._api().get(self._full_uri())
             fields = self._create_fields(**fields)
             self._set('_resource_fields', fields)
         return self._resource_fields
@@ -174,7 +175,8 @@ class Resource(_BASE_META_BRIDGE, object):
         fields = dict([f.filter(n) for n, f in fields.items()])
         fields = self._schema().remove_fields_not_in_filters(fields)
         fields['limit'] = 2
-        results = self._api().get(self._full_name(), self._schema(), **fields)
+        self._schema().check_list_request_allowed('get')
+        results = self._api().paginate(self._full_name(), **fields)
         resources = next(iter(results))['objects']
         if len(resources) > 1:
             raise MultipleResourcesReturned(fields, resources)
@@ -274,7 +276,8 @@ class Resource(_BASE_META_BRIDGE, object):
         :raises: ResourceDeleted
         """
         self.check_alive()
-        self._api().delete(self._full_uri(), self._schema())
+        self._schema().check_detail_request_allowed('delete')
+        self._api().delete(self._full_uri())
         self._alive.remove(self.uri())
 
     def set_caching(self, caching):

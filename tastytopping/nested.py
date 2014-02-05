@@ -1,3 +1,7 @@
+from .exceptions import (
+    NonExistantResource,
+    IncorrectNestedResourceArgs,
+)
 from .field import create_field
 
 
@@ -9,6 +13,11 @@ class NestedResource(object):
         self.schema = schema
         self.factory = factory
         self.kwargs = kwargs
+        self.get = self._nested_method(self.api.get)
+        self.post = self._nested_method(self.api.post)
+        self.put = self._nested_method(self.api.put)
+        self.patch = self._nested_method(self.api.patch)
+        self.delete = self._nested_method(self.api.delete)
 
     def __getattr__(self, name):
         return NestedResource(self.uri + name, self.api, self.schema, self.factory)
@@ -21,17 +30,12 @@ class NestedResource(object):
         args_string = '/'.join(str(a) for a in args)
         return '{0}{1}'.format(self.uri, args_string)
 
-    def get(self, **kwargs):
-        kwargs = kwargs or self.kwargs
-        result = self.api.nested(self.uri, **kwargs)
-        return create_field(result, None, self.factory).value()
-
-    def post(self, **kwargs):
-        kwargs = kwargs or self.kwargs
-        result = self.api.post(self.uri, **kwargs)
-        return create_field(result, None, self.factory).value()
-
-    def put(self, **kwargs):
-        kwargs = kwargs or self.kwargs
-        result = self.api.put(self.uri, **kwargs)
-        return create_field(result, None, self.factory).value()
+    def _nested_method(self, method):
+        def _api_method(**kwargs):
+            kwargs = kwargs or self.kwargs
+            try:
+                result = method(self.uri, **kwargs)
+            except NonExistantResource as err:
+                raise IncorrectNestedResourceArgs(*err.args)
+            return create_field(result, None, self.factory).value()
+        return _api_method
