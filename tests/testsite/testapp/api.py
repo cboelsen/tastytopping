@@ -135,7 +135,7 @@ class TreeResource(ModelResource):
     def calc_mult(self, request, **kwargs):
         '''Return the product of two numbers.'''
         self.method_check(request, allowed=['post'])
-        data = json.loads(request.body)
+        data = json.loads(request.body.decode("utf-8"))
         total = int(data['num1']) * int(data['num2'])
         return self.create_response(request, total)
 
