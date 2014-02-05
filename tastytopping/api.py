@@ -16,12 +16,10 @@ import json
 import requests
 
 from .exceptions import (
-    BadJsonResponse,
     ErrorResponse,
     NonExistantResource,
     CannotConnectToAddress,
     ResourceDeleted,
-    IncorrectNestedResourceArgs,
     IncorrectNestedResourceKwargs,
     BadUri,
     RestMethodNotAllowed,
@@ -66,12 +64,12 @@ class TastyApi(object):
         except (ValueError, TypeError) as err:
             try:
                 if response.text:
-                    args = (response.text, url, params, data)
+                    args = (response.text, err, url, params, data)
                     if 'NotFound: Invalid resource' in response.text:
                         raise NonExistantResource(*args)
                     if 'KeyError: ' in response.text:
                         raise IncorrectNestedResourceKwargs(*args)
-                    raise BadJsonResponse(*args)
+                    raise ErrorResponse(*args)
             # If it was raised before the request was sent, it wasn't a JSON error.
             except UnboundLocalError:
                 raise err
@@ -80,7 +78,7 @@ class TastyApi(object):
                 raise ResourceDeleted(url)
             if response.status_code == 405:
                 raise RestMethodNotAllowed(err, url, tx_func)
-            raise ErrorResponse(err, response.text, url, params, data)
+            raise ErrorResponse(response.text, err, url, params, data)
         except requests.exceptions.ConnectionError as err:
             raise CannotConnectToAddress(self.address())
 

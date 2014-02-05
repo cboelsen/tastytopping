@@ -33,7 +33,6 @@ from .exceptions import (
     CreatedResourceNotFound,
     ResourceHasNoUri,
     BadUri,
-    BadJsonResponse,
     ErrorResponse,
     NonExistantResource,
     CannotConnectToAddress,

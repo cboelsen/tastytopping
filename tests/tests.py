@@ -478,6 +478,10 @@ class IntegrationTest(unittest.TestCase):
         tree1 = TestTreeResource(name='tree1', children=[])
         self.assertRaises(IncorrectNestedResourceArgs, tree1.chained.nested.child(1).get)
 
+    def test_nested_resource_with_wrong_rest_method___exception_raised(self):
+        tree1 = TestTreeResource(name='tree1', children=[])
+        self.assertRaises(RestMethodNotAllowed, tree1.chained.nested.child(1).post)
+
     def test_set_auth_on_factory___all_resources_created_in_factory_share_auth(self):
         new_factory = ResourceFactory('http://localhost:8111/test/api/v1')
         new_factory.auth = 4
@@ -595,12 +599,11 @@ class IntegrationTest(unittest.TestCase):
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
-    # TODO Redo nested resource so that POST, PUT, etc. work.
+    # TODO Allow resource lists to be returned from a nested resource.
     # TODO asyncio
 
     # TESTING:
-    # TODO Re-enable py33-dev and py27-dev when tastypie works with django again...
-    # TODO exceptions
+    # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
     # TODO Test cookies
 
     # DOCS

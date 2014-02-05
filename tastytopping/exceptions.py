@@ -109,10 +109,6 @@ class BadUri(PrettyException):
 
 
 
-class BadJsonResponse(PrettyException):
-    """Raised when the response cannot be JSON decoded."""
-    pass
-
 class ErrorResponse(PrettyException):
     """Raised when an error status is returned from the API."""
     pass

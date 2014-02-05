@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+
+"""
+.. module: nested
+    :platform: Unix, Windows
+    :synopsis: Allows nested resources to be called.
+
+.. moduleauthor:: Christian Boelsen <christian.boelsen@hds.com>
+"""
+
+
 from .exceptions import (
     NonExistantResource,
     IncorrectNestedResourceArgs,
@@ -6,6 +17,12 @@ from .field import create_field
 
 
 class NestedResource(object):
+    """Allows a nested resource to be accessed from a standard resource.
+
+    Nested resources are treated differently because they don't have a schema
+    provided by tastypie. Consequently, the result has to be treated in a more
+    generic way.
+    """
 
     def __init__(self, uri, api, schema, factory, **kwargs):
         self.api = api
