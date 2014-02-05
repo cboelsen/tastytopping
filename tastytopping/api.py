@@ -69,7 +69,7 @@ class TastyApi(object):
                     args = (response.text, url, params, data)
                     if 'NotFound: Invalid resource' in response.text:
                         raise NonExistantResource(*args)
-                    if 'MultiValueDictKeyError: ' in response.text:
+                    if 'KeyError: ' in response.text:
                         raise IncorrectNestedResourceKwargs(*args)
                     raise BadJsonResponse(*args)
             # If it was raised before the request was sent, it wasn't a JSON error.
@@ -79,7 +79,7 @@ class TastyApi(object):
             if response.status_code == 404 or response.status_code == 410:
                 raise ResourceDeleted(url)
             if response.status_code == 405:
-                raise RestMethodNotAllowed(url, tx_func)
+                raise RestMethodNotAllowed(err, url, tx_func)
             raise ErrorResponse(err, response.text, url, params, data)
         except requests.exceptions.ConnectionError as err:
             raise CannotConnectToAddress(self.address())
@@ -157,7 +157,7 @@ class TastyApi(object):
         """
         return self._transmit(self._session().post, url, data=kwargs) or {}
 
-    def put(self, url, schema, **kwargs):
+    def put(self, url, **kwargs):
         """Put a given resource with the given fields.
 
         The fields can be set by passing in field=value as kwargs.
@@ -170,10 +170,9 @@ class TastyApi(object):
             the Resource was defined in the tastypie API (always_return_data).
         :rtype: dict
         """
-        schema.check_detail_request_allowed('put')
         return self._transmit(self._session().put, url, data=kwargs) or {}
 
-    def patch(self, url, schema, **kwargs):
+    def patch(self, url, **kwargs):
         """Patch a given resource with the given fields.
 
         The fields can be set by passing in field=value as kwargs.
@@ -186,7 +185,6 @@ class TastyApi(object):
             the Resource was defined in the tastypie API (always_return_data).
         :rtype: dict
         """
-        schema.check_detail_request_allowed('patch')
         return self._transmit(self._session().patch, url, data=kwargs) or {}
 
     def delete(self, url, schema):

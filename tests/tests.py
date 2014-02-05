@@ -452,27 +452,31 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(tree1.depth.get(), 2)
 
     def test_nested_resource_on_resource_with_args___endpoint_callable_as_a_method(self):
-        self.assertEqual(TestTreeResource.add(1, 2).get(), 3)
+        self.assertEqual(TestTreeResource.add(1, 2).put(), 3)
 
     def test_nested_resource_on_resource_with_kwargs___endpoint_callable_as_a_method(self):
-        self.assertEqual(TestTreeResource.mult.get(num1=3, num2=2), 6)
+        self.assertEqual(TestTreeResource.mult.post(num1=3, num2=2), 6)
 
     def test_nested_resource_on_resource_with_too_few_args___throws_exception(self):
-        self.assertRaises(IncorrectNestedResourceArgs, TestTreeResource.add(1).get)
+        self.assertRaises(ErrorResponse, TestTreeResource.add(1).put)
 
     def test_nested_resource_on_resource_with_too_many_args___throws_exception(self):
-        self.assertRaises(IncorrectNestedResourceArgs, TestTreeResource.add(1, 2, 3).get)
+        self.assertRaises(ErrorResponse, TestTreeResource.add(1, 2, 3).put)
 
     def test_nested_resource_on_resource_with_too_few_kwargs___throws_exception(self):
-        self.assertRaises(IncorrectNestedResourceKwargs, TestTreeResource.mult.get, num1=1)
+        self.assertRaises(IncorrectNestedResourceKwargs, TestTreeResource.mult.post, num1=1)
 
     def test_nested_resource_on_resource_with__too_manykwargs___endpoint_callable_as_a_method(self):
-        self.assertEqual(TestTreeResource.mult(num1=3, num2=2, num3=0).get(), 6)
+        self.assertEqual(TestTreeResource.mult(num1=3, num2=2, num3=0).post(), 6)
 
     def test_nested_resource_returning_related_resource___resource_object_returned(self):
         CHILD_NAME = 'tree2'
         tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME)])
         self.assertEqual(CHILD_NAME, tree1.chained.nested.child.get().name)
+
+    def test_nested_resource_on_resource_with_too_few_args_in_get___more_explicit_exception_raised(self):
+        tree1 = TestTreeResource(name='tree1', children=[])
+        self.assertRaises(IncorrectNestedResourceArgs, tree1.chained.nested.child(1).get)
 
     def test_set_auth_on_factory___all_resources_created_in_factory_share_auth(self):
         new_factory = ResourceFactory('http://localhost:8111/test/api/v1')

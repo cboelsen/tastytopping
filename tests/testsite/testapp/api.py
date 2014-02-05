@@ -128,12 +128,15 @@ class TreeResource(ModelResource):
 
     def calc_add(self, request, **kwargs):
         '''Return the sum of two numbers.'''
+        self.method_check(request, allowed=['put'])
         total = int(kwargs['num1']) + int(kwargs['num2'])
         return self.create_response(request, total)
 
     def calc_mult(self, request, **kwargs):
         '''Return the product of two numbers.'''
-        total = int(request.GET['num1']) * int(request.GET['num2'])
+        self.method_check(request, allowed=['post'])
+        data = json.loads(request.body)
+        total = int(data['num1']) * int(data['num2'])
         return self.create_response(request, total)
 
     def get_child(self, request, **kwargs):
