@@ -100,7 +100,7 @@ class Resource(_BASE_META_BRIDGE, object):
             try:
                 return self._schema().default(name)
             except FieldNotInSchema:
-                return NestedResource(self._full_uri() + name, self._api(), self._schema(), self._factory)
+                return NestedResource(self._full_uri() + name, self._api(), self._factory)
 
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self._fields().keys())))
@@ -177,7 +177,7 @@ class Resource(_BASE_META_BRIDGE, object):
         fields['limit'] = 2
         self._schema().check_list_request_allowed('get')
         results = self._api().paginate(self._full_name(), **fields)
-        resources = next(iter(results))['objects']
+        resources = next(results)['objects']
         if len(resources) > 1:
             raise MultipleResourcesReturned(fields, resources)
         return resources[0]

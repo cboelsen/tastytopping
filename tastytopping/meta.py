@@ -53,7 +53,7 @@ class ResourceMeta(type):
         return cls.count()
 
     def __getattr__(cls, name):
-        return NestedResource(cls._full_name() + name, cls._api(), cls._schema(), cls._factory)
+        return NestedResource(cls._full_name() + name, cls._api(), cls._factory)
 
     def _set_auth(cls, auth):
         def _set_api_auth(cls, auth):

@@ -12,6 +12,7 @@
 from .exceptions import (
     NonExistantResource,
     IncorrectNestedResourceArgs,
+    NoResourcesExist,
 )
 from .field import create_field
 
@@ -24,35 +25,61 @@ class NestedResource(object):
     generic way.
     """
 
-    def __init__(self, uri, api, schema, factory, **kwargs):
+    def __init__(self, uri, api, factory, **kwargs):
         self.api = api
         self.uri = uri if uri.endswith('/') else uri + '/'
-        self.schema = schema
         self.factory = factory
         self.kwargs = kwargs
-        self.get = self._nested_method(self.api.get)
-        self.post = self._nested_method(self.api.post)
-        self.put = self._nested_method(self.api.put)
-        self.patch = self._nested_method(self.api.patch)
-        self.delete = self._nested_method(self.api.delete)
+        self.get = self._api_method(self.api.get, filter_fields=True)
+        self.post = self._api_method(self.api.post)
+        self.put = self._api_method(self.api.put)
+        self.patch = self._api_method(self.api.patch)
+        self.delete = self._api_method(self.api.delete)
 
     def __getattr__(self, name):
-        return NestedResource(self.uri + name, self.api, self.schema, self.factory)
+        return NestedResource(self.uri + name, self.api, self.factory)
 
     def __call__(self, *args, **kwargs):
         uri = self._append_url(*args)
-        return NestedResource(uri, self.api, self.schema, self.factory, **kwargs)
+        return NestedResource(uri, self.api, self.factory, **self._stream_fields(**kwargs))
 
     def _append_url(self, *args):
         args_string = '/'.join(str(a) for a in args)
         return '{0}{1}'.format(self.uri, args_string)
 
-    def _nested_method(self, method):
+    def _stream_fields(self, **kwargs):
+        fields = {}
+        for name, value in kwargs.items():
+            fields[name] = create_field(value, None, self._factory)
+        return {n: v.stream() for n, v in fields.items()}
+
+    def _filter_fields(self, **kwargs):
+        fields = {}
+        for name, value in kwargs.items():
+            relate_name, relate_field = create_field(value, None, self._factory).filter(name)
+            fields[relate_name] = relate_field
+        return fields
+
+    def _api_method(self, method, filter_fields=False):
+        convert_fields = self._filter_fields if filter_fields else self._stream_fields
         def _api_method(**kwargs):
             kwargs = kwargs or self.kwargs
             try:
-                result = method(self.uri, **kwargs)
+                result = method(self.uri, **convert_fields(**kwargs))
             except NonExistantResource as err:
                 raise IncorrectNestedResourceArgs(*err.args)
             return create_field(result, None, self.factory).value()
         return _api_method
+
+    def filter(self, **kwargs):
+        fields = self._filter_fields(**kwargs)
+        exist = False
+        for response in self.api.paginate(self.uri, **fields):
+            for obj in response['objects']:
+                yield create_field(obj, None, self.factory).value()
+                exist = True
+        if not exist:
+            raise NoResourcesExist(self.uri, kwargs)
+
+    def all(self):
+        return self.filter()

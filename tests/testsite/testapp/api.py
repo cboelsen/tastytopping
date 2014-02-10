@@ -115,6 +115,11 @@ class TreeResource(ModelResource):
                 name="api_get_child",
             ),
             url(
+                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/nested_children{1}$'.format(self._meta.resource_name, trailing_slash()),
+                self.children.to_class().wrap_view('get_list'),
+                name="api_dispatch_detail",
+            ),
+            url(
                 r'^(?P<resource_name>{0})/add/(?P<num1>\d+)/(?P<num2>\d+){1}$'.format(self._meta.resource_name, trailing_slash()),
                 self.wrap_view('calc_add'),
                 name="api_calc_add",

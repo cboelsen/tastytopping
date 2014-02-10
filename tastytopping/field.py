@@ -136,7 +136,9 @@ def create_field(field, field_type, factory):
 
     try:
         if field_type == tastytypes.RELATED:
-            if hasattr(field, 'split') or hasattr(field, 'uri'):
+            # Single resources can be either a string, Resource, or dict.
+            if (hasattr(field, 'split') or hasattr(field, 'uri') or
+                    (isinstance(field, dict) and 'resource_uri' in field)):
                 result = ResourceField(field, factory)
             else:
                 result = ResourceListField(field, factory)
