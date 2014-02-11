@@ -266,9 +266,10 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(title, res2.title)
         self.assertEqual(text, res2.text)
 
-    def test_update_with_non_existent_field___exception_raised(self):
+    def test_update_with_field_not_in_schema___resource_updated(self):
         resource = TestResource(path=self.TEST_PATH1, rating=40).save()
-        self.assertRaises(FieldNotInSchema, resource.update, fake='fake')
+        resource.fake = 'fake'
+        self.assertTrue('fake' in resource.fields())
 
     def test_related_resource___basic_input_and_output_works(self):
         user = FACTORY.user.get(username=self.TEST_USERNAME)

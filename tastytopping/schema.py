@@ -105,7 +105,7 @@ class TastySchema(object):
                 if filter_type in _POSSIBLE_FILTERS and filter_type not in allowed_filters:
                     raise FilterNotAllowedForField(field, self._schema)
         except ValueError:  # No filter_type to check.
-            self._filters()[field]  # Check that the field can be filtered on. # pylint: disable=W0106
+            self._filters()[field.split('__', 1)[0]]  # Check that the field can be filtered on. # pylint: disable=W0106
 
     def _check_schema(self):
         invalid_names = set(['limit', 'order_by'])
@@ -136,6 +136,8 @@ class TastySchema(object):
         :raises: FieldNotNullable, ReadOnlyField
         """
         schema_field = self.field(field)
+        if schema_field is None:
+            return  # We can't validate the field as it's not in the schema.
         if value is None and not schema_field['nullable']:
             raise FieldNotNullable(self._resource, field)
         if schema_field['readonly']:
@@ -148,16 +150,14 @@ class TastySchema(object):
         :type name: str
         :returns: The description of the given field {str: str}.
         :rtype: dict
-        :raises: FieldNotInSchema
         """
-        try:
-            return self._fields()[name]
-        except KeyError:
-            raise FieldNotInSchema(name, self._schema)
+        return self._fields().get(name)
 
     def default(self, field):
         """Return the default value for this field."""
         field_desc = self.field(field)
+        if field_desc is None:
+            raise FieldNotInSchema(field, self._schema)
         value = field_desc['default']
         if value == "No default provided.":
             if field_desc['blank']:

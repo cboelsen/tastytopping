@@ -80,12 +80,10 @@ class ResourceMeta(type):
 
         fields = {}
         for name, value in kwargs.items():
-            try:
-                field_type = cls._schema().field(name)['type']
-                relate_name, relate_field = create_field(value, field_type, cls._factory).filter(name)
-                fields[relate_name] = relate_field
-            except FieldNotInSchema:
-                fields[name] = value
+            field_desc = cls._schema().field(name)
+            field_type = field_desc and field_desc['type']
+            relate_name, relate_field = create_field(value, field_type, cls._factory).filter(name)
+            fields[relate_name] = relate_field
 
         cls._schema().check_list_request_allowed('get')
         for response in cls._api().paginate(cls._full_name(), **fields):

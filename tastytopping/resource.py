@@ -163,7 +163,8 @@ class Resource(_BASE_META_BRIDGE, object):
     def _create_fields(self, **kwargs):
         fields = {}
         for name, value in kwargs.items():
-            field_type = self._schema().field(name)['type']
+            field_desc = self._schema().field(name)
+            field_type = field_desc and field_desc['type']
             fields[name] = create_field(value, field_type, self._factory)
         return fields
 
