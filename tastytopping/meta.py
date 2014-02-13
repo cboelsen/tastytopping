@@ -20,7 +20,6 @@ __all__ = ('ResourceMeta', )
 from .exceptions import (
     NoResourcesExist,
     MultipleResourcesReturned,
-    FieldNotInSchema,
 )
 from .field import create_field
 from .nested import NestedResource
