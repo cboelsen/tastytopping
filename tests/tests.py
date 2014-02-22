@@ -322,7 +322,6 @@ class IntegrationTest(unittest.TestCase):
         tree1 = TestTreeResource(name='tree1', parent=root)
         tree2 = TestTreeResource(name='tree2')
         tree2.parent = root
-        root.refresh()
         self.assertEqual(root.children, [tree1, tree2])
 
     def test_create_resource_with_explicitly_no_children___empty_list_accepted(self):

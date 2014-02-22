@@ -80,7 +80,7 @@ class Resource(_BASE_META_BRIDGE, object):
             self.save()
 
     def __str__(self):
-        return '<"{0}": {1}>'.format(self.uri(), self._fields())
+        return '<"{0}": {1}>'.format(self.uri(), self.fields())
 
     def __repr__(self):
         return '<{0} {1} @ {2}>'.format(self._name(), self.uri(), id(self))
@@ -92,15 +92,15 @@ class Resource(_BASE_META_BRIDGE, object):
         self.update(**{name: value})
 
     def __getattr__(self, name):
-        # TODO Wow... needs help...
         self.check_alive()
         try:
             return self._fields()[name].value()
         except KeyError:
-            try:
-                return self._schema().default(name)
-            except FieldNotInSchema:
-                return NestedResource(self._full_uri() + name, self._api(), self._factory)
+            pass
+        try:
+            return self._schema().default(name)
+        except FieldNotInSchema:
+            return NestedResource(self._full_uri() + name, self._api(), self._factory)
 
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self._fields().keys())))
@@ -201,10 +201,10 @@ class Resource(_BASE_META_BRIDGE, object):
             self._schema().check_detail_request_allowed('patch')
             self._api().patch(self._full_uri(), **fields)
         except RestMethodNotAllowed:
-            # TODO Why does this not work?!?
-            #fields = self._stream_fields(self._fields())
             self._schema().check_detail_request_allowed('put')
-            self._api().put(self._full_uri(), **fields)
+            current_fields = self._stream_fields(self._fields())
+            current_fields.update(fields)
+            self._api().put(self._full_uri(), **current_fields)
 
     def _set(self, name, value):
         #Avoiding python's normal __setattr__ behaviour to avoid infinite recursion.
@@ -315,10 +315,10 @@ class Resource(_BASE_META_BRIDGE, object):
         for field, value in kwargs.items():
             self._schema().validate(field, value)
         fields = self._create_fields(**kwargs)
-        self._fields().update(fields)
         if not self._caching:
             self._update_remote_fields(**fields)
         else:
+            self._fields().update(fields)
             self._cached_fields.update(fields)
 
     def save(self):
