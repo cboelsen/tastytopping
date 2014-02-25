@@ -6,7 +6,7 @@ except ImportError:
 
 setup(
     name = "TastyTopping",
-    version = "1.0.8",
+    version = "1.1.0",
     description = "An ORM for tastypie's API on the client-side.",
     author = "Christian Boelsen",
     author_email="christian.boelsen@hds.com",
