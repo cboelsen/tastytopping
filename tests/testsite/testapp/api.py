@@ -1,11 +1,14 @@
 import json
 
 from django.conf.urls import url
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.core import management
+from django.middleware.csrf import _get_new_csrf_key as get_new_csrf_key
+from django.middleware.csrf import _sanitize_token, constant_time_compare
 
 from tastypie import fields
-from tastypie.authentication import ApiKeyAuthentication
+from tastypie.authentication import ApiKeyAuthentication, SessionAuthentication
 from tastypie.authorization import Authorization
 from tastypie.http import HttpGone, HttpMultipleChoices
 from tastypie.models import ApiKey
@@ -31,10 +34,70 @@ class UserResource(ModelResource):
         excludes = ['email', 'password', 'is_superuser']
         allowed_methods = ['get']
         authorization = Authorization()
+        authentication = SessionAuthentication()
         filtering = {
             'username': ALL,
             'id': ALL,
         }
+
+    def prepend_urls(self):
+        params = (self._meta.resource_name, trailing_slash())
+        return [
+            url(r"^(?P<resource_name>%s)/login%s$" % params, self.wrap_view('login'), name="api_login"),
+            url(r"^(?P<resource_name>%s)/logout%s$" % params, self.wrap_view('logout'), name="api_logout")
+        ]
+
+    def login(self, request, **kwargs):
+        """
+        Authenticate a user, create a CSRF token for them, and return the user object as JSON.
+        """
+        self.method_check(request, allowed=['post'])
+        data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
+        username = data.get('username', '')
+        password = data.get('password', '')
+
+        if username == '' or password == '':
+            return self.create_response(request, {
+                'success': False,
+                'error_message': 'Missing username or password'
+            })
+
+        u = User.objects.get(username='testuser')
+        u.set_password('password')
+        u.save()
+
+        user = authenticate(username=username, password=password)
+        if user:
+            if user.is_active:
+                login(request, user)
+                response = self.create_response(request, {
+                    'success': True,
+                    'username': user.username
+                })
+                response.set_cookie("csrftoken", get_new_csrf_key())
+                return response
+            else:
+                return self.create_response(request, {
+                    'success': False,
+                    'reason': 'disabled',
+                }, HttpForbidden)
+        else:
+            return self.create_response(request, {
+                'success': False,
+                'error_message': 'Incorrect username or password'
+            })
+
+    def logout(self, request, **kwargs):
+        """
+        Attempt to log a user out, and return success status.
+        """
+        self.method_check(request, allowed=['get'])
+        self.is_authenticated(request)
+        if request.user and request.user.is_authenticated():
+            logout(request)
+            return self.create_response(request, { 'success': True })
+        else:
+            return self.create_response(request, { 'success': False, 'error_message': 'You are not authenticated, %s' % request.user.is_authenticated() })
          
          
 class TestResource(ModelResource):
@@ -140,7 +203,7 @@ class TreeResource(ModelResource):
     def calc_mult(self, request, **kwargs):
         '''Return the product of two numbers.'''
         self.method_check(request, allowed=['post'])
-        data = json.loads(request.body.decode("utf-8"))
+        data = self.deserialize(request, request.body, format=request.META.get('CONTENT_TYPE', 'application/json'))
         total = int(data['num1']) * int(data['num2'])
         return self.create_response(request, total)
 

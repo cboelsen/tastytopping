@@ -41,7 +41,7 @@ class TastyApi(object):
         self._baseurl = None
         self._res = None
         self._sess = None
-        self.auth = None
+        self._auth = None
 
     def _session(self):
         if self._sess is None:
@@ -89,6 +89,19 @@ class TastyApi(object):
             'content-type': 'application/json',
         }
 
+    def _get_auth(self):
+        return self._auth
+
+    def _set_auth(self, auth):
+        self._auth = auth
+        try:
+            if self._auth and self._auth.csrf is None:
+                self._auth.extract_csrf_token(self._session().cookies)
+        except AttributeError:
+            pass
+
+    auth = property(_get_auth, _set_auth)
+
     def address(self):
         """Return the address of the API."""
         return self._addr
@@ -112,7 +125,7 @@ class TastyApi(object):
         :param schema: The schema to use for validation.
         :type schema: TastySchema
         :returns: A generator object that yields dicts.
-        :rtype dict
+        :rtype: dict
         """
         retrieve_all_results = False
         if 'limit' not in kwargs:

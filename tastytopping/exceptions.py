@@ -139,3 +139,12 @@ class IncorrectNestedResourceKwargs(PrettyException):
     """
     pass
 
+
+
+class MissingCsrfTokenInCookies(PrettyException):
+    """Raised when no CSRF token could be found in a session's cookies.
+
+    This exception normally occurs when no CSRF token was passed to a
+    HTTPSessionAuth object and there was no user authentication prior (which
+    returned a CSRF token)."""
+    pass

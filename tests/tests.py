@@ -41,9 +41,7 @@ class IntegrationTest(unittest.TestCase):
 
     ################ HELPERS ###############
     def setUp(self):
-        TestResource.auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
-        TestTreeResource.caching = False
-        FACTORY.user.caching = False
+        TestResource.auth = HTTPApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
         self._delete_all_test_objects()
         self._default_auth = TestResource.auth
 
@@ -75,7 +73,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_create_with_factory___object_returned_with_same_fields(self):
         factory = ResourceFactory('http://localhost:8111/test/api/v1')
-        factory.test_resource.auth = HttpApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
+        factory.test_resource.auth = HTTPApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
         resource = factory.test_resource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         self.assertEqual(resource.path, self.TEST_PATH1)
         self.assertEqual(resource.rating, self.TEST_RATING1)
@@ -626,13 +624,23 @@ class IntegrationTest(unittest.TestCase):
     # TODO Cookbook
     # TODO Nested resources.
 
+try:
+    FACTORY.user.auth = HTTPSessionAuth()
+    raise StandardError('Should not have been allowed to use Session auth before getting a CSRF token!')
+except MissingCsrfTokenInCookies:
+    pass
 
-TestResource.auth = HttpApiKeyAuth(IntegrationTest.TEST_USERNAME, IntegrationTest.TEST_API_KEY)
+TestResource.auth = HTTPApiKeyAuth(IntegrationTest.TEST_USERNAME, IntegrationTest.TEST_API_KEY)
+TestTreeResource.caching = False
+FACTORY.user.caching = False
+FACTORY.user.login(username=IntegrationTest.TEST_USERNAME, password='password').post()
+FACTORY.user.auth = HTTPSessionAuth()
 
 CACHE = (
     TestResource(path='cache1'),
     TestResourceDerived(path='cache3'),
     TestTreeResource(name='cache4'),
+    FACTORY.user.get(username='testuser')
 )
 
 

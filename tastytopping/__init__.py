@@ -11,7 +11,8 @@
 
 from .auth import (
     AuthBase,
-    HttpApiKeyAuth,
+    HTTPApiKeyAuth,
+    HTTPSessionAuth,
     HTTPBasicAuth,
     HTTPDigestAuth,
 )
@@ -38,6 +39,7 @@ from .exceptions import (
     CannotConnectToAddress,
     IncorrectNestedResourceArgs,
     IncorrectNestedResourceKwargs,
+    MissingCsrfTokenInCookies,
 )
 
 from .factory import ResourceFactory

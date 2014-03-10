@@ -15,7 +15,7 @@ setup(
     license = "LGPLv3",
     long_description = open('README.rst', 'r').read(),
     install_requires = [
-        'requests >= 1.0.0',
+        'requests >= 1.0.3',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
