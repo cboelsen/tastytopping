@@ -151,10 +151,9 @@ class ResourceMeta(type):
         Note that this doesn't return anything, so any created resources will
         have to be retrieved with :meth:`tastytopping.resource.Resource.get` /
         :meth:`tastytopping.resource.Resource.update` /
-        :meth:`tastytopping.resource.Resource.all`, while all updated resources
-        will have to be refreshed (:meth:`tastytopping.resource.Resource.refresh`).
-        Resource objects passed into delete will be marked as deleted, so any
-        attempt to use them afterwards will raise an exception.
+        :meth:`tastytopping.resource.Resource.all`. Resource objects passed into
+        delete will be marked as deleted, so any attempt to use them afterwards
+        will raise an exception.
 
         Because of the potentially large size of bulk updates, the API will
         respond with a 202 before completing the request (see `wikipedia

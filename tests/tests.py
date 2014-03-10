@@ -614,11 +614,8 @@ class IntegrationTest(unittest.TestCase):
 
     # TESTING:
     # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
-    # TODO Test cookies
 
     # DOCS
-    # TODO Getting started
-    # TODO Optimizations / Bulk
     # TODO Generating API help.
     # TODO Release notes.
     # TODO Cookbook
