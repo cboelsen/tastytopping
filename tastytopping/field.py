@@ -112,58 +112,91 @@ class ResourceListField(Field):
             return field, []
 
 
-def _is_valid_uri(uri, factory):
-    try:
-        if hasattr(uri, 'format'):
-            # TODO This is INEFFICIENT! Ugh!
-            ResourceField(uri, factory).value().full_uri()
-            return True
-    except (BadUri, IndexError):
-        pass
-    return False
+class FieldCreator(object):
+
+    def __init__(self, field, field_type, factory):
+        self._field = field
+        self._field_type = field_type
+        self._factory = factory
+
+    def _is_probably_resource(self, field=None):
+        if field is None:
+            field = self._field
+        return (
+            hasattr(field, 'split') or
+            hasattr(field, 'uri') or (
+                isinstance(field, dict) and
+                'resource_uri' in field
+            )
+        )
+
+    def _is_probably_datetime(self):
+        return (
+            isinstance(self._field, datetime) or (
+                hasattr(self._field, 'format') and
+                self._field.count(':') == 2 and
+                self._field.count('-') == 2 and
+                self._field.count('T') == 1
+            )
+        )
+
+    def _is_probably_resource_list(self):
+        return (
+            isinstance(self._field, list) and
+            self._is_probably_resource(self._field[0])
+        )
 
 
-def _guess_field_type(field, factory):
-    is_uri = lambda f: _is_valid_uri(f, factory)
-    is_field_dict = lambda f: isinstance(f, dict) and 'resource_uri' in f
-    is_to_many = lambda f: isinstance(f, list) and (is_uri(f[0]) or is_field_dict(f[0]))
-    is_datetime = lambda f: hasattr(f, 'format') and f.count(':') == 2 and f.count('-') == 2 and f.count('T') == 1
-    type_map = {
-        is_datetime: tastytypes.DATETIME,
-        is_field_dict: tastytypes.RELATED,
-        is_to_many: tastytypes.RELATED,
-        is_uri: tastytypes.RELATED,
-    }
-    for is_field_type, field_type in type_map.items():
-        if is_field_type(field):
-            return field_type
+    def _try_remaining_types(self):
+        if self._is_probably_datetime():
+            return DateTimeField(self._field)
+        else:
+            return Field(self._field)
+
+    def _create_guessed_field(self):
+        try:
+            if self._is_probably_resource():
+                result = ResourceField(self._field, self._factory)
+                result.value().full_uri()
+            elif self._is_probably_resource_list():
+                result = ResourceListField(self._field, self._factory)
+                result[0].value().full_uri()
+            else:
+                result = self._try_remaining_types()
+        except (BadUri, IndexError):
+            result = self._try_remaining_types()
+        return result
+
+    def _create_known_field(self):
+        try:
+            if self._field_type == tastytypes.RELATED:
+                if self._is_probably_resource(self._field):
+                    result = ResourceField(self._field, self._factory)
+                else:
+                    result = ResourceListField(self._field, self._factory)
+            elif self._field_type == tastytypes.DATETIME:
+                result = DateTimeField(self._field)
+            else:
+                result = Field(self._field)
+        except Exception as error:
+            raise InvalidFieldValue(
+                error,
+                'Encountered "{0}" while creating a "{1}" Field with the value "{2}"'.format(
+                    error, self._field_type, self._field
+                )
+            )
+        return result
+
+    def create(self):
+        if self._field is None:
+            return Field(None)
+        if self._field_type is None:
+            return self._create_guessed_field()
+        return self._create_known_field()
 
 
 def create_field(field, field_type, factory):
     """Create an appropriate Field based on the field_type."""
 
-    if field_type is None:
-        field_type = _guess_field_type(field, factory)
-
-    if field is None:
-        return Field(None)
-
-    try:
-        if field_type == tastytypes.RELATED:
-            # Single resources can be either a string, Resource, or dict.
-            # TODO This has already been tested for above - need to refactor.
-            if (hasattr(field, 'split') or hasattr(field, 'uri') or
-                    (isinstance(field, dict) and 'resource_uri' in field)):
-                result = ResourceField(field, factory)
-            else:
-                result = ResourceListField(field, factory)
-        elif field_type == tastytypes.DATETIME:
-            result = DateTimeField(field)
-        else:
-            result = Field(field)
-    except Exception as error:
-        raise InvalidFieldValue(
-            error,
-            'Encountered "{0}" while creating a "{1}" Field with the value "{2}"'.format(error, field_type, field)
-        )
-    return result
+    creator = FieldCreator(field, field_type, factory)
+    return creator.create()
