@@ -1,0 +1,19 @@
+language: python
+python: 2.7
+env:
+  - TOX_ENV=py34-dev
+  - TOX_ENV=py34-0.11
+  - TOX_ENV=py33-dev
+  - TOX_ENV=py33-0.11
+  - TOX_ENV=py33-0.10
+  - TOX_ENV=py27-dev
+  - TOX_ENV=py27-0.11
+  - TOX_ENV=py27-0.10
+  - TOX_ENV=py27-0.9
+  - TOX_ENV=docs
+  - TOX_ENV=pylint
+install:
+  - pip install tox
+  - pip install -r requirements.txt
+script:
+  - tox -e $TOX_ENV
