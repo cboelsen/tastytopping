@@ -14,7 +14,10 @@ __all__ = ('create_field', )
 
 from datetime import datetime
 
-from .exceptions import InvalidFieldValue
+from .exceptions import (
+    InvalidFieldValue,
+    BadUri,
+)
 from . import tastytypes
 
 
@@ -109,8 +112,19 @@ class ResourceListField(Field):
             return field, []
 
 
-def _guess_field_type(field):
-    is_uri = lambda f: hasattr(f, 'format') and f.startswith('/') and f.endswith('/')
+def _is_valid_uri(uri, factory):
+    try:
+        if hasattr(uri, 'format'):
+            # TODO This is INEFFICIENT! Ugh!
+            ResourceField(uri, factory).value().full_uri()
+            return True
+    except (BadUri, IndexError):
+        pass
+    return False
+
+
+def _guess_field_type(field, factory):
+    is_uri = lambda f: _is_valid_uri(f, factory)
     is_field_dict = lambda f: isinstance(f, dict) and 'resource_uri' in f
     is_to_many = lambda f: isinstance(f, list) and (is_uri(f[0]) or is_field_dict(f[0]))
     is_datetime = lambda f: hasattr(f, 'format') and f.count(':') == 2 and f.count('-') == 2 and f.count('T') == 1
@@ -129,7 +143,7 @@ def create_field(field, field_type, factory):
     """Create an appropriate Field based on the field_type."""
 
     if field_type is None:
-        field_type = _guess_field_type(field)
+        field_type = _guess_field_type(field, factory)
 
     if field is None:
         return Field(None)
@@ -137,6 +151,7 @@ def create_field(field, field_type, factory):
     try:
         if field_type == tastytypes.RELATED:
             # Single resources can be either a string, Resource, or dict.
+            # TODO This has already been tested for above - need to refactor.
             if (hasattr(field, 'split') or hasattr(field, 'uri') or
                     (isinstance(field, dict) and 'resource_uri' in field)):
                 result = ResourceField(field, factory)

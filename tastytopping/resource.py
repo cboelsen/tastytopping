@@ -75,7 +75,7 @@ class Resource(_BASE_META_BRIDGE, object):
         self._set('_resource_fields', fields)
         self._set('_cached_fields', {})
         self._set('_caching', self.caching)
-        self._set('_full_uri_', None)
+        self._set('_full_uri', None)
         if not self._caching and not self._uri:
             self.save()
 
@@ -100,7 +100,7 @@ class Resource(_BASE_META_BRIDGE, object):
         try:
             return self._schema().default(name)
         except FieldNotInSchema:
-            return NestedResource(self._full_uri() + name, self._api(), self._factory)
+            return NestedResource(self.full_uri() + name, self._api(), self._factory)
 
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self._fields().keys())))
@@ -136,7 +136,7 @@ class Resource(_BASE_META_BRIDGE, object):
     def _fields(self):
         if not self._resource_fields or not self._caching:
             self._schema().check_detail_request_allowed('get')
-            fields = self._api().get(self._full_uri())
+            fields = self._api().get(self.full_uri())
             fields = self._create_fields(**fields)
             self._set('_resource_fields', fields)
         return self._resource_fields
@@ -199,22 +199,17 @@ class Resource(_BASE_META_BRIDGE, object):
         fields = self._stream_fields(kwargs)
         try:
             self._schema().check_detail_request_allowed('patch')
-            self._api().patch(self._full_uri(), **fields)
+            self._api().patch(self.full_uri(), **fields)
         except RestMethodNotAllowed:
             self._schema().check_detail_request_allowed('put')
             current_fields = self._stream_fields(self._fields())
             current_fields.update(fields)
-            self._api().put(self._full_uri(), **current_fields)
+            self._api().put(self.full_uri(), **current_fields)
 
     def _set(self, name, value):
         #Avoiding python's normal __setattr__ behaviour to avoid infinite recursion.
         attr = '_Resource{0}'.format(name) if name.startswith('__') else name
         super(Resource, self).__setattr__(attr, value)
-
-    def _full_uri(self):
-        if self._full_uri_ is None:
-            self._set('_full_uri_', self._api().create_full_uri(self.uri()))
-        return self._full_uri_
 
     @classmethod
     def _full_name(cls):
@@ -259,6 +254,16 @@ class Resource(_BASE_META_BRIDGE, object):
             raise ResourceHasNoUri()
         return self._uri
 
+    def full_uri(self):
+        """Returns the full resource URI for this object, including server name.
+
+        :returns: The full URI (ie. protocol + server name + resource_uri)
+        :rtype: str
+        """
+        if self._full_uri is None:
+            self._set('_full_uri', self._api().create_full_uri(self.uri()))
+        return self._full_uri
+
     def check_alive(self):
         """Check that the Resource has not been deleted.
 
@@ -278,7 +283,7 @@ class Resource(_BASE_META_BRIDGE, object):
         """
         self.check_alive()
         self._schema().check_detail_request_allowed('delete')
-        self._api().delete(self._full_uri())
+        self._api().delete(self.full_uri())
         self._alive.remove(self.uri())
 
     def set_caching(self, caching):
