@@ -5,18 +5,20 @@ import psutil
 import threading
 import time
 
+COMMAND = 'python manage.py runserver 8111 --noreload'
+
 
 def start():
-    os.system('python manage.py runserver 8111 --noreload')
+    os.system(COMMAND)
 
 
 def kill_django():
-    print('Shutting down test API...')
+    command = COMMAND.split()
     for p in psutil.process_iter():
         try:
-            cmd = p.cmdline
-            if 'manage.py' in cmd and 'runserver' in cmd and '8111' in cmd:
+            if p.cmdline() == command:
                 p.terminate()
+                print('Shut down test API...')
         except:
             pass
     remove_db()

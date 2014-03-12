@@ -1,6 +1,9 @@
 TastyTopping
 ============
 
+.. image:: https://api.travis-ci.org/cboelsen/tastytopping.png?branch=master
+        :target: https://travis-ci.org/cboelsen/tastytopping
+
 Designed to take the heavy lifting out of working with django-tastypie APIs on
 the client side.
 
