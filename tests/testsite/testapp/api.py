@@ -15,7 +15,7 @@ from tastypie.models import ApiKey
 from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
 from tastypie.utils import trailing_slash
     
-from .models import Test, Tree, TestContainer, InvalidField
+from .models import Test, Tree, TestContainer, InvalidField, NoUniqueInitField
 
 
 class ApiKeyResource(ModelResource):
@@ -262,3 +262,11 @@ class InvalidFieldResource(ModelResource):
         queryset = InvalidField.objects.all()
         resource_name = 'invalid_field'
         authorization = Authorization()
+
+
+class NoUniqueInitFieldResource(ModelResource):
+    class Meta:
+        queryset = NoUniqueInitField.objects.all()
+        resource_name = 'no_unique'
+        authorization = Authorization()
+        filtering = {'name': ALL,}

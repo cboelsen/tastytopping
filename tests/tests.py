@@ -590,6 +590,11 @@ class IntegrationTest(unittest.TestCase):
         res1 = FACTORY.test_resource(_fields='/something/that/wont/merge/')
         self.assertRaises(BadUri, getattr, res1, 'rating')
 
+    def test_creating_two_identical_resources___second_is_unable_to_get_created_resource(self):
+        res1 = FACTORY.no_unique(name='name', num=0).save()
+        res2 = FACTORY.no_unique(name='name', num=0)
+        self.assertRaises(MultipleResourcesReturned, res2.save)
+
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
     #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()

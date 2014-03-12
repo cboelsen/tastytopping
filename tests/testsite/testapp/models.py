@@ -24,3 +24,8 @@ class TestContainer(models.Model):
 class InvalidField(models.Model):
     name = models.CharField(max_length=255, unique=True)
     limit = models.IntegerField()
+
+
+class NoUniqueInitField(models.Model):
+    name = models.CharField(max_length=255)
+    num = models.IntegerField()
