@@ -112,7 +112,7 @@ class ResourceListField(Field):
             return field, []
 
 
-class FieldCreator(object):
+class _FieldCreator(object):
 
     def __init__(self, field, field_type, factory):
         self._field = field
@@ -188,6 +188,7 @@ class FieldCreator(object):
         return result
 
     def create(self):
+        """Create a Field object based on the construction params."""
         if self._field is None:
             return Field(None)
         if self._field_type is None:
@@ -198,5 +199,5 @@ class FieldCreator(object):
 def create_field(field, field_type, factory):
     """Create an appropriate Field based on the field_type."""
 
-    creator = FieldCreator(field, field_type, factory)
+    creator = _FieldCreator(field, field_type, factory)
     return creator.create()

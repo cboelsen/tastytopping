@@ -93,12 +93,14 @@ class TastyApi(object):
         return self._auth
 
     def _set_auth(self, auth):
-        self._auth = auth
         try:
-            if self._auth and self._auth.csrf is None:
-                self._auth.extract_csrf_token(self._session().cookies)
+            current_csrf = auth.csrf
         except AttributeError:
             pass
+        else:
+            if current_csrf is None:
+                auth.extract_csrf_token(self._session().cookies)
+        self._auth = auth
 
     auth = property(_get_auth, _set_auth)
 

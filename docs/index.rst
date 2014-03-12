@@ -47,7 +47,7 @@ The following needs to be installed locally to run TastyTopping:
 
 - Python 2.7+ or Python 3.3+
 
-- `requests <http://requests.readthedocs.org/en/latest/>`_ >= 1.0.3
+- `requests <http://requests.readthedocs.org/en/latest/>`_ >= 1.2.3
 
 
 Tested with / against:
@@ -56,7 +56,7 @@ Tested with / against:
 
 - `django-tastypie <http://django-tastypie.readthedocs.org/en/latest/>`_ >= 0.9.14
 
-- `requests <http://requests.readthedocs.org/en/latest/>`_ >= 1.0.3
+- `requests <http://requests.readthedocs.org/en/latest/>`_ >= 1.2.3
 
 (see the `tox.ini
 <https://github.com/cboelsen/tastytopping/blob/master/tox.ini>`_ file for

@@ -23,7 +23,7 @@ Installation is the usual simple affair with python nowadays:
 
         - Python 2.7+ or Python 3.3+
 
-        - requests 1.0.3+
+        - requests 1.2.3+
 
     2. Either check out TastyTopping from
         `github <https://github.com/cboelsen/tastytopping>`_ or to pull a
