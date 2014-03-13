@@ -195,16 +195,16 @@ class Resource(_BASE_META_BRIDGE, object):
         return details
 
     def _update_remote_fields(self, **kwargs):
-        # Update both the remote and local values.
+        full_uri = self.full_uri()
         fields = self._stream_fields(kwargs)
         try:
             self._schema().check_detail_request_allowed('patch')
-            self._api().patch(self.full_uri(), **fields)
+            self._api().patch(full_uri, **fields)
         except RestMethodNotAllowed:
             self._schema().check_detail_request_allowed('put')
             current_fields = self._stream_fields(self._fields())
             current_fields.update(fields)
-            self._api().put(self.full_uri(), **current_fields)
+            self._api().put(full_uri, **current_fields)
 
     def _set(self, name, value):
         #Avoiding python's normal __setattr__ behaviour to avoid infinite recursion.

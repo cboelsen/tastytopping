@@ -595,6 +595,9 @@ class IntegrationTest(unittest.TestCase):
         res2 = FACTORY.no_unique(name='name', num=0)
         self.assertRaises(MultipleResourcesReturned, res2.save)
 
+    def test_creating_resource_disallowing_gets___created_resource_not_found_raised(self):
+        self.assertRaises(CreatedResourceNotFound, FACTORY.only_post(path=self.TEST_PATH1).save)
+
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
     #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()

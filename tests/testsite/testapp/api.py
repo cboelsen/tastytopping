@@ -148,6 +148,15 @@ class NoFilterResource(ModelResource):
         filtering = {}
 
 
+class OnlyPostResource(ModelResource):
+    class Meta:
+        queryset = Test.objects.all()
+        resource_name = 'only_post'
+        list_allowed_methods   = ['post']
+        detail_allowed_methods = []
+        authorization = Authorization()
+
+
 class TreeResource(ModelResource):
     parent = fields.ToOneField('self', 'parent', null=True)
     children = fields.ToManyField('self', 'children', null=True, related_name='parent')

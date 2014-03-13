@@ -6,6 +6,7 @@ from .api import (
     UserResource,
     ApiKeyResource,
     NoFilterResource,
+    OnlyPostResource,
     TreeResource,
     TestContainerResource,
     InvalidFieldResource,
@@ -18,6 +19,7 @@ api_v1.register(TestResource())
 api_v1.register(UserResource())
 api_v1.register(ApiKeyResource())
 api_v1.register(NoFilterResource())
+api_v1.register(OnlyPostResource())
 api_v1.register(TreeResource())
 api_v1.register(TestContainerResource())
 api_v1.register(InvalidFieldResource())
