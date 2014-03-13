@@ -2,6 +2,7 @@
 import atexit
 import os
 import psutil
+import subprocess
 import threading
 import time
 
@@ -9,7 +10,11 @@ COMMAND = 'python manage.py runserver 8111 --noreload'
 
 
 def start():
-    os.system(COMMAND)
+    cmd = COMMAND
+    verbose = os.environ.get('VERBOSE')
+    if not verbose:
+        cmd += ' > /dev/null 2>&1'
+    os.system(cmd)
 
 
 def kill_django():
@@ -32,15 +37,14 @@ def remove_db():
 
 
 def run():
-    print('Setting up test API...')
     atexit.register(kill_django)
     os.chdir(os.path.join('tests', 'testsite'))
     remove_db()
-    os.system('python manage.py syncdb --noinput')
-    os.system('python manage.py createsuperuser --noinput --username=testuser --email=none@test.test')
+    subprocess.check_call('python manage.py syncdb --noinput'.split())
+    subprocess.check_call('python manage.py createsuperuser --noinput --username=testuser --email=none@test.test'.split())
     t = threading.Thread(target=start)
     t.daemon = True
     t.start()
-    os.system('python manage.py user')
+    subprocess.check_call('python manage.py user'.split())
 
 run()
