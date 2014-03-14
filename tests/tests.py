@@ -598,6 +598,11 @@ class IntegrationTest(unittest.TestCase):
     def test_creating_resource_disallowing_gets___created_resource_not_found_raised(self):
         self.assertRaises(CreatedResourceNotFound, FACTORY.only_post(path=self.TEST_PATH1).save)
 
+    def test_date_only_model_field___correctly_handle_date_only(self):
+        DATE = datetime.datetime(2014, 11, 12, 13, 14, 15)
+        res1 = TestResource(path=self.TEST_PATH1, date_only=DATE).save()
+        self.assertEqual(datetime.datetime(2014, 11, 12), res1.date_only)
+
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
     #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
@@ -614,6 +619,8 @@ class IntegrationTest(unittest.TestCase):
 
 
     # FEATURES:
+    # TODO Allow stacking filters (ala Django) and allow count() on this object-thing. See:
+    #           https://docs.djangoproject.com/en/dev/ref/models/querysets/
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Have a generate_docs() method on the factory.
     # TODO Have 'help' return RST?!?
@@ -625,8 +632,8 @@ class IntegrationTest(unittest.TestCase):
 
     # DOCS
     # TODO Generating API help.
-    # TODO Release notes.
     # TODO Cookbook
+    #   - Extending Resource classes with own methods
     # TODO Nested resources.
 
 try:

@@ -198,7 +198,7 @@ class TastySchema(object):
         result = {}
         for field, value in fields.items():
             for fil in filters:
-                if field.startswith(fil):
+                if field.split('__')[0] == fil:
                     self._check_filter(field)
                     result[field] = value
                     break

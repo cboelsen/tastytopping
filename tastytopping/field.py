@@ -59,7 +59,10 @@ class DateTimeField(Field):
             try:
                 value = datetime.strptime(value, tastytypes.DATETIME_FORMAT1)
             except ValueError:
-                value = datetime.strptime(value, tastytypes.DATETIME_FORMAT2)
+                try:
+                    value = datetime.strptime(value, tastytypes.DATETIME_FORMAT2)
+                except ValueError:
+                    value = datetime.strptime(value, tastytypes.DATETIME_FORMAT3)
         super(DateTimeField, self).__init__(value)
         self._str = stream
 

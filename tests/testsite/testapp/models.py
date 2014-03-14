@@ -9,6 +9,7 @@ class Test(models.Model):
     title  = models.CharField(max_length=255, null=True)
     text   = models.TextField(null=True, blank=True)
     created_by = models.OneToOneField(User, null=True)
+    date_only = models.DateField('date', null=True)
 
 
 class Tree(models.Model):
