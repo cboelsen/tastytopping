@@ -34,4 +34,13 @@ setup(
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
+    keywords=[
+        'tastypie',
+        'client',
+        'django',
+        'rest',
+        'api',
+        'resource',
+        'orm',
+        ],
 )

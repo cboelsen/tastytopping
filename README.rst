@@ -69,8 +69,6 @@ Features
           delete=[new_resource],
       )
 
-- Auto-generate docs for your tastypie API (in progress).
-
 Find more information on these features at `read the docs!
 <http://tastytopping.readthedocs.org/en/latest/>`_
 

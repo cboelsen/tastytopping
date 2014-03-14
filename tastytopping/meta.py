@@ -195,7 +195,3 @@ class ResourceMeta(type):
         # Mark each deleted resource as deleted.
         for resource in delete:
             cls._alive.remove(resource.uri())
-
-    def help(cls, verbose=False):
-        """Return a string with the help for this resource's schema."""
-        return cls._schema().help(verbose)

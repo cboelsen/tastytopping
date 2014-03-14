@@ -582,10 +582,6 @@ class IntegrationTest(unittest.TestCase):
         str(res1._schema())
         str(ReadOnlyField('text', 1))
 
-    def test_help___doesnt_crash(self):
-        FACTORY.test_resource.help()
-        FACTORY.test_resource.help(verbose=True)
-
     def test_resource_with_malformed_uri___api_cannot_create_full_uri(self):
         res1 = FACTORY.test_resource(_fields='/something/that/wont/merge/')
         self.assertRaises(BadUri, getattr, res1, 'rating')
@@ -601,7 +597,7 @@ class IntegrationTest(unittest.TestCase):
     def test_date_only_model_field___correctly_handle_date_only(self):
         DATE = datetime.datetime(2014, 11, 12, 13, 14, 15)
         res1 = TestResource(path=self.TEST_PATH1, date_only=DATE).save()
-        self.assertEqual(datetime.datetime(2014, 11, 12), res1.date_only)
+        self.assertEqual(datetime.datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
 
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
@@ -610,20 +606,11 @@ class IntegrationTest(unittest.TestCase):
     #    res2.rating = 11
     #    res2.save()
 
-    #def test_zzz(self):
-    #    import sys
-    #    sys.stderr.write('\n' + TestResource.help())
-    #    sys.stderr.write('\n' + FACTORY.user.help())
-    #    sys.stderr.write('\n' + TestTreeResource.help(verbose=True))
-    #    sys.stderr.write('\n' + TestTreeResource.help())
-
 
     # FEATURES:
     # TODO Allow stacking filters (ala Django) and allow count() on this object-thing. See:
     #           https://docs.djangoproject.com/en/dev/ref/models/querysets/
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
-    # TODO Have a generate_docs() method on the factory.
-    # TODO Have 'help' return RST?!?
     # TODO Single dispatch functions.
     # TODO asyncio
 
@@ -631,7 +618,6 @@ class IntegrationTest(unittest.TestCase):
     # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
 
     # DOCS
-    # TODO Generating API help.
     # TODO Cookbook
     #   - Extending Resource classes with own methods
     # TODO Nested resources.
