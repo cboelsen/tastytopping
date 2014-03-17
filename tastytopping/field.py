@@ -163,7 +163,7 @@ class _FieldCreator(object):
                 result.value().full_uri()
             elif self._is_probably_resource_list():
                 result = ResourceListField(self._field, self._factory)
-                result[0].value().full_uri()
+                result.value()[0].full_uri()
             else:
                 result = self._try_remaining_types()
         except (BadUri, IndexError):

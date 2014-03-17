@@ -18,11 +18,10 @@ __all__ = ('ResourceMeta', )
 
 
 from .exceptions import (
-    NoResourcesExist,
     MultipleResourcesReturned,
 )
-from .field import create_field
 from .nested import NestedResource
+from .queryset import QuerySet
 
 
 class ResourceMeta(type):
@@ -45,14 +44,14 @@ class ResourceMeta(type):
         obj._class_api = None
         obj._class_resource = None
         obj._class_schema = None
-        obj._full_name_ = None
+        obj._full_name = None
         return obj
 
     def __len__(cls):
-        return cls.count()
+        return cls.all().count()
 
     def __getattr__(cls, name):
-        return NestedResource(cls._full_name() + name, cls._api(), cls._factory)
+        return NestedResource(cls.full_name() + name, cls._api(), cls._factory)
 
     def _set_auth(cls, auth):
         def _set_api_auth(cls, auth):
@@ -74,23 +73,7 @@ class ResourceMeta(type):
         :rtype: list
         :raises: NoResourcesExist
         """
-        exist = False
-        cls._schema().check_fields_in_filters(kwargs)
-
-        fields = {}
-        for name, value in kwargs.items():
-            field_desc = cls._schema().field(name)
-            field_type = field_desc and field_desc['type']
-            relate_name, relate_field = create_field(value, field_type, cls._factory).filter(name)
-            fields[relate_name] = relate_field
-
-        cls._schema().check_list_request_allowed('get')
-        for response in cls._api().paginate(cls._full_name(), **fields):
-            for obj in response['objects']:
-                yield cls(_fields=obj)
-                exist = True
-        if not exist:
-            raise NoResourcesExist(cls._name(), kwargs)
+        return QuerySet(cls, cls._schema(), cls._api(), **kwargs)
 
     def all(cls):
         """Return all existing objects via the API.
@@ -99,7 +82,7 @@ class ResourceMeta(type):
         :rtype: list
         :raises: NoResourcesExist
         """
-        return cls.filter()
+        return QuerySet(cls, cls._schema(), cls._api())
 
     def get(cls, **kwargs):
         """Return an existing object via the API.
@@ -129,21 +112,8 @@ class ResourceMeta(type):
         of them will result in a ResourceDeleted exception).
         """
         cls._schema().check_list_request_allowed('delete')
-        cls._api().delete(cls._full_name())
+        cls._api().delete(cls.full_name())
         cls._alive = set()
-
-    def count(cls, **kwargs):
-        """Return the number of records for this resource.
-
-        :param kwargs: Keywors arguments to filter the search.
-        :type kwargs: dict
-        :returns: The number of records for this resource.
-        :rtype: int
-        """
-        kwargs['limit'] = 1
-        cls._schema().check_list_request_allowed('get')
-        response = cls._api().get(cls._full_name(), **kwargs)
-        return response['meta']['total_count']
 
     def bulk(cls, create=None, update=None, delete=None):
         """Create, update, and delete to multiple resources in a single request.
@@ -176,7 +146,7 @@ class ResourceMeta(type):
         for resource in update + delete:
             resource.check_alive()
         # The resources to create or update are sent in a single list.
-        resources = create
+        resources = [cls._stream_fields(cls._create_fields(**res)) for res in create]
         for resource in update:
             resource_fields = {n: v.stream() for n, v in resource._fields().items()}
             resource_fields['resource_uri'] = resource.uri()
@@ -187,7 +157,7 @@ class ResourceMeta(type):
             [r.fields() for r in resources if hasattr(r, 'uri')]
         )
         cls._api().bulk(
-            cls._full_name(),
+            cls.full_name(),
             cls._schema(),
             resources,
             [d.uri() for d in delete]

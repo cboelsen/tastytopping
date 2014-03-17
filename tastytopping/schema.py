@@ -96,7 +96,7 @@ class TastySchema(object):
             raise NoFiltersInSchema(self._schema)
 
     def _check_filter(self, field):
-        if field in ['limit', 'order_by']:
+        if field in ['limit', 'order_by', 'offset']:
             return
         try:
             field_name, filter_type = field.split('__')
@@ -108,7 +108,7 @@ class TastySchema(object):
             self._filters()[field.split('__', 1)[0]]  # Check that the field can be filtered on. # pylint: disable=W0106
 
     def _check_schema(self):
-        invalid_names = set(['limit', 'order_by'])
+        invalid_names = set(['limit', 'order_by', 'offset'])
         field_names = set(self._fields().keys())
         invalid_field_names = field_names & invalid_names
         if invalid_field_names:
@@ -194,7 +194,7 @@ class TastySchema(object):
         if not fields:
             return fields
         filters = self._filters().copy()
-        filters.update({'limit': 0, 'order_by': 0})
+        filters.update({'limit': 0, 'order_by': 0, 'offset': 0})
         result = {}
         for field, value in fields.items():
             for fil in filters:

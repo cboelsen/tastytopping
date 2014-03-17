@@ -367,7 +367,7 @@ class IntegrationTest(unittest.TestCase):
         res2 = TestResource(path=self.TEST_PATH2).save()
         self.assertEqual(len(TestResource), 2)
         res2 = TestResource(path='another_path').save()
-        self.assertEqual(TestResource.count(), 3)
+        self.assertEqual(TestResource.all().count(), 3)
 
     def test_bool_value_of_resource_instance___true_when_exists_and_false_when_not(self):
         res = TestResource(path=self.TEST_PATH1).save()
@@ -599,6 +599,81 @@ class IntegrationTest(unittest.TestCase):
         res1 = TestResource(path=self.TEST_PATH1, date_only=DATE).save()
         self.assertEqual(datetime.datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
 
+    def test_indexing_resources___index_number_refers_to_item_number_in_list(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        self.assertEqual(self.TEST_PATH1 + '3', TestResource.all()[3].path)
+        self.assertEqual(self.TEST_PATH1 + '7', TestResource.all()[7].path)
+
+    def test_slicing_resources___slice_refers_to_item_numbers_in_list(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        resource_list = TestResource.all()[2:7]
+        self.assertEqual(self.TEST_PATH1 + '4', resource_list[2].path)
+        self.assertEqual(self.TEST_PATH1 + '6', resource_list[4].path)
+
+    def test_multiple_filters___filters_are_combined(self):
+        TestResource.bulk(create=[
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'title': 'A'},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'title': 'B'},
+            {'path': self.TEST_PATH1+'3', 'rating': 40, 'title': 'A'},
+        ])
+        self.assertEqual(
+            TestResource.get(path=self.TEST_PATH1+'1'),
+            TestResource.filter(title='A').all().filter(rating=20)[0]
+        )
+
+    def test_too_large_index___exception_raised(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        with self.assertRaises(IndexError):
+            TestResource.all()[10]
+        with self.assertRaises(IndexError):
+            TestResource.all()[9:11]
+
+    def test_negative_index___exception_raised(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        with self.assertRaises(IndexError):
+            TestResource.all()[-1]
+        with self.assertRaises(IndexError):
+            TestResource.all()[1:-1]
+
+    def test_wrong_index_type___exception_raised(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        with self.assertRaises(TypeError):
+            TestResource.all()['a']
+
+    def test_empty_slice___empty_list_returned(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        self.assertFalse(TestResource.all()[1:1])
+
+    def test_queryset_to_bool_conversion___empty_list_returns_false(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        self.assertTrue(TestResource.filter(path=self.TEST_PATH1 + '1'))
+        self.assertFalse(TestResource.filter(path=self.TEST_PATH1 + '21'))
+
+    def test_queryset_stores_iterated_values___same_values_returned_on_next_loop1(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        all_resources = TestResource.all()
+        self.assertEqual(list(all_resources), list(all_resources))
+
+    def test_queryset_stores_iterated_values___same_values_returned_on_next_loop2(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        all_resources = TestResource.all()
+        next(iter(all_resources))
+        next(iter(all_resources))
+        self.assertEqual(list(all_resources), list(all_resources))
+
+    def test_multiple_order_by___ordering_is_combined(self):
+        TestResource.bulk(create=[
+            {'path': self.TEST_PATH1+'1', 'rating': 40, 'date': datetime.datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 3)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'9', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+        ])
+        resources = TestResource.filter(rating__lt=50).order_by('rating').order_by('-date')
+        self.assertEquals(resources[0].path, self.TEST_PATH1+'2')
+        self.assertEquals(resources[1].path, self.TEST_PATH1+'3')
+        self.assertEquals(resources[2].path, self.TEST_PATH1+'1')
+
+
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
     #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
@@ -608,6 +683,7 @@ class IntegrationTest(unittest.TestCase):
 
 
     # FEATURES:
+    # TODO Thread-safety
     # TODO Allow stacking filters (ala Django) and allow count() on this object-thing. See:
     #           https://docs.djangoproject.com/en/dev/ref/models/querysets/
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
@@ -615,6 +691,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO asyncio
 
     # TESTING:
+    # TODO Thread-safety
     # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
 
     # DOCS

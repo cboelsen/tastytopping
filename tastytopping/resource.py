@@ -160,12 +160,13 @@ class Resource(_BASE_META_BRIDGE, object):
         fields = self._create_fields(**fields)
         return fields, uri
 
-    def _create_fields(self, **kwargs):
+    @classmethod
+    def _create_fields(cls, **kwargs):
         fields = {}
         for name, value in kwargs.items():
-            field_desc = self._schema().field(name)
+            field_desc = cls._schema().field(name)
             field_type = field_desc and field_desc['type']
-            fields[name] = create_field(value, field_type, self._factory)
+            fields[name] = create_field(value, field_type, cls._factory)
         return fields
 
     @staticmethod
@@ -177,7 +178,7 @@ class Resource(_BASE_META_BRIDGE, object):
         fields = self._schema().remove_fields_not_in_filters(fields)
         fields['limit'] = 2
         self._schema().check_list_request_allowed('get')
-        results = self._api().paginate(self._full_name(), **fields)
+        results = self._api().paginate(self.full_name(), **fields)
         resources = next(results)['objects']
         if len(resources) > 1:
             raise MultipleResourcesReturned(fields, resources)
@@ -186,7 +187,7 @@ class Resource(_BASE_META_BRIDGE, object):
     def _create_new_resource(self, **kwargs):
         fields = self._create_fields(**kwargs)
         self._schema().check_list_request_allowed('post')
-        details = self._api().post(self._full_name(), **self._stream_fields(fields))
+        details = self._api().post(self.full_name(), **self._stream_fields(fields))
         if not details:
             try:
                 details = self._get_this_resource(fields)
@@ -212,10 +213,10 @@ class Resource(_BASE_META_BRIDGE, object):
         super(Resource, self).__setattr__(attr, value)
 
     @classmethod
-    def _full_name(cls):
-        if cls._full_name_ is None:
-            cls._full_name_ = cls._api().address() + cls._name() + '/'
-        return cls._full_name_
+    def full_name(cls):
+        if cls._full_name is None:
+            cls._full_name = cls._api().address() + cls._name() + '/'
+        return cls._full_name
 
     @classmethod
     def _api(cls):
@@ -241,7 +242,7 @@ class Resource(_BASE_META_BRIDGE, object):
     def _schema(cls):
         """Return the schema used by this class."""
         if cls._class_schema is None:
-            cls._class_schema = retrieve_from_cache(cls._api().schema, cls._full_name())
+            cls._class_schema = retrieve_from_cache(cls._api().schema, cls.full_name())
         return cls._class_schema
 
     def uri(self):
