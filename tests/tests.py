@@ -630,6 +630,10 @@ class IntegrationTest(unittest.TestCase):
             TestResource.all()[10]
         with self.assertRaises(IndexError):
             TestResource.all()[9:11]
+        with self.assertRaises(IndexError):
+            TestResource.all()[-10]
+        with self.assertRaises(IndexError):
+            TestResource.all()[-11:-9]
 
     def test_negative_index___correct_resource_returned(self):
         TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
@@ -706,6 +710,27 @@ class IntegrationTest(unittest.TestCase):
         TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         TestResource.all().delete()
         self.assertEquals(0, TestResource.all().count())
+
+    def test_reverse_queryset___returned_resources_order_reversed_list(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        normal_order = TestResource.all()
+        reverse_order = normal_order.reverse()
+        self.assertEqual(list(normal_order)[0], list(reverse_order)[-1])
+        self.assertEqual(list(normal_order)[-1], list(reverse_order)[0])
+
+    def test_reverse_queryset___returned_resources_order_reversed_slice(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        normal_order = TestResource.all()
+        reverse_order = normal_order.reverse()
+        self.assertEqual(normal_order[:][0], reverse_order[:][-1])
+        self.assertEqual(normal_order[:][-1], reverse_order[:][0])
+
+    def test_reverse_twice_queryset___returned_resources_order_not_reversed(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        normal_order = TestResource.all()
+        reverse_order = normal_order.reverse().reverse()
+        self.assertEqual(normal_order[:][0], reverse_order[:][0])
+        self.assertEqual(normal_order[:][-1], reverse_order[:][-1])
 
     #def test_queryset_logical_operator_and___filters_are_combined(self):
     #    TestResource.bulk(create=[

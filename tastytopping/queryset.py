@@ -24,7 +24,6 @@ from .field import create_field
 
 
 # TODO Logical operators __and__, __or__, etc.
-# TODO reverse()
 # TODO none() ?!?!?!?!
 # TODO prefetch_related()
 # TODO iterator() to prevent caching (return ret()??)
@@ -56,10 +55,11 @@ class QuerySet(object):
         self._resource = resource
         self._schema = schema
         self._api = api
+        self._kwargs = kwargs
+        self._reverse = kwargs.pop('reverse', False)
         self._ordering = kwargs.pop('order_by', [])
         if not isinstance(self._ordering, list):
             self._ordering = [self._ordering]
-        self._kwargs = kwargs
 
         self._val_retriever = None
         self._retrieved_resources = []
@@ -81,13 +81,22 @@ class QuerySet(object):
             raise TypeError("Invalid argument type.")
 
     def __iter__(self):
+        # TODO Starting to get a bit big here... refactor.
         exist = bool(self._retrieved_resources)
-        for resource in self._retrieved_resources:
-            yield resource
-        for resource in self._retriever():
-            self._retrieved_resources.append(resource)
-            yield resource
-            exist = True
+        if not self._reverse:
+            for resource in self._retrieved_resources:
+                yield resource
+            for resource in self._retriever():
+                self._retrieved_resources.append(resource)
+                yield resource
+                exist = True
+        else:
+            # TODO Very inefficient! Redo!
+            for resource in self._retriever():
+                self._retrieved_resources.append(resource)
+                exist = True
+            for resource in self._retrieved_resources[::-1]:
+                yield resource
         if not exist:
             raise NoResourcesExist(self._resource._name(), self._kwargs)
 
@@ -107,19 +116,24 @@ class QuerySet(object):
 
     def _get_specified_resources(self, start, stop, step=1):
         # TODO Refactor into smaller methods.
-        if start == stop:
+        if start is not None and start == stop:
             return []
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = 0
         if start < 0 or stop < 0:
+            orig_start, orig_stop = start, stop
             total_count = self.count()
             if start < 0:
                 start = total_count + start
             if stop < 0:
                 stop = total_count + stop
             # TODO Refactor duplicated code.
-            if start >= total_count:
-                raise IndexError("The index {0} is out of range.".format(start))
-            if stop > total_count:
-                raise IndexError("The index {0} is out of range.".format(stop))
+            if start < 0:
+                raise IndexError("The index {0} is out of range.".format(orig_start))
+            if stop <= 0:
+                raise IndexError("The index {0} is out of range.".format(orig_stop))
         if step < 0:
             start, stop = stop + 1, start + 1
         limit = stop - start if stop > start else start - stop
@@ -133,7 +147,10 @@ class QuerySet(object):
             raise IndexError("The index {0} is out of range.".format(start))
         if stop > total_count:
             raise IndexError("The index {0} is out of range.".format(stop))
-        return create_field(result['objects'][::step], None, self._resource._factory).value()
+        objects = result['objects'][::step]
+        if self._reverse:
+            objects.reverse()
+        return create_field(objects, None, self._resource._factory).value()
 
     def _retriever(self):
         if self._val_retriever is None:
@@ -167,8 +184,8 @@ class QuerySet(object):
 
         :param kwargs: Keywors arguments to filter the search.
         :type kwargs: dict
-        :returns: Resource objects.
-        :rtype: list
+        :returns: A new QuerySet.
+        :rtype: QuerySet
         :raises: NoResourcesExist
         """
         new_kwargs = self._kwargs.copy()
@@ -178,8 +195,8 @@ class QuerySet(object):
     def all(self):
         """Return all existing objects via the API.
 
-        :returns: Resource objects.
-        :rtype: list
+        :returns: A new QuerySet.
+        :rtype: QuerySet
         :raises: NoResourcesExist
         """
         return self.filter()
@@ -232,6 +249,11 @@ class QuerySet(object):
             # Is equivalent to:
             query = query.order_by('path')
             query = query.order_by('content')
+
+        :param args: The fields according to which to order the Resources.
+        :type args: tuple
+        :returns: A new QuerySet.
+        :rtype: QuerySet
         """
         return self.filter(order_by=self._ordering + list(args), **self._kwargs.copy())
 
@@ -256,3 +278,16 @@ class QuerySet(object):
             self._schema.check_list_request_allowed('delete')
             self._api.delete(self._resource.full_name())
             self._resource._alive = set()
+
+    def reverse(self):
+        """Reverse the order of the Resources returned from the QuerySet.
+
+        Calling reverse() on an alerady-reversed QuerySet restores the original
+        order of Resources.
+
+        :returns: A new QuerySet.
+        :rtype: QuerySet
+        """
+        new_kwargs = self._kwargs.copy()
+        new_kwargs['reverse'] = self._reverse ^ True
+        return QuerySet(self._resource, self._schema, self._api, **new_kwargs)
