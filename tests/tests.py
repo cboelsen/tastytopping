@@ -2,10 +2,13 @@
 # -*- coding: utf-8 -*-
 # pylint: skip-file
 
+#from concurrent import futures
 import copy
 import datetime
 import pickle
 import requests
+#import threading
+#import time
 import unittest
 
 from tastytopping import *
@@ -628,12 +631,12 @@ class IntegrationTest(unittest.TestCase):
         with self.assertRaises(IndexError):
             TestResource.all()[9:11]
 
-    def test_negative_index___exception_raised(self):
+    def test_negative_index___correct_resource_returned(self):
         TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
-        with self.assertRaises(IndexError):
-            TestResource.all()[-1]
-        with self.assertRaises(IndexError):
-            TestResource.all()[1:-1]
+        self.assertEqual(self.TEST_PATH1 + '8', TestResource.all()[-2].path)
+        self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[3:-3][-2].path)
+        self.assertEqual(self.TEST_PATH1 + '4', TestResource.all()[-8:8][2].path)
+        self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[-6:-3][1].path)
 
     def test_wrong_index_type___exception_raised(self):
         TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
@@ -673,6 +676,65 @@ class IntegrationTest(unittest.TestCase):
         self.assertEquals(resources[1].path, self.TEST_PATH1+'3')
         self.assertEquals(resources[2].path, self.TEST_PATH1+'1')
 
+    def test_slicing_resources_with_step___stepping_works(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        resource_list = TestResource.all()[1:9:2]
+        self.assertEqual(self.TEST_PATH1 + '1', resource_list[0].path)
+        self.assertEqual(self.TEST_PATH1 + '3', resource_list[1].path)
+        self.assertEqual(self.TEST_PATH1 + '5', resource_list[2].path)
+
+    def test_slicing_resources_with_negative_step___order_reversed(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        resource_list = TestResource.all()[9:1:-2]
+        self.assertEqual(self.TEST_PATH1 + '9', resource_list[0].path)
+        self.assertEqual(self.TEST_PATH1 + '7', resource_list[1].path)
+        self.assertEqual(self.TEST_PATH1 + '3', resource_list[-1].path)
+
+    def test_negative_index_with_negative_slicing___correct_resource_returned(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[-3:3:-2][-1].path)
+        self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[8:-8:-3][1].path)
+        self.assertEqual(self.TEST_PATH1 + '6', TestResource.all()[-3:-6:-1][1].path)
+
+    #def test_queryset_logical_operator_and___filters_are_combined(self):
+    #    TestResource.bulk(create=[
+    #        {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
+    #        {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
+    #        {'path': self.TEST_PATH1+'3', 'rating': 40, 'date': datetime.datetime(2014, 1, 2)},
+    #    ])
+    #    resources = TestResource.filter(rating__lt=30) & TestResource.filter(date=datetime.datetime(2014, 1, 2))
+    #    self.assertEqual(1, resources.count())
+    #    self.assertEqual(self.TEST_PATH1+'2', resources[0].path)
+
+    #def test_queryset_logical_operator_and___filters_are_combined(self):
+    #    TestResource.bulk(create=[
+    #        {'path': self.TEST_PATH1+'1', 'rating': 10},
+    #        {'path': self.TEST_PATH1+'2', 'rating': 20},
+    #        {'path': self.TEST_PATH1+'3', 'rating': 40},
+    #    ])
+    #    resources = TestResource.filter(rating=20) & TestResource.filter(rating=10)
+    #    self.assertEqual(2, resources.count())
+
+
+    # TODO Threading
+    #def test_zzz_threading___argh(self):
+    #    lock = threading.Lock()
+    #    def work(res):
+    #        for i in range(100):
+    #            # TODO This doesn't work!
+    #            with lock:
+    #                new_text = res.text + '_' + str(i)
+    #            res.text = new_text
+    #            time.sleep(0.00001)
+    #    res1 = TestResource(path=self.TEST_PATH1, text='start').save()
+    #    with futures.ThreadPoolExecutor(max_workers=10) as executor:
+    #        jobs = [executor.submit(work, res1) for _ in range(10)]
+    #        for future in futures.as_completed(jobs):
+    #            pass
+    #    import sys
+    #    sys.stderr.write(str(res1.text) + '\n')
+    #    sys.stderr.write(str(res1.text.count('_')) + '\n')
+
 
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
@@ -695,6 +757,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
 
     # DOCS
+    # TODO QuerySet
     # TODO Cookbook
     #   - Extending Resource classes with own methods
     # TODO Nested resources.

@@ -4,6 +4,7 @@ from .exceptions import (
 from .field import create_field
 
 
+# TODO Logical operators __and__, __or__, etc.
 class QuerySet(object):
 
     def __init__(self, resource, schema, api, **kwargs):
@@ -18,7 +19,6 @@ class QuerySet(object):
         self._val_retriever = None
         self._retrieved_resources = []
 
-
     def __bool__(self):
         return self.count() > 0
 
@@ -28,8 +28,7 @@ class QuerySet(object):
     def __getitem__(self, key):
         # TODO Check if the resources have already been retrieved.
         if isinstance(key, slice):
-            # TODO Handle step values.
-            return self._get_specified_resources(key.start, key.stop)
+            return self._get_specified_resources(key.start, key.stop, key.step or 1)
         elif isinstance( key, int ):
             return self._get_specified_resources(key, key + 1)[0]
         else:
@@ -60,13 +59,22 @@ class QuerySet(object):
     def _stream_fields(fields):
         return {n: v.stream() for n, v in fields.items()}
 
-    def _get_specified_resources(self, start, stop):
+    def _get_specified_resources(self, start, stop, step=1):
         if start == stop:
             return []
-        if start < 0:
-            raise IndexError("The index {0} is out of range. Only positive indices are supported.".format(start))
-        if stop < 0:
-            raise IndexError("The index {0} is out of range. Only positive indices are supported.".format(stop))
+        if start < 0 or stop < 0:
+            total_count = self.count()
+            if start < 0:
+                start = total_count + start
+            if stop < 0:
+                stop = total_count + stop
+            # TODO Refactor duplicated code.
+            if start >= total_count:
+                raise IndexError("The index {0} is out of range.".format(start))
+            if stop > total_count:
+                raise IndexError("The index {0} is out of range.".format(stop))
+        if step < 0:
+            start, stop = stop + 1, start + 1
         get_kwargs = self._kwargs.copy()
         get_kwargs.update({'offset': start, 'limit': stop - start})
         get_kwargs = self._apply_order(get_kwargs)
@@ -77,7 +85,7 @@ class QuerySet(object):
             raise IndexError("The index {0} is out of range.".format(start))
         if stop > total_count:
             raise IndexError("The index {0} is out of range.".format(stop))
-        return create_field(result['objects'], None, self._resource._factory).value()
+        return create_field(result['objects'][::step], None, self._resource._factory).value()
 
     def _retriever(self):
         if self._val_retriever is None:
