@@ -67,6 +67,7 @@ class Resource(_BASE_META_BRIDGE, object):
         affect all instances of a Resource, as well as the derived Resource
         class itself (TODO link to examples here)."""
 
+    _factory = None
     _alive = set()
 
     def __init__(self, **kwargs):
@@ -213,12 +214,6 @@ class Resource(_BASE_META_BRIDGE, object):
         super(Resource, self).__setattr__(attr, value)
 
     @classmethod
-    def full_name(cls):
-        if cls._full_name is None:
-            cls._full_name = cls._api().address() + cls._name() + '/'
-        return cls._full_name
-
-    @classmethod
     def _api(cls):
         """Return the API used by this class."""
         if cls._class_api is None:
@@ -244,6 +239,18 @@ class Resource(_BASE_META_BRIDGE, object):
         if cls._class_schema is None:
             cls._class_schema = retrieve_from_cache(cls._api().schema, cls.full_name())
         return cls._class_schema
+
+    @classmethod
+    def full_name(cls):
+        """Returns the full list resource URI for this class, including the
+        server name.
+
+        :returns: List resource's name.
+        :rtype: str
+        """
+        if cls._full_name is None:
+            cls._full_name = cls._api().address() + cls._name() + '/'
+        return cls._full_name
 
     def uri(self):
         """Return the resource_uri for this object.

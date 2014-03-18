@@ -17,9 +17,6 @@ __all__ = ('ResourceMeta', )
 # pylint: disable=W0212
 
 
-from .exceptions import (
-    MultipleResourcesReturned,
-)
 from .nested import NestedResource
 from .queryset import QuerySet
 
@@ -93,27 +90,7 @@ class ResourceMeta(type):
         :rtype: Resource
         :raises: NoResourcesExist, MultipleResourcesReturned
         """
-        # No more than two results are needed, so save the server's resources.
-        kwargs['limit'] = 2
-        resource_iter = iter(cls.filter(**kwargs))
-        result = next(resource_iter)
-        try:
-            next(resource_iter)
-            raise MultipleResourcesReturned(cls._name(), kwargs, list(resource_iter))
-        except StopIteration:
-            pass
-        return result
-
-    def delete_all(cls):
-        """Delete the entire collection of resources.
-
-        Besides deleting the collection of resources remotely, all local
-        Resource objects of this type will be marked as deleted (ie. using any
-        of them will result in a ResourceDeleted exception).
-        """
-        cls._schema().check_list_request_allowed('delete')
-        cls._api().delete(cls.full_name())
-        cls._alive = set()
+        return QuerySet(cls, cls._schema(), cls._api()).get(**kwargs)
 
     def bulk(cls, create=None, update=None, delete=None):
         """Create, update, and delete to multiple resources in a single request.

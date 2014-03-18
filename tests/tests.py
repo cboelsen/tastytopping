@@ -52,7 +52,7 @@ class IntegrationTest(unittest.TestCase):
         TestResource.auth = self._default_auth
 
     def _delete_all_test_objects(self):
-        TestResource.delete_all()
+        TestResource.all().delete()
         self._delete_all(TestTreeResource)
 
     def _delete_all(self, resource_class):
@@ -513,13 +513,13 @@ class IntegrationTest(unittest.TestCase):
     def test_delete_on_all_resources___no_resources_returned_from_all(self):
         TestResource.bulk(create=[{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
         self.assertEqual(2, len(TestResource))
-        TestResource.delete_all()
+        TestResource.all().delete()
         self.assertEqual(0, len(TestResource))
 
     def test_delete_on_all_resources___resource_objects_marked_as_deleted(self):
         res1 = TestResource(path=self.TEST_PATH1).save()
         res2 = TestResource(path=self.TEST_PATH2).save()
-        TestResource.delete_all()
+        TestResource.all().delete()
         self.assertRaises(ResourceDeleted, res1.save)
         self.assertRaises(ResourceDeleted, res2.save)
 
@@ -696,6 +696,17 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[8:-8:-3][1].path)
         self.assertEqual(self.TEST_PATH1 + '6', TestResource.all()[-3:-6:-1][1].path)
 
+    def test_delete_on_queryset___only_filtered_resources_deleted(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.filter(rating__gt=5).delete()
+        self.assertEquals(6, TestResource.all().count())
+        self.assertEquals(5, TestResource.all()[-1].rating)
+
+    def test_delete_on_queryset___delete_list_resource_when_no_filters(self):
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.all().delete()
+        self.assertEquals(0, TestResource.all().count())
+
     #def test_queryset_logical_operator_and___filters_are_combined(self):
     #    TestResource.bulk(create=[
     #        {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
@@ -749,6 +760,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO Allow stacking filters (ala Django) and allow count() on this object-thing. See:
     #           https://docs.djangoproject.com/en/dev/ref/models/querysets/
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
+    # TODO Allow 'exclude()' when tastypie allows it.
     # TODO Single dispatch functions.
     # TODO asyncio
 
