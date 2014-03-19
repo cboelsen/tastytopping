@@ -732,6 +732,44 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(normal_order[:][0], reverse_order[:][0])
         self.assertEqual(normal_order[:][-1], reverse_order[:][-1])
 
+    def test_queryset_exist___states_whether_resources_match_query(self):
+        self.assertFalse(TestResource.all().exists())
+        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        self.assertTrue(bool(TestResource.all()))
+        self.assertFalse(bool(TestResource.filter(rating__gt=20)))
+        self.assertTrue(TestResource.filter(rating__lt=5).exists())
+
+    def test_latest_resource_by_date___returns_the_correct_resource(self):
+        TestResource.bulk(create=[
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+        ])
+        resource = TestResource.filter(rating__lt=50).latest('date')
+        self.assertEquals(resource.path, self.TEST_PATH1+'2')
+
+    def test_latest_resource_by_date___previous_order_by_taken_into_account(self):
+        TestResource.bulk(create=[
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+        ])
+        resource = TestResource.all().order_by('-rating').latest('date')
+        self.assertEquals(resource.path, self.TEST_PATH1+'4')
+
+    def test_earliest_resource_by_date___returns_the_correct_resource(self):
+        TestResource.bulk(create=[
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+        ])
+        resource = TestResource.all().earliest('date')
+        self.assertEquals(resource.path, self.TEST_PATH1+'1')
+
+
     #def test_queryset_logical_operator_and___filters_are_combined(self):
     #    TestResource.bulk(create=[
     #        {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
@@ -790,6 +828,7 @@ class IntegrationTest(unittest.TestCase):
     # TODO asyncio
 
     # TESTING:
+    # TODO Tests have frozen twice!!!!
     # TODO Thread-safety
     # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
 

@@ -27,11 +27,8 @@ from .field import create_field
 # TODO none() ?!?!?!?!
 # TODO prefetch_related()
 # TODO iterator() to prevent caching (return ret()??)
-# TODO latest()
-# TODO earliest()
 # TODO first()
 # TODO last()
-# TODO exists()
 # TODO update()
 
 class QuerySet(object):
@@ -65,7 +62,7 @@ class QuerySet(object):
         self._retrieved_resources = []
 
     def __bool__(self):
-        return self.count() > 0
+        return self.exists()
 
     # TODO Eventually remove: This is only for python2.x compatability
     __nonzero__ = __bool__
@@ -291,3 +288,38 @@ class QuerySet(object):
         new_kwargs = self._kwargs.copy()
         new_kwargs['reverse'] = self._reverse ^ True
         return QuerySet(self._resource, self._schema, self._api, **new_kwargs)
+
+    def exists(self):
+        """Returns whether any resources match for the current query.
+
+        :returns: True if any resources match, otherwise False.
+        :rtype: bool
+        """
+        return self.count() > 0
+
+    def _return_first_by_date(self, field_name):
+        # TODO What happens when the field isn't a date/datetime field?!?!
+        date_kwargs = self._kwargs.copy()
+        date_kwargs['order_by'] = [field_name] + self._ordering
+        return QuerySet(self._resource, self._schema, self._api, **date_kwargs)[0]
+
+    def latest(self, field_name):
+        """Returns the latest resource, by date, using the 'field_name'
+        provided as the date field.
+
+        Note that earliest() and latest() exist purely for convenience and
+        readability.
+
+        :param field_name: The name of the field to order the resources by.
+        :type field_name: str
+        :returns: The latest resource, by date.
+        :rtype: Resource
+        :raises: NoResourcesExist
+        """
+        # TODO Link any methods named in the docstrings.
+        field_name = field_name[1:] if field_name.startswith('-') else '-' + field_name
+        return self._return_first_by_date(field_name)
+
+    def earliest(self, field_name):
+        """Works otherwise like latest() except the direction is changed."""
+        return self._return_first_by_date(field_name)
