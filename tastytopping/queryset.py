@@ -26,9 +26,6 @@ from .field import create_field
 # TODO Logical operators __and__, __or__, etc.
 # TODO none() ?!?!?!?!
 # TODO prefetch_related()
-# TODO iterator() to prevent caching (return ret()??)
-# TODO first()
-# TODO last()
 
 class QuerySet(object):
     """Makes lazy queries against Resources.
@@ -96,19 +93,14 @@ class QuerySet(object):
         if not exist:
             raise NoResourcesExist(self._resource._name(), self._kwargs)
 
-    # TODO This was taken straight from resource.py
-    def _create_fields(self, **kwargs):
-        fields = {}
-        for name, value in kwargs.items():
+    def _filter_fields(self, fields):
+        filtered_fields = {}
+        for name, value in fields.items():
             field_desc = self._schema.field(name)
             field_type = field_desc and field_desc['type']
-            fields[name] = create_field(value, field_type, self._resource._factory)
-        return fields
-
-    # TODO This was taken straight from resource.py
-    @staticmethod
-    def _stream_fields(fields):
-        return {n: v.stream() for n, v in fields.items()}
+            relate_name, relate_field = create_field(value, field_type, self._resource._factory).filter(name)
+            filtered_fields[relate_name] = relate_field
+        return filtered_fields
 
     def _get_specified_resources(self, start, stop, step=1):
         # TODO Refactor into smaller methods.
@@ -136,7 +128,7 @@ class QuerySet(object):
         get_kwargs = self._kwargs.copy()
         get_kwargs.update({'offset': start, 'limit': limit})
         get_kwargs = self._apply_order(get_kwargs)
-        get_kwargs = self._stream_fields(self._create_fields(**get_kwargs))
+        get_kwargs = self._filter_fields(get_kwargs)
         result = self._api.get(self._resource.full_name(), **get_kwargs)
         total_count = result['meta']['total_count']
         if start >= total_count:
@@ -150,23 +142,7 @@ class QuerySet(object):
 
     def _retriever(self):
         if self._val_retriever is None:
-            self._schema.check_fields_in_filters(self._kwargs)
-            fields = {}
-            for name, value in self._kwargs.items():
-                field_desc = self._schema.field(name)
-                field_type = field_desc and field_desc['type']
-                relate_name, relate_field = create_field(value, field_type, self._resource._factory).filter(name)
-                fields[relate_name] = relate_field
-            self._schema.check_list_request_allowed('get')
-            fields = self._apply_order(fields)
-            fields = self._stream_fields(self._create_fields(**fields))
-            if 'limit' not in fields:
-                fields['limit'] = 0
-            def _ret():
-                for response in self._api.paginate(self._resource.full_name(), **fields):
-                    for obj in response['objects']:
-                        yield self._resource(_fields=obj)
-            self._val_retriever = _ret()
+            self._val_retriever = self.iterator()
         return self._val_retriever
 
     def _apply_order(self, kwargs):
@@ -230,7 +206,7 @@ class QuerySet(object):
         count_kwargs = self._kwargs.copy()
         count_kwargs['limit'] = 1
         self._schema.check_list_request_allowed('get')
-        count_kwargs = self._stream_fields(self._create_fields(**count_kwargs))
+        count_kwargs = self._filter_fields(count_kwargs)
         response = self._api.get(self._resource.full_name(), **count_kwargs)
         return response['meta']['total_count']
 
@@ -317,6 +293,37 @@ class QuerySet(object):
         """
         return self.count() > 0
 
+    def iterator(self):
+        """Returns an iterator to the QuerySet's results.
+
+        Evaluates the QuerySet (by performing the query) and returns an
+        iterator over the results. A QuerySet typically caches its results
+        internally so that repeated evaluations do not result in additional
+        queries. In contrast, iterator() will read results directly, without
+        doing any caching at the QuerySet level (internally, the default
+        iterator calls iterator() and caches the return value). For a QuerySet
+        which returns a large number of objects that you only need to access
+        once, this can result in better performance and a significant reduction
+        in memory.
+
+        Note that using iterator() on a QuerySet which has already been
+        evaluated will force it to evaluate again, repeating the query.
+
+        :returns: An iterator to the QuerySet's results.
+        :rtype: iterator object
+        """
+        self._schema.check_list_request_allowed('get')
+        self._schema.check_fields_in_filters(self._kwargs)
+        fields = self._filter_fields(self._kwargs)
+        fields = self._apply_order(fields)
+        if 'limit' not in fields:
+            fields['limit'] = 0
+        def _ret():
+            for response in self._api.paginate(self._resource.full_name(), **fields):
+                for obj in response['objects']:
+                    yield self._resource(_fields=obj)
+        return _ret()
+
     def _return_first_by_date(self, field_name):
         # TODO What happens when the field isn't a date/datetime field?!?!
         date_kwargs = self._kwargs.copy()
@@ -343,3 +350,21 @@ class QuerySet(object):
     def earliest(self, field_name):
         """Works otherwise like latest() except the direction is changed."""
         return self._return_first_by_date(field_name)
+
+    def first(self):
+        """Return the first resource from the query.
+
+        :returns: The first Resource or None
+        :rtype: Resource
+        """
+        try:
+            return self[0]
+        except IndexError:
+            return None
+
+    def last(self):
+        """Works like first(), but returns the last resource"""
+        try:
+            return self[-1]
+        except IndexError:
+            return None

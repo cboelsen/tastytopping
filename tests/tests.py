@@ -4,7 +4,7 @@
 
 #from concurrent import futures
 import copy
-import datetime
+from datetime import datetime
 import pickle
 import requests
 #import threading
@@ -123,14 +123,14 @@ class IntegrationTest(unittest.TestCase):
 
     def test_datetime_objects___streams_both_ways(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
-        resource1.date = datetime.datetime(2013, 12, 6)
+        resource1.date = datetime(2013, 12, 6)
         resource1.save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.date, resource2.date)
 
     def test_datetime_objects_with_ms___streams_both_ways(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
-        resource1.date = datetime.datetime(2013, 12, 6, 1, 1, 1, 500)
+        resource1.date = datetime(2013, 12, 6, 1, 1, 1, 500)
         resource1.save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.date, resource2.date)
@@ -598,9 +598,9 @@ class IntegrationTest(unittest.TestCase):
         self.assertRaises(CreatedResourceNotFound, FACTORY.only_post(path=self.TEST_PATH1).save)
 
     def test_date_only_model_field___correctly_handle_date_only(self):
-        DATE = datetime.datetime(2014, 11, 12, 13, 14, 15)
+        DATE = datetime(2014, 11, 12, 13, 14, 15)
         res1 = TestResource(path=self.TEST_PATH1, date_only=DATE).save()
-        self.assertEqual(datetime.datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
+        self.assertEqual(datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
 
     def test_indexing_resources___index_number_refers_to_item_number_in_list(self):
         TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
@@ -670,10 +670,10 @@ class IntegrationTest(unittest.TestCase):
 
     def test_multiple_order_by___ordering_is_combined(self):
         TestResource.create([
-            {'path': self.TEST_PATH1+'1', 'rating': 40, 'date': datetime.datetime(2014, 1, 1)},
-            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 3)},
-            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
-            {'path': self.TEST_PATH1+'9', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'1', 'rating': 40, 'date': datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime(2014, 1, 3)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'9', 'rating': 60, 'date': datetime(2014, 1, 4)},
         ])
         resources = TestResource.filter(rating__lt=50).order_by('rating').order_by('-date')
         self.assertEquals(resources[0].path, self.TEST_PATH1+'2')
@@ -741,30 +741,30 @@ class IntegrationTest(unittest.TestCase):
 
     def test_latest_resource_by_date___returns_the_correct_resource(self):
         TestResource.create([
-            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
-            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
-            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
-            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime(2014, 1, 4)},
         ])
         resource = TestResource.filter(rating__lt=50).latest('date')
         self.assertEquals(resource.path, self.TEST_PATH1+'2')
 
     def test_latest_resource_by_date___previous_order_by_taken_into_account(self):
         TestResource.create([
-            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
-            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
-            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
-            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime(2014, 1, 4)},
         ])
         resource = TestResource.all().order_by('-rating').latest('date')
         self.assertEquals(resource.path, self.TEST_PATH1+'4')
 
     def test_earliest_resource_by_date___returns_the_correct_resource(self):
         TestResource.create([
-            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
-            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
-            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
-            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime.datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime(2014, 1, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime(2014, 1, 4)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime(2014, 1, 2)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'date': datetime(2014, 1, 4)},
         ])
         resource = TestResource.all().earliest('date')
         self.assertEquals(resource.path, self.TEST_PATH1+'1')
@@ -779,28 +779,43 @@ class IntegrationTest(unittest.TestCase):
 
     def test_bulk_updates_on_filtered_queryset___all_resources_matching_query_updated(self):
         TestResource.create([
-            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A'},
-            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B'},
-            {'path': self.TEST_PATH1+'3', 'rating': 20, 'text': 'C'},
-            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D'},
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A', 'date': datetime(2013, 3, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B', 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'text': 'C', 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D', 'date': datetime(2013, 3, 4)},
         ])
-        TestResource.filter(rating=20).update(rating=40)
+        NEW_DATE = datetime(2013, 3, 5)
+        TestResource.filter(rating=20).update(date=NEW_DATE)
         all_resources = list(TestResource.all())
-        self.assertEquals(40, all_resources[0].rating)
+        self.assertEquals(NEW_DATE, all_resources[0].date)
         self.assertEquals('A', all_resources[0].text)
-        self.assertEquals(40, all_resources[2].rating)
+        self.assertEquals(NEW_DATE, all_resources[2].date)
         self.assertEquals('C', all_resources[2].text)
-        self.assertEquals(60, all_resources[3].rating)
+        self.assertEquals(datetime(2013, 3, 4), all_resources[3].date)
         self.assertEquals('D', all_resources[3].text)
+
+    def test_queryset_iterator___evaluates_results_each_time(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        all_resources = TestResource.all()
+        self.assertEqual(10, len(list(all_resources.iterator())))
+        TestResource(path=self.TEST_PATH1).save()
+        self.assertEqual(11, len(list(all_resources.iterator())))
+
+    def test_queryset_first_last___returns_the_first_resource(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        self.assertEqual(self.TEST_PATH1 + '0', TestResource.all().first().path)
+        self.assertEqual(None, TestResource.filter(rating=50).first())
+        self.assertEqual(self.TEST_PATH1 + '9', TestResource.all().last().path)
+        self.assertEqual(None, TestResource.filter(rating=50).last())
 
 
     #def test_queryset_logical_operator_and___filters_are_combined(self):
     #    TestResource.create([
-    #        {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
-    #        {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
-    #        {'path': self.TEST_PATH1+'3', 'rating': 40, 'date': datetime.datetime(2014, 1, 2)},
+    #        {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime(2014, 1, 1)},
+    #        {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime(2014, 1, 2)},
+    #        {'path': self.TEST_PATH1+'3', 'rating': 40, 'date': datetime(2014, 1, 2)},
     #    ])
-    #    resources = TestResource.filter(rating__lt=30) & TestResource.filter(date=datetime.datetime(2014, 1, 2))
+    #    resources = TestResource.filter(rating__lt=30) & TestResource.filter(date=datetime(2014, 1, 2))
     #    self.assertEqual(1, resources.count())
     #    self.assertEqual(self.TEST_PATH1+'2', resources[0].path)
 
