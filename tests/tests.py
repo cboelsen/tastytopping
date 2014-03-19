@@ -220,7 +220,7 @@ class IntegrationTest(unittest.TestCase):
     def test_more_resources_to_get_than_default_limit___api_gets_all_resources(self):
         NUM_RESOURCES = 22
         resources = [{'path': self.TEST_PATH1 + str(i), 'rating': self.TEST_RATING1} for i in range(NUM_RESOURCES)]
-        TestResource.bulk(create=resources)
+        TestResource.create(resources)
         resources = TestResource.all()
         self.assertEqual(len(set(resources)), NUM_RESOURCES)
 
@@ -228,7 +228,7 @@ class IntegrationTest(unittest.TestCase):
         NUM_RESOURCES = 8
         LIMIT = 5
         resources = [{'path': self.TEST_PATH1 + str(i), 'rating': self.TEST_RATING1} for i in range(NUM_RESOURCES)]
-        TestResource.bulk(create=resources)
+        TestResource.create(resources)
         resources = TestResource.filter(limit=LIMIT)
         self.assertEqual(len(set(resources)), LIMIT)
 
@@ -388,7 +388,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertRaises(ResourceDeleted, res.save)
 
     def test_bulk_creation___multiple_resources_can_be_gotten(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
+        TestResource.create([{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
         res1 = TestResource.get(path=self.TEST_PATH1)
         res2 = TestResource.get(path=self.TEST_PATH2)
 
@@ -511,7 +511,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(new_factory.auth, new_factory.tree.auth)
 
     def test_delete_on_all_resources___no_resources_returned_from_all(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
+        TestResource.create([{'path': self.TEST_PATH1}, {'path': self.TEST_PATH2}])
         self.assertEqual(2, len(TestResource))
         TestResource.all().delete()
         self.assertEqual(0, len(TestResource))
@@ -603,18 +603,18 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(datetime.datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
 
     def test_indexing_resources___index_number_refers_to_item_number_in_list(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         self.assertEqual(self.TEST_PATH1 + '3', TestResource.all()[3].path)
         self.assertEqual(self.TEST_PATH1 + '7', TestResource.all()[7].path)
 
     def test_slicing_resources___slice_refers_to_item_numbers_in_list(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         resource_list = TestResource.all()[2:7]
         self.assertEqual(self.TEST_PATH1 + '4', resource_list[2].path)
         self.assertEqual(self.TEST_PATH1 + '6', resource_list[4].path)
 
     def test_multiple_filters___filters_are_combined(self):
-        TestResource.bulk(create=[
+        TestResource.create([
             {'path': self.TEST_PATH1+'1', 'rating': 20, 'title': 'A'},
             {'path': self.TEST_PATH1+'2', 'rating': 20, 'title': 'B'},
             {'path': self.TEST_PATH1+'3', 'rating': 40, 'title': 'A'},
@@ -625,7 +625,7 @@ class IntegrationTest(unittest.TestCase):
         )
 
     def test_too_large_index___exception_raised(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         with self.assertRaises(IndexError):
             TestResource.all()[10]
         with self.assertRaises(IndexError):
@@ -636,40 +636,40 @@ class IntegrationTest(unittest.TestCase):
             TestResource.all()[-11:-9]
 
     def test_negative_index___correct_resource_returned(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         self.assertEqual(self.TEST_PATH1 + '8', TestResource.all()[-2].path)
         self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[3:-3][-2].path)
         self.assertEqual(self.TEST_PATH1 + '4', TestResource.all()[-8:8][2].path)
         self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[-6:-3][1].path)
 
     def test_wrong_index_type___exception_raised(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         with self.assertRaises(TypeError):
             TestResource.all()['a']
 
     def test_empty_slice___empty_list_returned(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         self.assertFalse(TestResource.all()[1:1])
 
     def test_queryset_to_bool_conversion___empty_list_returns_false(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         self.assertTrue(TestResource.filter(path=self.TEST_PATH1 + '1'))
         self.assertFalse(TestResource.filter(path=self.TEST_PATH1 + '21'))
 
     def test_queryset_stores_iterated_values___same_values_returned_on_next_loop1(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         all_resources = TestResource.all()
         self.assertEqual(list(all_resources), list(all_resources))
 
     def test_queryset_stores_iterated_values___same_values_returned_on_next_loop2(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         all_resources = TestResource.all()
         next(iter(all_resources))
         next(iter(all_resources))
         self.assertEqual(list(all_resources), list(all_resources))
 
     def test_multiple_order_by___ordering_is_combined(self):
-        TestResource.bulk(create=[
+        TestResource.create([
             {'path': self.TEST_PATH1+'1', 'rating': 40, 'date': datetime.datetime(2014, 1, 1)},
             {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 3)},
             {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
@@ -681,52 +681,52 @@ class IntegrationTest(unittest.TestCase):
         self.assertEquals(resources[2].path, self.TEST_PATH1+'1')
 
     def test_slicing_resources_with_step___stepping_works(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         resource_list = TestResource.all()[1:9:2]
         self.assertEqual(self.TEST_PATH1 + '1', resource_list[0].path)
         self.assertEqual(self.TEST_PATH1 + '3', resource_list[1].path)
         self.assertEqual(self.TEST_PATH1 + '5', resource_list[2].path)
 
     def test_slicing_resources_with_negative_step___order_reversed(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         resource_list = TestResource.all()[9:1:-2]
         self.assertEqual(self.TEST_PATH1 + '9', resource_list[0].path)
         self.assertEqual(self.TEST_PATH1 + '7', resource_list[1].path)
         self.assertEqual(self.TEST_PATH1 + '3', resource_list[-1].path)
 
     def test_negative_index_with_negative_slicing___correct_resource_returned(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[-3:3:-2][-1].path)
         self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[8:-8:-3][1].path)
         self.assertEqual(self.TEST_PATH1 + '6', TestResource.all()[-3:-6:-1][1].path)
 
     def test_delete_on_queryset___only_filtered_resources_deleted(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         TestResource.filter(rating__gt=5).delete()
         self.assertEquals(6, TestResource.all().count())
         self.assertEquals(5, TestResource.all()[-1].rating)
 
     def test_delete_on_queryset___delete_list_resource_when_no_filters(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         TestResource.all().delete()
         self.assertEquals(0, TestResource.all().count())
 
     def test_reverse_queryset___returned_resources_order_reversed_list(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         normal_order = TestResource.all()
         reverse_order = normal_order.reverse()
         self.assertEqual(list(normal_order)[0], list(reverse_order)[-1])
         self.assertEqual(list(normal_order)[-1], list(reverse_order)[0])
 
     def test_reverse_queryset___returned_resources_order_reversed_slice(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         normal_order = TestResource.all()
         reverse_order = normal_order.reverse()
         self.assertEqual(normal_order[:][0], reverse_order[:][-1])
         self.assertEqual(normal_order[:][-1], reverse_order[:][0])
 
     def test_reverse_twice_queryset___returned_resources_order_not_reversed(self):
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         normal_order = TestResource.all()
         reverse_order = normal_order.reverse().reverse()
         self.assertEqual(normal_order[:][0], reverse_order[:][0])
@@ -734,13 +734,13 @@ class IntegrationTest(unittest.TestCase):
 
     def test_queryset_exist___states_whether_resources_match_query(self):
         self.assertFalse(TestResource.all().exists())
-        TestResource.bulk(create=[{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         self.assertTrue(bool(TestResource.all()))
         self.assertFalse(bool(TestResource.filter(rating__gt=20)))
         self.assertTrue(TestResource.filter(rating__lt=5).exists())
 
     def test_latest_resource_by_date___returns_the_correct_resource(self):
-        TestResource.bulk(create=[
+        TestResource.create([
             {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
             {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
             {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
@@ -750,7 +750,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEquals(resource.path, self.TEST_PATH1+'2')
 
     def test_latest_resource_by_date___previous_order_by_taken_into_account(self):
-        TestResource.bulk(create=[
+        TestResource.create([
             {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
             {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
             {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
@@ -760,7 +760,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEquals(resource.path, self.TEST_PATH1+'4')
 
     def test_earliest_resource_by_date___returns_the_correct_resource(self):
-        TestResource.bulk(create=[
+        TestResource.create([
             {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
             {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 4)},
             {'path': self.TEST_PATH1+'3', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
@@ -769,9 +769,33 @@ class IntegrationTest(unittest.TestCase):
         resource = TestResource.all().earliest('date')
         self.assertEquals(resource.path, self.TEST_PATH1+'1')
 
+    def test_bulk_updates_on_full_queryset___all_resources_updated(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.all().update(rating=60)
+        all_resources = list(TestResource.all())
+        self.assertEquals(60, all_resources[0].rating)
+        self.assertEquals(60, all_resources[5].rating)
+        self.assertEquals(60, all_resources[9].rating)
+
+    def test_bulk_updates_on_filtered_queryset___all_resources_matching_query_updated(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A'},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B'},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'text': 'C'},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D'},
+        ])
+        TestResource.filter(rating=20).update(rating=40)
+        all_resources = list(TestResource.all())
+        self.assertEquals(40, all_resources[0].rating)
+        self.assertEquals('A', all_resources[0].text)
+        self.assertEquals(40, all_resources[2].rating)
+        self.assertEquals('C', all_resources[2].text)
+        self.assertEquals(60, all_resources[3].rating)
+        self.assertEquals('D', all_resources[3].text)
+
 
     #def test_queryset_logical_operator_and___filters_are_combined(self):
-    #    TestResource.bulk(create=[
+    #    TestResource.create([
     #        {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime.datetime(2014, 1, 1)},
     #        {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime.datetime(2014, 1, 2)},
     #        {'path': self.TEST_PATH1+'3', 'rating': 40, 'date': datetime.datetime(2014, 1, 2)},
@@ -781,7 +805,7 @@ class IntegrationTest(unittest.TestCase):
     #    self.assertEqual(self.TEST_PATH1+'2', resources[0].path)
 
     #def test_queryset_logical_operator_and___filters_are_combined(self):
-    #    TestResource.bulk(create=[
+    #    TestResource.create([
     #        {'path': self.TEST_PATH1+'1', 'rating': 10},
     #        {'path': self.TEST_PATH1+'2', 'rating': 20},
     #        {'path': self.TEST_PATH1+'3', 'rating': 40},

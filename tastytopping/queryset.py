@@ -29,7 +29,6 @@ from .field import create_field
 # TODO iterator() to prevent caching (return ret()??)
 # TODO first()
 # TODO last()
-# TODO update()
 
 class QuerySet(object):
     """Makes lazy queries against Resources.
@@ -161,6 +160,8 @@ class QuerySet(object):
             self._schema.check_list_request_allowed('get')
             fields = self._apply_order(fields)
             fields = self._stream_fields(self._create_fields(**fields))
+            if 'limit' not in fields:
+                fields['limit'] = 0
             def _ret():
                 for response in self._api.paginate(self._resource.full_name(), **fields):
                     for obj in response['objects']:
@@ -253,6 +254,25 @@ class QuerySet(object):
         :rtype: QuerySet
         """
         return self.filter(order_by=self._ordering + list(args), **self._kwargs.copy())
+
+    def update(self, **kwargs):
+        """Updates all resources matching this query with the given fields.
+
+        This method provides a large optimization to updating each resource
+        individually: This method will only make 2 API calls per thousand
+        resources.
+
+        :param kwargs: The fields to update: {field_name: field_value, ...}
+        :param type: dict
+        :raises: NoResourcesExist
+        """
+        resources_to_update = list(self)
+        resources = []
+        for resource in resources_to_update:
+            resource_fields = kwargs.copy()
+            resource_fields['resource_uri'] = resource.uri()
+            resources.append(resource_fields)
+        self._resource.bulk(create=resources)
 
     def delete(self):
         """Delete every Resource filtered by this query.

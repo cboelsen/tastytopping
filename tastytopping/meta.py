@@ -92,6 +92,14 @@ class ResourceMeta(type):
         """
         return QuerySet(cls, cls._schema(), cls._api()).get(**kwargs)
 
+    def create(cls, resources):
+        """Creates new resources for each dict given.
+
+        :param resources: A list of fields (dict) for new resources.
+        :type resources: list
+        """
+        cls.bulk(create=resources)
+
     def bulk(cls, create=None, update=None, delete=None):
         """Create, update, and delete to multiple resources in a single request.
 
