@@ -18,7 +18,10 @@ __all__ = ('ResourceMeta', )
 
 
 from .nested import NestedResource
-from .queryset import QuerySet
+from .queryset import (
+    QuerySet,
+    EmptyQuerySet,
+)
 
 
 class ResourceMeta(type):
@@ -80,6 +83,9 @@ class ResourceMeta(type):
         :raises: NoResourcesExist
         """
         return QuerySet(cls, cls._schema(), cls._api())
+
+    def none(cls):
+        return EmptyQuerySet(cls, cls._schema(), cls._api())
 
     def get(cls, **kwargs):
         """Return an existing object via the API.
