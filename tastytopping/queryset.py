@@ -23,7 +23,6 @@ from .field import create_field
 # pylint: disable=W0212
 
 
-# TODO Logical operators __and__, __or__, etc.
 # TODO prefetch_related()
 
 
@@ -34,13 +33,16 @@ class _AbstractQuerySet(object):
         self._schema = schema
         self._api = api
         self._kwargs = kwargs
-        self._reverse = kwargs.pop('reverse', False)
+        self._reverse = kwargs.pop('__reverse', False)
         self._ordering = kwargs.pop('order_by', [])
         if not isinstance(self._ordering, list):
             self._ordering = [self._ordering]
 
         self._val_retriever = None
         self._retrieved_resources = []
+
+    def __and__(self, other):
+        raise NotImplementedError('abstract')
 
     def __bool__(self):
         return self.exists()
@@ -174,7 +176,7 @@ class _AbstractQuerySet(object):
         :rtype: QuerySet
         """
         new_kwargs = self._kwargs.copy()
-        new_kwargs['reverse'] = self._reverse ^ True
+        new_kwargs['__reverse'] = self._reverse ^ True
         return self._queryset_class()(self._resource, self._schema, self._api, **new_kwargs)
 
     def iterator(self):
@@ -253,6 +255,26 @@ class QuerySet(_AbstractQuerySet):
     :param kwargs: The filters to use in the query.
     :type kwargs: dict
     """
+
+    @staticmethod
+    def _create_filter_list(val1, val2):
+        make_set = lambda val: list([val]) if not isinstance(val, list) else set(val)
+        val1 = make_set(val1)
+        val2 = make_set(val2)
+        return list(val1 & val2)
+
+    def __and__(self, other):
+        if isinstance(other, EmptyQuerySet):
+            return EmptyQuerySet(other._resource, other._schema, other._api)
+        new_kwargs = self._kwargs.copy()
+        if self._ordering or other._ordering:
+            new_kwargs['order_by'] = self._ordering + other._ordering
+        for name, value in other._kwargs.items():
+            if name in new_kwargs:
+                new_kwargs[name] = self._create_filter_list(new_kwargs[name], value)
+            else:
+                new_kwargs[name] = value
+        return QuerySet(self._resource, self._schema, self._api, **new_kwargs)
 
     def __getitem__(self, key):
         # TODO Check if the resources have already been retrieved.
@@ -415,6 +437,9 @@ class EmptyQuerySet(_AbstractQuerySet):
     :param kwargs: The filters to use in the query.
     :type kwargs: dict
     """
+
+    def __and__(self, other):
+        return EmptyQuerySet(self._resource, self._schema, self._api)
 
     def __getitem__(self, key):
         raise IndexError("The index {0} is out of range.".format(key))

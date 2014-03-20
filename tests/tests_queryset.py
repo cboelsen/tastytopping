@@ -244,3 +244,52 @@ class QuerySetTests(TestsBase):
         self.assertRaises(NotImplementedError, abstract.iterator)
         self.assertRaises(NotImplementedError, abstract.latest, 'date')
         self.assertRaises(NotImplementedError, abstract.earliest, 'date')
+        with self.assertRaises(NotImplementedError):
+            abstract & abstract
+
+    def test_logical_and_with_empty_queryset___empty_queryset_returned(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        combined1 = TestResource.all() & TestResource.none()
+        combined2 = TestResource.none() & TestResource.all()
+        self.assertEqual(0, combined1.count())
+        self.assertEqual(0, combined2.count())
+
+    def test_logical_and_with_different_filters___combined_queryset_returned(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A', 'date': datetime(2013, 3, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B', 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'text': 'C', 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D', 'date': datetime(2013, 3, 4)},
+        ])
+        combined = TestResource.filter(rating=20) & TestResource.filter(date=datetime(2013, 3, 2))
+        self.assertEqual(self.TEST_PATH1+'2', combined.get().path)
+
+    def test_logical_and_with_same_fields_different_filters___combined_queryset_returned(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A', 'date': datetime(2013, 3, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B', 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'3', 'rating': 80, 'text': 'C', 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D', 'date': datetime(2013, 3, 4)},
+        ])
+        combined = TestResource.filter(rating__gt=30) & TestResource.filter(rating__lt=70)
+        self.assertEqual(self.TEST_PATH1+'4', combined.get().path)
+
+    def test_logical_and_with_same_filters___filters_appended(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A', 'date': datetime(2013, 3, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B', 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'3', 'rating': 80, 'text': 'C', 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D', 'date': datetime(2013, 3, 4)},
+        ])
+        combined = TestResource.filter(rating__in=[20, 30]) & TestResource.filter(rating__in=[20, 80])
+        self.assertEqual(2, combined.count())
+
+    def test_logical_and_with_order_by___ordering_combined(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A', 'date': datetime(2013, 3, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B', 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'text': 'C', 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D', 'date': datetime(2013, 3, 1)},
+        ])
+        combined = TestResource.all().order_by('rating') & TestResource.all().order_by('date')
+        self.assertEqual(self.TEST_PATH1+'3', combined[1].path)
