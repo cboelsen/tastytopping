@@ -45,6 +45,8 @@ class ResourceMeta(type):
         obj._class_schema_lock = Lock()
         obj._full_name_ = None
         obj._full_name_lock = Lock()
+        obj._filter_field = None
+        obj._filter_field_lock = Lock()
         return obj
 
     def __len__(cls):

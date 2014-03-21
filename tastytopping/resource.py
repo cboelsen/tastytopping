@@ -359,9 +359,14 @@ class Resource(_BASE_META_BRIDGE, object):
             self._set('_resource_fields', fields)
         return self
 
-    def filter_field(self):
+    @classmethod
+    def filter_field(cls):
         """Return a field that can be used as a unique key for this Resource."""
-        return self._schema().filterable_key()
+        if cls._filter_field is None:
+            with cls._filter_field_lock:
+                if cls._filter_field is None:
+                    cls._filter_field = cls._schema().filterable_key()
+        return cls._filter_field
 
     @classmethod
     def filter(cls, **kwargs):
