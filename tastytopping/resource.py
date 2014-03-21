@@ -101,7 +101,9 @@ class Resource(_BASE_META_BRIDGE, object):
         try:
             return self._schema().default(name)
         except FieldNotInSchema:
-            return NestedResource(self.full_uri() + name, self._api(), self._factory)
+            if name == 'nested':
+                return NestedResource(self.full_uri(), self._api(), self._factory)
+            raise AttributeError("'{0}' object has no attribute '{1}'".format(self.__class__, name))
 
     def __dir__(self):
         return sorted(set(dir(type(self)) + list(self.__dict__.keys()) + list(self._fields().keys())))

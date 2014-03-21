@@ -48,6 +48,15 @@ class IntegrationTests(TestsBase):
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource2.rating, self.TEST_RATING1 + 1)
 
+    def test_get_non_existent_field_on_object___raises_exception(self):
+        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
+        with self.assertRaises(AttributeError):
+            resource1.fake_field
+
+    def test_get_non_existent_field_on_class___raises_exception(self):
+        with self.assertRaises(AttributeError):
+            TestResource.fake_field
+
     def test_delete_object___no_object_to_get(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource.delete()

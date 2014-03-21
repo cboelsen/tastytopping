@@ -77,6 +77,7 @@ class _AbstractQuerySet(object):
         return self.filter()
 
     def none(self):
+        """Return an EmptyQuerySet object."""
         return EmptyQuerySet(self._resource, self._schema, self._api, **self._kwargs)
 
     def get(self, **kwargs):

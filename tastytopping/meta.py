@@ -51,7 +51,9 @@ class ResourceMeta(type):
         return cls.all().count()
 
     def __getattr__(cls, name):
-        return NestedResource(cls.full_name() + name, cls._api(), cls._factory)
+        if name == 'nested':
+            return NestedResource(cls.full_name(), cls._api(), cls._factory)
+        raise AttributeError("'{0}' object has no attribute '{1}'".format(cls.__name__, name))
 
     def _set_auth(cls, auth):
         def _set_api_auth(cls, auth):
@@ -85,6 +87,7 @@ class ResourceMeta(type):
         return QuerySet(cls, cls._schema(), cls._api())
 
     def none(cls):
+        """Return an EmptyQuerySet object."""
         return EmptyQuerySet(cls, cls._schema(), cls._api())
 
     def get(cls, **kwargs):

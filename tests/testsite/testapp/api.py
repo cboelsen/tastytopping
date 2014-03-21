@@ -12,7 +12,13 @@ from tastypie.authentication import ApiKeyAuthentication, SessionAuthentication
 from tastypie.authorization import Authorization
 from tastypie.http import HttpGone, HttpMultipleChoices
 from tastypie.models import ApiKey
-from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
+from tastypie.resources import (
+    ModelResource,
+    ObjectDoesNotExist,
+    MultipleObjectsReturned,
+    ALL,
+    ALL_WITH_RELATIONS,
+)
 from tastypie.utils import trailing_slash
     
 from .models import Test, Tree, TestContainer, InvalidField, NoUniqueInitField
