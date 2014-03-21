@@ -58,12 +58,6 @@ class Resource(_BASE_META_BRIDGE, object):
     resource_name = None
     """(str): The name of the resource. Defined by the 'resource_name' class
         variable in the Resource's class Meta."""
-    caching = True
-    """(bool): Whether to cache the resource's fields locally, or to always
-        call into the API to retrieve the fields. Note that this is a class
-        member variable, so updates will only apply to new objects. Use
-        :meth:`tastytopping.resource.Resource.set_caching` to update an
-        instance."""
     auth = None
     """(AuthBase): The Authorization to use with the resource. Note that because
         authorization applies on a per resource basis, changing the auth will
@@ -78,10 +72,7 @@ class Resource(_BASE_META_BRIDGE, object):
         self._set_uri(uri)
         self._set('_resource_fields', fields)
         self._set('_cached_fields', {})
-        self._set('_caching', self.caching)
         self._set('_full_uri', None)
-        if not self._caching and not self._uri:
-            self.save()
 
     def __str__(self):
         return '<"{0}": {1}>'.format(self.uri(), self.fields())
@@ -93,7 +84,7 @@ class Resource(_BASE_META_BRIDGE, object):
         if name not in self._fields():
             super(Resource, self).__setattr__(name, value)
         self.check_alive()
-        self.update(**{name: value})
+        self.update(**{name: value, '___no_save': None})
 
     def __getattr__(self, name):
         self.check_alive()
@@ -122,12 +113,10 @@ class Resource(_BASE_META_BRIDGE, object):
 
     def __copy__(self):
         new_obj = type(self)(_fields=self.fields())
-        new_obj.set_caching(self._caching)
         return new_obj
 
     def __deepcopy__(self, memo):
         new_obj = type(self)(_fields=copy.deepcopy(self.fields(), memo))
-        new_obj.set_caching(self._caching)
         return new_obj
 
     def __bool__(self):
@@ -140,7 +129,7 @@ class Resource(_BASE_META_BRIDGE, object):
     __nonzero__ = __bool__
 
     def _fields(self):
-        if not self._resource_fields or not self._caching:
+        if not self._resource_fields:
             self._schema().check_detail_request_allowed('get')
             fields = self._api().get(self.full_uri())
             fields = self._create_fields(**fields)
@@ -298,18 +287,8 @@ class Resource(_BASE_META_BRIDGE, object):
         self._api().delete(self.full_uri())
         self._alive.remove(self.uri())
 
-    def set_caching(self, caching):
-        """Set whether this object should cache its fields.
-
-        :param caching: True to cache fields, False to always retrieve from the API.
-        :type caching: bool
-        """
-        self._set('_caching', caching)
-
     def refresh(self):
         """Retrieve the latest values from the API with the next member access.
-
-        Note that this is only useful if the Resource is caching its fields.
         """
         self._set('_resource_fields', None)
         self._set('_cached_fields', {})
@@ -323,7 +302,7 @@ class Resource(_BASE_META_BRIDGE, object):
         return {n: v.value() for n, v in self._fields().items()}
 
     def update(self, **kwargs):
-        """Set multiple fields' values at once.
+        """Set multiple fields' values at once, and call save().
 
         :param kwargs: The fields to update as keyword arguments.
         :type kwargs: dict
@@ -332,19 +311,13 @@ class Resource(_BASE_META_BRIDGE, object):
         for field, value in kwargs.items():
             self._schema().validate(field, value)
         fields = self._create_fields(**kwargs)
-        if not self._caching:
-            self._update_remote_fields(**fields)
-        else:
-            self._fields().update(fields)
-            self._cached_fields.update(fields)
+        self._fields().update(fields)
+        self._cached_fields.update(fields)
+        if '___no_save' not in kwargs:
+            self.save()
 
     def save(self):
-        """Save the resource remotely, via the API.
-
-        Note that this method only makes sense when the Resource is caching its
-        fields locally (default). It is still possible to call this method when
-        caching is set to False, but there won't be a noticable effect.
-        """
+        """Save the resource remotely, via the API."""
         try:
             # Attempt to update the resource.
             self.check_alive()

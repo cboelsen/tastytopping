@@ -35,7 +35,6 @@ Contents
 
     tutorial
     auth
-    caching
     optimization
     tastytopping
 

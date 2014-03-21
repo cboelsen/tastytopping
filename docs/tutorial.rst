@@ -89,6 +89,4 @@ features:
 
  - :doc:`auth`
 
- - :doc:`caching`
-
  - :doc:`optimization`

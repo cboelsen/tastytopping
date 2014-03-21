@@ -14,8 +14,8 @@ from tests_base import *
 class NestedTests(TestsBase):
 
     def test_nested_resource_on_resource___endpoint_callable_as_a_method(self):
-        tree1 = TestTreeResource(name='tree1', parent=TestTreeResource(name='tree2'))
-        TestTreeResource(name='tree3', children=[tree1.parent])
+        tree1 = TestTreeResource(name='tree1', parent=TestTreeResource(name='tree2').save()).save()
+        TestTreeResource(name='tree3', children=[tree1.parent]).save()
         self.assertEqual(tree1.nested.depth.get(), 2)
 
     def test_nested_resource_on_resource_with_args___endpoint_callable_as_a_method(self):
@@ -38,25 +38,25 @@ class NestedTests(TestsBase):
 
     def test_nested_resource_returning_related_resource___resource_object_returned(self):
         CHILD_NAME = 'tree2'
-        tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME)])
+        tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME).save()]).save()
         self.assertEqual(CHILD_NAME, tree1.nested.chained.nested.child.get().name)
 
     def test_nested_resource_on_resource_with_too_few_args_in_get___more_explicit_exception_raised(self):
-        tree1 = TestTreeResource(name='tree1', children=[])
+        tree1 = TestTreeResource(name='tree1', children=[]).save()
         self.assertRaises(IncorrectNestedResourceArgs, tree1.nested.chained.nested.child(1).get)
 
     def test_nested_resource_with_wrong_rest_method___exception_raised(self):
-        tree1 = TestTreeResource(name='tree1', children=[])
+        tree1 = TestTreeResource(name='tree1', children=[]).save()
         self.assertRaises(RestMethodNotAllowed, tree1.nested.chained.nested.child(1).post)
 
     def test_nested_resource_with_resource_list___list_of_resources_returned(self):
-        tree1 = TestTreeResource(name='tree1')
-        tree2 = TestTreeResource(name='tree2')
-        parent = TestTreeResource(name='parent', children=[tree1, tree2])
+        tree1 = TestTreeResource(name='tree1').save()
+        tree2 = TestTreeResource(name='tree2').save()
+        parent = TestTreeResource(name='parent', children=[tree1, tree2]).save()
         self.assertEqual([tree1, tree2, parent], list(parent.nested.nested_children().all()))
 
     def test_nested_resource_with_empty_resource_list___exception_raised(self):
-        tree1 = TestTreeResource(name='tree1')
-        tree2 = TestTreeResource(name='tree2')
-        parent = TestTreeResource(name='parent', children=[tree1, tree2])
+        tree1 = TestTreeResource(name='tree1').save()
+        tree2 = TestTreeResource(name='tree2').save()
+        parent = TestTreeResource(name='parent', children=[tree1, tree2]).save()
         self.assertRaises(NoResourcesExist, list, parent.nested.nested_children().filter(name='fake'))

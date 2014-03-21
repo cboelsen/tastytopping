@@ -40,10 +40,6 @@ request:
     entry1.user = entry2.user = user2
     factory.entry.bulk(update=[entry1, entry2])
 
-Note that this method effectively calls
-:py:meth:`tastytopping.resource.Resource.save` for each resource, so it only
-makes sense if the Resources are caching.
-
 Lastly, it's possible to delete multiple Resources in a single request:
 
 ::
@@ -94,9 +90,10 @@ result in a ResourceDeleted exception.
 Update multiple fields
 ----------------------
 
-When a resource has caching turned off, it's still possible to update multiple
-fields in a single request using
-:py:meth:`tastytopping.resource.Resource.update`:
+As a shortcut, it's possible to update multiple fields in a single request
+using :py:meth:`tastytopping.resource.Resource.update`, which will also update
+the resource remotely (ie. effectively call
+:py:meth:`tastytopping.resource.Resource.save`).
 
 ::
 

@@ -69,8 +69,6 @@ except MissingCsrfTokenInCookies:
     pass
 
 TestResource.auth = HTTPApiKeyAuth(TestsBase.TEST_USERNAME, TestsBase.TEST_API_KEY)
-TestTreeResource.caching = False
-FACTORY.user.caching = False
 FACTORY.user.nested.login(username=TestsBase.TEST_USERNAME, password='password').post()
 FACTORY.user.auth = HTTPSessionAuth()
 

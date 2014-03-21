@@ -99,25 +99,6 @@ class IntegrationTests(TestsBase):
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource1.date, resource2.date)
 
-    def test_switching_cache_off___values_pulled_directly_from_api(self):
-        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
-        resource2 = TestResource.get(path=self.TEST_PATH1)
-        resource2.set_caching(False)
-        resource1.rating = 10
-        resource1.save()
-        self.assertEqual(resource1.rating, resource2.rating)
-
-    def test_switching_cache_back_on___values_become_stale(self):
-        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
-        resource2 = TestResource.get(path=self.TEST_PATH1)
-        resource1.set_caching(False)
-        resource2.set_caching(False)
-        resource1.rating = 10
-        self.assertEqual(resource1.rating, resource2.rating)
-        resource2.set_caching(True)
-        resource1.rating = 20
-        self.assertNotEqual(resource1.rating, resource2.rating)
-
     def test_equality___objects_equal_when_uris_equal(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource2 = TestResource.get(path=self.TEST_PATH1)
@@ -191,7 +172,6 @@ class IntegrationTests(TestsBase):
         title = 'TITLE'
         text = 'This is some text.'
         resource = TestResource(path=self.TEST_PATH1, rating=40).save()
-        resource.set_caching(False)
         resource.update(rating=rating, title=title, text=text)
         res2 = TestResource.get()
         self.assertEqual(rating, res2.rating)
@@ -209,7 +189,7 @@ class IntegrationTests(TestsBase):
         self.assertEqual(user, TestResource.get(path=self.TEST_PATH1).created_by)
 
     def test_post_resource_when_not_allowed___exception_raised(self):
-        self.assertRaises(RestMethodNotAllowed, FACTORY.user, username='bob')
+        self.assertRaises(RestMethodNotAllowed, FACTORY.user(username='bob').save)
 
     def test_creating_resource_with_related_resource_members___accessed_via_tasty_objects(self):
         user = FACTORY.user.get(username=self.TEST_USERNAME)
@@ -235,29 +215,32 @@ class IntegrationTests(TestsBase):
         self.assertRaises(InvalidFieldValue, setattr, res, 'created_by', 'user')
 
     def test_create_resource_with_multiple_resources_in_related_field___multiple_resources_accepted(self):
-        tree1 = TestTreeResource(name='tree1')
-        tree2 = TestTreeResource(name='tree2')
-        parent = TestTreeResource(name='parent', children=[tree1, tree2])
+        tree1 = TestTreeResource(name='tree1').save()
+        tree2 = TestTreeResource(name='tree2').save()
+        parent = TestTreeResource(name='parent', children=[tree1, tree2]).save()
         self.assertEqual(TestTreeResource.get(name='parent').children, [tree1, tree2])
 
     def test_update_resource_with_multiple_resources_in_related_field___multiple_resources_accepted(self):
-        parent1 = TestTreeResource(name='parent1')
-        parent2 = TestTreeResource(name='parent2')
-        tree1 = TestTreeResource(name='tree1')
-        tree2 = TestTreeResource(name='tree2')
+        parent1 = TestTreeResource(name='parent1').save()
+        parent2 = TestTreeResource(name='parent2').save()
+        tree1 = TestTreeResource(name='tree1').save()
+        tree2 = TestTreeResource(name='tree2').save()
         parent1.children = [tree1]
         parent1.children += [tree2]
+        parent1.save()
         self.assertEqual(TestTreeResource.get(children=parent1.children).children, [tree1, tree2])
 
     def test_create_resource_with_same_parent_multiple_times___multiple_resources_returned_in_parent(self):
-        root = TestTreeResource(name='root')
-        tree1 = TestTreeResource(name='tree1', parent=root)
+        root = TestTreeResource(name='root').save()
+        tree1 = TestTreeResource(name='tree1', parent=root).save()
         tree2 = TestTreeResource(name='tree2')
         tree2.parent = root
+        tree2.save()
+        root.refresh()
         self.assertEqual(root.children, [tree1, tree2])
 
     def test_create_resource_with_explicitly_no_children___empty_list_accepted(self):
-        root = TestTreeResource(name='root')
+        root = TestTreeResource(name='root').save()
         root.children = []
         self.assertEqual(TestTreeResource.get(children=[]).name, 'root')
 
@@ -387,7 +370,7 @@ class IntegrationTests(TestsBase):
         self.assertRaises(ResourceDeleted, res2.save)
 
     def test_dir_on_resource_instance___fields_returned_in_addition(self):
-        tree1 = TestTreeResource(name='tree1')
+        tree1 = TestTreeResource(name='tree1').save()
         self.assertTrue('name' in dir(tree1))
         self.assertTrue('parent' in dir(tree1))
         self.assertTrue('children' in dir(tree1))
@@ -436,9 +419,8 @@ class IntegrationTests(TestsBase):
 
     def test_copying_resources___deep_copy_works(self):
         res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
-        res1.set_caching(False)
         res2 = copy.deepcopy(res1)
-        self.assertFalse(res2._caching)
+        self.assertEqual(res1, res2)
 
     def test_string_representations___doesnt_crash(self):
         res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
