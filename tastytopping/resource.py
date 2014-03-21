@@ -226,8 +226,8 @@ class Resource(_BASE_META_BRIDGE, object):
                     if cls.api_url is None:
                         raise NotImplementedError('"api_url" needs to be defined in a derived class.')
                     cls._class_api = TastyApi(cls.api_url)
-                    if cls.auth:
-                        cls._class_api.auth = cls.auth
+                    if cls._auth:
+                        cls._class_api.auth = cls._auth
         return cls._class_api
 
     @classmethod

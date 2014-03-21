@@ -58,8 +58,7 @@ class ResourceMeta(type):
         raise AttributeError("'{0}' class has no attribute '{1}'".format(cls, name))
 
     def _get_auth(cls):
-        # TODO Lock!
-        #with cls._auth_lock:
+        with cls._auth_lock:
             return cls._auth
 
     def _set_auth(cls, auth):
