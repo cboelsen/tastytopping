@@ -25,6 +25,7 @@ from .exceptions import (
     RestMethodNotAllowed,
 )
 from .schema import TastySchema
+from threading import Lock
 
 
 class TastyApi(object):
@@ -38,14 +39,16 @@ class TastyApi(object):
         self._addr = address
         if not address.endswith('/'):
             self._addr += '/'
-        self._baseurl = None
-        self._res = None
         self._sess = None
+        self._sess_lock = Lock()
         self._auth = None
+        self._auth_lock = Lock()
 
     def _session(self):
         if self._sess is None:
-            self._sess = requests.session()
+            with self._sess_lock:
+                if self._sess is None:
+                    self._sess = requests.session()
         return self._sess
 
     def _transmit(self, tx_func, url, params=None, data=None):
@@ -90,17 +93,19 @@ class TastyApi(object):
         }
 
     def _get_auth(self):
-        return self._auth
+        with self._auth_lock:
+            return self._auth
 
     def _set_auth(self, auth):
-        try:
-            current_csrf = auth.csrf
-        except AttributeError:
-            pass
-        else:
-            if current_csrf is None:
-                auth.extract_csrf_token(self._session().cookies)
-        self._auth = auth
+        with self._auth_lock:
+            try:
+                current_csrf = auth.csrf
+            except AttributeError:
+                pass
+            else:
+                if current_csrf is None:
+                    auth.extract_csrf_token(self._session().cookies)
+            self._auth = auth
 
     auth = property(_get_auth, _set_auth)
 

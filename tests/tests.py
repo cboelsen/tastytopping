@@ -515,7 +515,6 @@ class IntegrationTests(TestsBase):
 
 
     # FEATURES:
-    # TODO Thread-safety
     # TODO Allow stacking filters (ala Django) and allow count() on this object-thing. See:
     #           https://docs.djangoproject.com/en/dev/ref/models/querysets/
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)

@@ -347,7 +347,7 @@ class QuerySet(_AbstractQuerySet):
         get_kwargs.update({'offset': start, 'limit': limit})
         get_kwargs = self._apply_order(get_kwargs)
         get_kwargs = self._filter_fields(get_kwargs)
-        result = self._api.get(self._resource.full_name(), **get_kwargs)
+        result = self._api.get(self._resource._full_name(), **get_kwargs)
         total_count = result['meta']['total_count']
         if start >= total_count:
             raise IndexError("The index {0} is out of range.".format(start))
@@ -376,7 +376,7 @@ class QuerySet(_AbstractQuerySet):
         count_kwargs['limit'] = 1
         self._schema.check_list_request_allowed('get')
         count_kwargs = self._filter_fields(count_kwargs)
-        response = self._api.get(self._resource.full_name(), **count_kwargs)
+        response = self._api.get(self._resource._full_name(), **count_kwargs)
         return response['meta']['total_count']
 
     def update(self, **kwargs):
@@ -395,7 +395,7 @@ class QuerySet(_AbstractQuerySet):
         else:
             # If no filters have been given, then we can shortcut to delete the list resource.
             self._schema.check_list_request_allowed('delete')
-            self._api.delete(self._resource.full_name())
+            self._api.delete(self._resource._full_name())
             self._resource._alive = set()
 
     def iterator(self):
@@ -405,7 +405,7 @@ class QuerySet(_AbstractQuerySet):
         fields = self._apply_order(fields)
         if 'limit' not in fields:
             fields['limit'] = 0
-        for response in self._api.paginate(self._resource.full_name(), **fields):
+        for response in self._api.paginate(self._resource._full_name(), **fields):
             for obj in response['objects']:
                 yield self._resource(_fields=obj)
 

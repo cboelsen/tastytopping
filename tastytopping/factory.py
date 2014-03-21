@@ -13,6 +13,7 @@ __all__ = ('ResourceFactory', )
 
 
 from .resource import Resource
+from threading import Lock
 
 
 class ResourceFactory(object):
@@ -38,30 +39,44 @@ class ResourceFactory(object):
     def __init__(self, api_url):
         self._url = api_url
         self._classes = {}
+        self._classes_lock = Lock()
+        self._classes_locks = {}
         self._auth = None
+        self._auth_lock = Lock()
 
     def __getattr__(self, name):
-        return self._resource_class(name)
+        with self._classes_lock:
+            if name not in self._classes_locks:
+                self._classes_locks[name] = Lock()
+        with self._classes_locks[name]:
+            return self._resource_class(name)
 
     def _resource_class(self, resource):
         try:
             return self._classes[resource]
         except KeyError:
-            class _SpecificResource(Resource):
-                api_url = self._url
-                resource_name = resource
-                _factory = self
-            _SpecificResource.auth = self._auth
-            self._classes[resource] = _SpecificResource
-            return _SpecificResource
+            new_resource_class = type(
+                    resource,
+                    (Resource, ),
+                    {
+                        'api_url': self._url,
+                        'resource_name': resource,
+                        '_factory': self
+                    },
+            )
+            new_resource_class.auth = self._auth
+            self._classes[resource] = new_resource_class
+            return new_resource_class
 
     def _get_auth(self):
-        return self._auth
+        with self._auth_lock:
+            return self._auth
 
     def _set_auth(self, auth):
-        self._auth = auth
-        for resource_class in self._classes.values():
-            resource_class.auth = auth
+        with self._auth_lock:
+            self._auth = auth
+            for resource_class in self._classes.values():
+                resource_class.auth = auth
 
     auth = property(
         _get_auth,

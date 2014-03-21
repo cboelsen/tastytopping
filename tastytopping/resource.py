@@ -29,6 +29,10 @@ from .exceptions import (
 from .field import create_field
 from .meta import ResourceMeta
 from .nested import NestedResource
+from .queryset import (
+    QuerySet,
+    EmptyQuerySet,
+)
 
 
 # Required because the syntax for metaclasses changed between python 2 and 3.
@@ -181,7 +185,7 @@ class Resource(_BASE_META_BRIDGE, object):
         fields = self._schema().remove_fields_not_in_filters(fields)
         fields['limit'] = 2
         self._schema().check_list_request_allowed('get')
-        results = self._api().paginate(self.full_name(), **fields)
+        results = self._api().paginate(self._full_name(), **fields)
         resources = next(results)['objects']
         if len(resources) > 1:
             raise MultipleResourcesReturned(fields, resources)
@@ -190,7 +194,7 @@ class Resource(_BASE_META_BRIDGE, object):
     def _create_new_resource(self, **kwargs):
         fields = self._create_fields(**kwargs)
         self._schema().check_list_request_allowed('post')
-        details = self._api().post(self.full_name(), **self._stream_fields(fields))
+        details = self._api().post(self._full_name(), **self._stream_fields(fields))
         if not details:
             try:
                 details = self._get_this_resource(fields)
@@ -217,42 +221,41 @@ class Resource(_BASE_META_BRIDGE, object):
 
     @classmethod
     def _api(cls):
-        """Return the API used by this class."""
         if cls._class_api is None:
-            if cls.api_url is None:
-                raise NotImplementedError('"api_url" needs to be defined in a derived class.')
-            cls._class_api = retrieve_from_cache(TastyApi, cls.api_url, id=cls)
-            if cls.auth:
-                cls._class_api.auth = cls.auth
+            with cls._class_api_lock:
+                if cls._class_api is None:
+                    if cls.api_url is None:
+                        raise NotImplementedError('"api_url" needs to be defined in a derived class.')
+                    cls._class_api = retrieve_from_cache(TastyApi, cls.api_url, id=cls)
+                    if cls.auth:
+                        cls._class_api.auth = cls.auth
         return cls._class_api
 
     @classmethod
-    def _name(cls):
-        """Return the resource name of this class."""
-        if cls._class_resource is None:
-            if cls.resource_name is None:
-                raise NotImplementedError('"resource_name" needs to be defined in a derived class.')
-            cls._class_resource = cls.resource_name
-        return cls._class_resource
-
-    @classmethod
     def _schema(cls):
-        """Return the schema used by this class."""
         if cls._class_schema is None:
-            cls._class_schema = retrieve_from_cache(cls._api().schema, cls.full_name())
+            with cls._class_schema_lock:
+                if cls._class_schema is None:
+                    cls._class_schema = retrieve_from_cache(cls._api().schema, cls._full_name())
         return cls._class_schema
 
     @classmethod
-    def full_name(cls):
-        """Returns the full list resource URI for this class, including the
-        server name.
+    def _name(cls):
+        if cls._class_resource is None:
+            with cls._class_resource_lock:
+                if cls._class_resource is None:
+                    if cls.resource_name is None:
+                        raise NotImplementedError('"resource_name" needs to be defined in a derived class.')
+                    cls._class_resource = cls.resource_name
+        return cls._class_resource
 
-        :returns: List resource's name.
-        :rtype: str
-        """
-        if cls._full_name is None:
-            cls._full_name = cls._api().address() + cls._name() + '/'
-        return cls._full_name
+    @classmethod
+    def _full_name(cls):
+        if cls._full_name_ is None:
+            with cls._full_name_lock:
+                if cls._full_name_ is None:
+                    cls._full_name_ = cls._api().address() + cls._name() + '/'
+        return cls._full_name_
 
     def uri(self):
         """Return the resource_uri for this object.
@@ -360,3 +363,103 @@ class Resource(_BASE_META_BRIDGE, object):
     def filter_field(self):
         """Return a field that can be used as a unique key for this Resource."""
         return self._schema().filterable_key()
+
+    @classmethod
+    def filter(cls, **kwargs):
+        """Return existing objects via the API, filtered by kwargs.
+
+        :param kwargs: Keywors arguments to filter the search.
+        :type kwargs: dict
+        :returns: Resource objects.
+        :rtype: list
+        :raises: NoResourcesExist
+        """
+        return QuerySet(cls, cls._schema(), cls._api(), **kwargs)
+
+    @classmethod
+    def all(cls):
+        """Return all existing objects via the API.
+
+        :returns: Resource objects.
+        :rtype: list
+        :raises: NoResourcesExist
+        """
+        return QuerySet(cls, cls._schema(), cls._api())
+
+    @classmethod
+    def none(cls):
+        """Return an EmptyQuerySet object."""
+        return EmptyQuerySet(cls, cls._schema(), cls._api())
+
+    @classmethod
+    def get(cls, **kwargs):
+        """Return an existing object via the API.
+
+        :param kwargs: Keywors arguments to filter the search.
+        :type kwargs: dict
+        :returns: The resource identified by the kwargs.
+        :rtype: Resource
+        :raises: NoResourcesExist, MultipleResourcesReturned
+        """
+        return QuerySet(cls, cls._schema(), cls._api()).get(**kwargs)
+
+    @classmethod
+    def create(cls, resources):
+        """Creates new resources for each dict given.
+
+        :param resources: A list of fields (dict) for new resources.
+        :type resources: list
+        """
+        cls.bulk(create=resources)
+
+    @classmethod
+    def bulk(cls, create=None, update=None, delete=None):
+        """Create, update, and delete to multiple resources in a single request.
+
+        Note that this doesn't return anything, so any created resources will
+        have to be retrieved with :meth:`tastytopping.resource.Resource.get` /
+        :meth:`tastytopping.resource.Resource.update` /
+        :meth:`tastytopping.resource.Resource.all`. Resource objects passed into
+        delete will be marked as deleted, so any attempt to use them afterwards
+        will raise an exception.
+
+        Because of the potentially large size of bulk updates, the API will
+        respond with a 202 before completing the request (see `wikipedia
+        <http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#2xx_Success>`_,
+        and `tastypie <http://django-tastypie.readthedocs.org/en/latest/interacting.html#bulk-operations>`_).
+        This means it's possible for the request to fail without us knowing.
+        So, while this method can be used for a sizeable optimization, there is
+        a pitfall: You have been warned!
+
+        :param create: The dicts of fields for new resources.
+        :type create: list
+        :param update: The Resource objects to update.
+        :type update: list
+        :param delete: The Resource objects to delete.
+        :type delete: list
+        """
+        create = create or []
+        update = update or []
+        delete = delete or []
+        for resource in update + delete:
+            resource.check_alive()
+        # The resources to create or update are sent in a single list.
+        resources = [cls._stream_fields(cls._create_fields(**res)) for res in create]
+        for resource in update:
+            resource_fields = {n: v.stream() for n, v in resource._fields().items()}
+            resource_fields['resource_uri'] = resource.uri()
+            resources.append(resource_fields)
+        # Get the fields for any Resource objects given.
+        resources = (
+            [r for r in resources if not hasattr(r, 'uri')] +
+            [r.fields() for r in resources if hasattr(r, 'uri')]
+        )
+        cls._api().bulk(
+            cls._full_name(),
+            cls._schema(),
+            resources,
+            [d.uri() for d in delete]
+        )
+        # Mark each deleted resource as deleted.
+        for resource in delete:
+            cls._alive.remove(resource.uri())
