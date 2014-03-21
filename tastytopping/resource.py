@@ -13,6 +13,7 @@ __all__ = ('Resource', )
 
 
 import copy
+from threading import Lock
 
 
 from .api import TastyApi
@@ -66,6 +67,19 @@ class Resource(_BASE_META_BRIDGE, object):
 
     _factory = None
     _alive = set()
+
+    _auth = None
+    _auth_lock = Lock()
+    _class_api = None
+    _class_api_lock = Lock()
+    _class_resource = None
+    _class_resource_lock = Lock()
+    _class_schema = None
+    _class_schema_lock = Lock()
+    _full_name_ = None
+    _full_name_lock = Lock()
+    _filter_field = None
+    _filter_field_lock = Lock()
 
     def __init__(self, **kwargs):
         fields, uri = self._get_fields_and_uri_if_in_kwargs(**kwargs)
@@ -423,6 +437,8 @@ class Resource(_BASE_META_BRIDGE, object):
         # The resources to create or update are sent in a single list.
         resources = [cls._stream_fields(cls._create_fields(**res)) for res in create]
         for resource in update:
+            # We're accessing a member of the same class.
+            # pylint: disable=W0212
             resource_fields = {n: v.stream() for n, v in resource._fields().items()}
             resource_fields['resource_uri'] = resource.uri()
             resources.append(resource_fields)

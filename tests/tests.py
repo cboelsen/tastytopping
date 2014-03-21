@@ -13,12 +13,12 @@ import unittest
 
 from tastytopping import *
 
-from tests_base import *
+from .tests_base import *
 
 # Import the other tests to run.
-from tests_auth import AuthTests
-from tests_queryset import QuerySetTests
-from tests_nested import NestedTests
+from .tests_auth import AuthTests
+from .tests_queryset import QuerySetTests
+from .tests_nested import NestedTests
 
 
 ################################# TEST CLASS ##################################

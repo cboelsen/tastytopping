@@ -12,13 +12,7 @@
 __all__ = ('ResourceMeta', )
 
 
-# There's lots of protected access between base/derived/meta classes to produce
-# this magic.
-# pylint: disable=W0212
-
-
 from .nested import NestedResource
-from threading import Lock
 
 
 class ResourceMeta(type):
@@ -27,6 +21,8 @@ class ResourceMeta(type):
     _classes = []
 
     def __new__(mcs, name, bases, classdict):
+        # We're accessing a member of the same class.
+        # pylint: disable=W0212
         try:
             auth_value = classdict.pop('auth')
         except KeyError:
@@ -36,17 +32,7 @@ class ResourceMeta(type):
         mcs._classes.append(obj)
         # Move the user provided auth to a protected member.
         obj._auth = auth_value
-        obj._auth_lock = Lock()
         obj._class_api = None
-        obj._class_api_lock = Lock()
-        obj._class_resource = None
-        obj._class_resource_lock = Lock()
-        obj._class_schema = None
-        obj._class_schema_lock = Lock()
-        obj._full_name_ = None
-        obj._full_name_lock = Lock()
-        obj._filter_field = None
-        obj._filter_field_lock = Lock()
         return obj
 
     def __len__(cls):

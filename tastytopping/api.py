@@ -92,10 +92,6 @@ class TastyApi(object):
             'content-type': 'application/json',
         }
 
-    def _get_auth(self):
-        with self._auth_lock:
-            return self._auth
-
     def _set_auth(self, auth):
         with self._auth_lock:
             try:
@@ -106,6 +102,10 @@ class TastyApi(object):
                 if current_csrf is None:
                     auth.extract_csrf_token(self._session().cookies)
             self._auth = auth
+
+    def _get_auth(self):
+        with self._auth_lock:
+            return self._auth
 
     auth = property(_get_auth, _set_auth)
 

@@ -7,7 +7,7 @@ import unittest
 
 from tastytopping import *
 
-from tests_base import *
+from .tests_base import *
 
 
 ################################# TEST CLASS ##################################
