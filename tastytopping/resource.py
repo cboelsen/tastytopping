@@ -16,7 +16,6 @@ import copy
 
 
 from .api import TastyApi
-from .cache import retrieve_from_cache
 from .exceptions import (
     ResourceDeleted,
     CreatedResourceNotFound,
@@ -226,7 +225,7 @@ class Resource(_BASE_META_BRIDGE, object):
                 if cls._class_api is None:
                     if cls.api_url is None:
                         raise NotImplementedError('"api_url" needs to be defined in a derived class.')
-                    cls._class_api = retrieve_from_cache(TastyApi, cls.api_url, id=cls)
+                    cls._class_api = TastyApi(cls.api_url)
                     if cls.auth:
                         cls._class_api.auth = cls.auth
         return cls._class_api
@@ -236,7 +235,7 @@ class Resource(_BASE_META_BRIDGE, object):
         if cls._class_schema is None:
             with cls._class_schema_lock:
                 if cls._class_schema is None:
-                    cls._class_schema = retrieve_from_cache(cls._api().schema, cls._full_name())
+                    cls._class_schema = cls._api().schema(cls._full_name())
         return cls._class_schema
 
     @classmethod
