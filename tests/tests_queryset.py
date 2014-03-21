@@ -293,3 +293,13 @@ class QuerySetTests(TestsBase):
         ])
         combined = TestResource.all().order_by('rating') & TestResource.all().order_by('date')
         self.assertEqual(self.TEST_PATH1+'3', combined[1].path)
+
+    def test_using_previously_cached_values_in_slicing___correct_results_returned(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        all_resources = TestResource.all()
+        for i, _ in enumerate(all_resources):
+            if i > 6:
+                break
+        self.assertEqual(2, all_resources[2].rating)
+        self.assertEqual(3, all_resources[2:5][-2].rating)
+        self.assertEqual(9, all_resources[6:][-1].rating)
