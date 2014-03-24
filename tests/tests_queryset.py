@@ -125,14 +125,14 @@ class QuerySetTests(TestsBase):
 
     def test_reverse_queryset___returned_resources_order_reversed_list(self):
         TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
-        normal_order = TestResource.all()
+        normal_order = TestResource.all().order_by('rating')
         reverse_order = normal_order.reverse()
         self.assertEqual(list(normal_order)[0], list(reverse_order)[-1])
         self.assertEqual(list(normal_order)[-1], list(reverse_order)[0])
 
     def test_reverse_queryset___returned_resources_order_reversed_slice(self):
         TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
-        normal_order = TestResource.all()
+        normal_order = TestResource.all().order_by('rating')
         reverse_order = normal_order.reverse()
         self.assertEqual(normal_order[:][0], reverse_order[:][-1])
         self.assertEqual(normal_order[:][-1], reverse_order[:][0])
@@ -143,6 +143,17 @@ class QuerySetTests(TestsBase):
         reverse_order = normal_order.reverse().reverse()
         self.assertEqual(normal_order[:][0], reverse_order[:][0])
         self.assertEqual(normal_order[:][-1], reverse_order[:][-1])
+
+    def test_reverse_queryset_iterator___returned_resources_order_reversed_list(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        normal_order = TestResource.all().order_by('rating')
+        reverse_order = normal_order.reverse()
+        self.assertEqual(list(normal_order.iterator())[0], list(reverse_order.iterator())[-1])
+        self.assertEqual(list(normal_order)[-1], list(reverse_order.iterator())[0])
+
+    def test_reverse_without_order___exception_raised(self):
+        with self.assertRaises(OrderByRequiredForReverse):
+            TestResource.all().reverse()[0]
 
     def test_queryset_exist___states_whether_resources_match_query(self):
         self.assertFalse(TestResource.all().exists())

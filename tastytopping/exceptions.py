@@ -148,3 +148,11 @@ class MissingCsrfTokenInCookies(PrettyException):
     HTTPSessionAuth object and there was no user authentication prior (which
     returned a CSRF token)."""
     pass
+
+class OrderByRequiredForReverse(PrettyException):
+    """Raised by QuerySet when attempting to reverse a query without an order.
+
+    This exception will be raised when attempting to evaluate a QuerySet that
+    should be reversed (ie. reverse() has been called at least once), but does
+    not have an order.
+    """

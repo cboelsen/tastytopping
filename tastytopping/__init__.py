@@ -40,6 +40,7 @@ from .exceptions import (
     IncorrectNestedResourceArgs,
     IncorrectNestedResourceKwargs,
     MissingCsrfTokenInCookies,
+    OrderByRequiredForReverse,
 )
 
 from .factory import ResourceFactory

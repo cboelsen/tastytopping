@@ -15,6 +15,7 @@ __all__ = ('QuerySet', 'EmptyQuerySet', )
 from .exceptions import (
     MultipleResourcesReturned,
     NoResourcesExist,
+    OrderByRequiredForReverse,
 )
 from .field import create_field
 
@@ -65,6 +66,10 @@ class _AbstractQuerySet(object):
         """
         new_kwargs = self._kwargs.copy()
         new_kwargs.update(kwargs)
+        if '__reverse' not in new_kwargs:
+            new_kwargs['__reverse'] = self._reverse
+        if self._ordering:
+            new_kwargs['order_by'] = self._ordering + new_kwargs.get('order_by', [])
         return self._queryset_class()(self._resource, self._schema, self._api, **new_kwargs)
 
     def all(self):
@@ -147,7 +152,7 @@ class _AbstractQuerySet(object):
         :returns: A new QuerySet.
         :rtype: QuerySet
         """
-        return self.filter(order_by=self._ordering + list(args), **self._kwargs.copy())
+        return self.filter(order_by=list(args))
 
     def exists(self):
         """Returns whether any resources match for the current query.
@@ -173,12 +178,14 @@ class _AbstractQuerySet(object):
         Calling reverse() on an alerady-reversed QuerySet restores the original
         order of Resources.
 
+        Evaluating a QuerySet that is reversed but has no order will result in
+        a OrderByRequiredForReverse exception being raised. So, ensure you call
+        order_by() on any reversed QuerySet.
+
         :returns: A new QuerySet.
         :rtype: QuerySet
         """
-        new_kwargs = self._kwargs.copy()
-        new_kwargs['__reverse'] = self._reverse ^ True
-        return self._queryset_class()(self._resource, self._schema, self._api, **new_kwargs)
+        return self.filter(__reverse=self._reverse ^ True)
 
     def iterator(self):
         """Returns an iterator to the QuerySet's results.
@@ -270,6 +277,7 @@ class QuerySet(_AbstractQuerySet):
         new_kwargs = self._kwargs.copy()
         if self._ordering or other._ordering:
             new_kwargs['order_by'] = self._ordering + other._ordering
+        new_kwargs['__reverse'] = self._reverse
         for name, value in other._kwargs.items():
             if name in new_kwargs:
                 new_kwargs[name] = self._create_filter_list(new_kwargs[name], value)
@@ -289,22 +297,13 @@ class QuerySet(_AbstractQuerySet):
             raise TypeError("Invalid argument type.")
 
     def __iter__(self):
-        # TODO Starting to get a bit big here... refactor.
         exist = bool(self._retrieved_resources)
-        if not self._reverse:
-            for resource in self._retrieved_resources:
-                yield resource
-            for resource in self._retriever():
-                self._retrieved_resources.append(resource)
-                yield resource
-                exist = True
-        else:
-            # TODO Very inefficient! Redo by inverting the order_by fields
-            for resource in self._retriever():
-                self._retrieved_resources.append(resource)
-                exist = True
-            for resource in self._retrieved_resources[::-1]:
-                yield resource
+        for resource in self._retrieved_resources:
+            yield resource
+        for resource in self._retriever():
+            self._retrieved_resources.append(resource)
+            yield resource
+            exist = True
         if not exist:
             raise NoResourcesExist(self._resource._name(), self._kwargs)
 
@@ -359,8 +358,6 @@ class QuerySet(_AbstractQuerySet):
             return self._retrieved_resources[start:stop:step]
         limit = stop - start if stop > start else start - stop
         objects = self._get_specified_resource_objects(start, stop, limit)[::step]
-        if self._reverse:
-            objects.reverse()
         return create_field(objects, None, self._resource._factory).value()
 
     def _retriever(self):
@@ -368,12 +365,19 @@ class QuerySet(_AbstractQuerySet):
             self._val_retriever = self.iterator()
         return self._val_retriever
 
+    @staticmethod
+    def _flip_field_order(field):
+        return field[1:] if field.startswith('-') else '-' + field
+
     def _apply_order(self, kwargs):
         if self._ordering:
             ordered_kwargs = kwargs.copy()
-            ordered_kwargs['order_by'] = self._ordering
+            ordering = self._ordering if not self._reverse else [self._flip_field_order(o) for o in self._ordering]
+            ordered_kwargs['order_by'] = ordering
             return ordered_kwargs
         else:
+            if self._reverse:
+                raise OrderByRequiredForReverse(self._resource, self._kwargs)
             return kwargs
 
     def count(self):
@@ -417,14 +421,16 @@ class QuerySet(_AbstractQuerySet):
     def _return_first_by_date(self, field_name):
         # TODO What happens when the field isn't a date/datetime field?!?!
         date_kwargs = self._kwargs.copy()
-        date_kwargs['order_by'] = [field_name] + self._ordering
+        date_kwargs['__reverse'] = self._reverse
+        date_field = field_name if not self._reverse else self._flip_field_order(field_name)
+        date_kwargs['order_by'] = [date_field] + self._ordering
         try:
             return QuerySet(self._resource, self._schema, self._api, **date_kwargs)[0]
         except IndexError:
             raise NoResourcesExist(self._resource._name(), self._kwargs)
 
     def latest(self, field_name):
-        field_name = field_name[1:] if field_name.startswith('-') else '-' + field_name
+        field_name = self._flip_field_order(field_name)
         return self._return_first_by_date(field_name)
 
     def earliest(self, field_name):
