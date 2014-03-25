@@ -314,3 +314,48 @@ class QuerySetTests(TestsBase):
         self.assertEqual(2, all_resources[2].rating)
         self.assertEqual(3, all_resources[2:5][-2].rating)
         self.assertEqual(9, all_resources[6:][-1].rating)
+
+    def test_prefetch_related_on_non_related_field___has_no_effect(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        all_resources = TestResource.all().prefetch_related('rating')
+        self.assertEqual(2, all_resources[2].rating)
+
+    def test_prefetch_related___full_related_field_stored_on_return_of_iter(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 50)])
+        FACTORY.container.create([
+            {'test': TestResource.get(path=self.TEST_PATH1+'11')},
+            {'test': TestResource.get(path=self.TEST_PATH1+'12')},
+            {'test': TestResource.get(path=self.TEST_PATH1+'13')},
+        ])
+        all_containers = FACTORY.container.all().prefetch_related('test')
+        self.assertEqual(11, list(all_containers)[0].test.rating)
+        self.assertEqual(12, list(all_containers)[1].test.rating)
+        self.assertEqual(13, list(all_containers)[2].test.rating)
+
+    def test_prefetch_related___full_related_field_stored_on_return_of_slice(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 50)])
+        FACTORY.container.create([
+            {'test': TestResource.get(path=self.TEST_PATH1+'11')},
+            {'test': TestResource.get(path=self.TEST_PATH1+'12')},
+            {'test': TestResource.get(path=self.TEST_PATH1+'13')},
+        ])
+        all_containers = FACTORY.container.all().prefetch_related('test')
+        self.assertEqual(11, all_containers[0].test.rating)
+        self.assertEqual(12, all_containers[1].test.rating)
+        self.assertEqual(13, all_containers[2].test.rating)
+
+    def test_prefetch_related_with_to_many_field___full_related_fields_stored_on_return_of_iter(self):
+        FACTORY.tree.create([{'name': str(i)} for i in range(20)])
+        roots = [FACTORY.tree.get(name='0'), FACTORY.tree.get(name='1')]
+        FACTORY.tree.create([
+            {'name': '100', 'parent': roots[0]},
+            {'name': '101', 'parent': roots[0]},
+            {'name': '102', 'parent': roots[0]},
+            {'name': '103', 'parent': roots[1]},
+            {'name': '104', 'parent': roots[1]},
+        ])
+        all_trees = list(FACTORY.tree.all().prefetch_related('children', 'parent'))
+        self.assertEqual('100', all_trees[0].children[0].name)
+        self.assertEqual('101', all_trees[0].children[1].name)
+        self.assertEqual('103', all_trees[1].children[0].name)
+        self.assertEqual('0', all_trees[21].parent.name)

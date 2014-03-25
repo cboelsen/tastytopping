@@ -169,7 +169,7 @@ class TreeResource(ModelResource):
     class Meta:
         resource_name = 'tree'
         queryset = Tree.objects.all()
-        list_allowed_methods   = ['get', 'post']
+        list_allowed_methods   = ['get', 'post', 'patch']
         detail_allowed_methods = ['get', 'delete', 'put']
         authorization = Authorization()
         always_return_data = True

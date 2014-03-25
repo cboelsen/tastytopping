@@ -24,9 +24,6 @@ from .field import create_field
 # pylint: disable=W0212
 
 
-# TODO prefetch_related()
-
-
 class _AbstractQuerySet(object):
 
     def __init__(self, resource, schema, api, **kwargs):
@@ -35,12 +32,14 @@ class _AbstractQuerySet(object):
         self._api = api
         self._kwargs = kwargs
         self._reverse = kwargs.pop('__reverse', False)
+        self._prefetch = kwargs.pop('__prefetch', [])
         self._ordering = kwargs.pop('order_by', [])
         if not isinstance(self._ordering, list):
             self._ordering = [self._ordering]
 
         self._val_retriever = None
         self._retrieved_resources = []
+        self._prefetched_resources = {k: None for k in self._prefetch}
 
     def __and__(self, other):
         raise NotImplementedError('abstract')
@@ -68,8 +67,10 @@ class _AbstractQuerySet(object):
         new_kwargs.update(kwargs)
         if '__reverse' not in new_kwargs:
             new_kwargs['__reverse'] = self._reverse
-        if self._ordering:
+        if self._ordering or 'order_by' in new_kwargs:
             new_kwargs['order_by'] = self._ordering + new_kwargs.get('order_by', [])
+        if self._prefetch or '__prefetch' in new_kwargs:
+            new_kwargs['__prefetch'] = self._prefetch + new_kwargs.get('__prefetch', [])
         return self._queryset_class()(self._resource, self._schema, self._api, **new_kwargs)
 
     def all(self):
@@ -246,6 +247,29 @@ class _AbstractQuerySet(object):
         except IndexError:
             return None
 
+    def prefetch_related(self, *args):
+        """Returns a QuerySet that will automatically retrieve, in a single
+        batch, related objects for each of the specified lookups.
+
+        This method simulates an SQL 'join' and including the fields of the
+        related object, except that it does a separate lookup for each
+        relationship and does the ‘joining’ in Python.
+
+        It will check that the related field hasn't already been 'joined' by
+        setting 'full=True' in the Resource's field in tastypie.
+
+        Take note that this method will fetch all the resources of all the
+        given fields to do the 'joining', so it only makes sense for QuerySets
+        that will return a large nunmber of resources. Even then, watch the
+        memory usage!
+
+        :param args: The fields to prefetch.
+        :type args: tuple
+        :returns: A new QuerySet.
+        :rtype: QuerySet
+        """
+        return self.filter(__prefetch=list(args))
+
 
 class QuerySet(_AbstractQuerySet):
     """Makes lazy queries against Resources.
@@ -286,21 +310,28 @@ class QuerySet(_AbstractQuerySet):
         return QuerySet(self._resource, self._schema, self._api, **new_kwargs)
 
     def __getitem__(self, key):
+        # TODO Cache the results here too!
         if isinstance(key, slice):
             if key.start is not None and key.start == key.stop:
                 return []
-            return self._get_specified_resources(key.start, key.stop, key.step or 1)
+            resource_list = self._get_specified_resources(key.start, key.stop, key.step or 1)
+            resource_list = [self._insert_prefetched_resources(r) for r in resource_list]
+            return resource_list
         elif isinstance(key, int):
             stop = key - 1 if key < 0 else key + 1
-            return self._get_specified_resources(key, stop)[0]
+            resource = self._get_specified_resources(key, stop)[0]
+            resource = self._insert_prefetched_resources(resource)
+            return resource
         else:
             raise TypeError("Invalid argument type.")
 
     def __iter__(self):
         exist = bool(self._retrieved_resources)
         for resource in self._retrieved_resources:
+            resource = self._insert_prefetched_resources(resource)
             yield resource
         for resource in self._retriever():
+            resource = self._insert_prefetched_resources(resource)
             self._retrieved_resources.append(resource)
             yield resource
             exist = True
@@ -310,6 +341,36 @@ class QuerySet(_AbstractQuerySet):
     @classmethod
     def _queryset_class(cls):
         return QuerySet
+
+    def _prefetch_resources(self, related_resource, field_name):
+        all_related_resource = []
+        for resources in related_resource._api().paginate(related_resource._full_name(), limit=0):
+            all_related_resource += resources['objects']
+        self._prefetched_resources[field_name] = {r['resource_uri']: r for r in all_related_resource}
+
+    def _insert_prefetched_resources(self, resource):
+        for pre_field_name in self._prefetched_resources:
+            related_resource = getattr(resource, pre_field_name, None)
+            # See if the field is a Resource, and check that the fields aren't already populated.
+            if hasattr(related_resource, 'uri') and not related_resource._resource_fields:
+                # Preload the related resources if it hasn't already happened.
+                if not self._prefetched_resources[pre_field_name]:
+                    self._prefetch_resources(related_resource, pre_field_name)
+                # Create a new prefetched field to replace the old field.
+                details = self._prefetched_resources[pre_field_name][related_resource.uri()]
+                full_related_resource = create_field(details, None, self._resource._factory).value()
+                setattr(resource, pre_field_name, full_related_resource)
+            elif isinstance(related_resource, list) and len(related_resource) > 0:
+                # Preload the related resources if it hasn't already happened.
+                if not self._prefetched_resources[pre_field_name]:
+                    self._prefetch_resources(related_resource[0], pre_field_name)
+                # Create a list of new prefetched fields to replace the old fields.
+                full_related_resources = []
+                for rel in related_resource:
+                    details = self._prefetched_resources[pre_field_name][rel.uri()]
+                    full_related_resources.append(create_field(details, None, self._resource._factory).value())
+                setattr(resource, pre_field_name, full_related_resources)
+        return resource
 
     def _filter_fields(self, fields):
         filtered_fields = {}
