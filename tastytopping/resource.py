@@ -46,7 +46,7 @@ class Resource(_BASE_META_BRIDGE, object):
     To wrap a TastyPie resource, a class must be defined that inherits from
     Resource. This derived class must specify, as a minimum, the class members
     'api_url', and 'resource_name' (see below for descriptions).
-    :class:`tastytopping.ResourceFactory` returns instances of this class from
+    :py:class:`~tastytopping.ResourceFactory` returns instances of this class from
     its methods. Users are strongly encouraged to use these factory methods
     instead of directly subclassing from Resource.
 
@@ -60,10 +60,11 @@ class Resource(_BASE_META_BRIDGE, object):
     """(str): The name of the resource. Defined by the 'resource_name' class
         variable in the Resource's class Meta."""
     auth = None
-    """(AuthBase): The Authorization to use with the resource. Note that because
-        authorization applies on a per resource basis, changing the auth will
-        affect all instances of a Resource, as well as the derived Resource
-        class itself (TODO link to examples here)."""
+    """(:py:class:`~tastytopping.auth.AuthBase`): The Authorization to use with
+        the resource. Note that because authorization applies to all resources
+        of a given type, changing the auth will affect all instances of a
+        Resource, as well as the derived Resource class itself (TODO link to
+        examples here)."""
 
     _factory = None
     _alive = set()
@@ -264,6 +265,7 @@ class Resource(_BASE_META_BRIDGE, object):
 
         :returns: resource_uri
         :rtype: str
+        :raises: :py:class:`~tastytopping.exceptions.ResourceHasNoUri`
         """
         if self._uri is None:
             raise ResourceHasNoUri()
@@ -283,7 +285,11 @@ class Resource(_BASE_META_BRIDGE, object):
         """Check that the Resource has not been deleted.
 
         Note that this only checks locally, so if another client deletes the
-        resource elsewhere it won't be picked up.
+        resource originating from another
+        :py:class:`~tastytopping.factory.ResourceFactory`, or a different PC,
+        it won't be picked up.
+
+        :raises: :py:class:`~tastytopping.exceptions.ResourceDeleted`
         """
         if not self:
             raise ResourceDeleted(self.uri())
@@ -294,7 +300,7 @@ class Resource(_BASE_META_BRIDGE, object):
         Note that any attempt to use this object after calling delete will
         result in an ResourceDeleted exception.
 
-        :raises: ResourceDeleted
+        :raises: :py:class:`~tastytopping.exceptions.ResourceDeleted`
         """
         self.check_alive()
         self._schema().check_detail_request_allowed('delete')
@@ -302,8 +308,7 @@ class Resource(_BASE_META_BRIDGE, object):
         self._alive.remove(self.uri())
 
     def refresh(self):
-        """Retrieve the latest values from the API with the next member access.
-        """
+        """Retrieve the latest values from the API with the next member access."""
         self._set('_resource_fields', None)
         self._set('_cached_fields', {})
 
@@ -316,7 +321,8 @@ class Resource(_BASE_META_BRIDGE, object):
         return {n: v.value() for n, v in self._fields().items()}
 
     def update(self, **kwargs):
-        """Set multiple fields' values at once, and call save().
+        """Set multiple fields' values at once, and call
+        :py:meth:`~tastytopping.resource.Resource.save`.
 
         :param kwargs: The fields to update as keyword arguments.
         :type kwargs: dict
@@ -331,7 +337,10 @@ class Resource(_BASE_META_BRIDGE, object):
             self.save()
 
     def save(self):
-        """Save the resource remotely, via the API."""
+        """Saves a resource back to the API.
+
+        :raises: :py:class:`~tastytopping.exceptions.ResourceDeleted`
+        """
         try:
             # Attempt to update the resource.
             self.check_alive()
@@ -348,7 +357,11 @@ class Resource(_BASE_META_BRIDGE, object):
 
     @classmethod
     def filter_field(cls):
-        """Return a field that can be used as a unique key for this Resource."""
+        """Return a field that can be used as a unique key for this Resource.
+
+        :returns: A field that can be used as a unique key.
+        :rtype: str
+        """
         if cls._filter_field is None:
             with cls._filter_field_lock:
                 if cls._filter_field is None:
@@ -357,29 +370,31 @@ class Resource(_BASE_META_BRIDGE, object):
 
     @classmethod
     def filter(cls, **kwargs):
-        """Return existing objects via the API, filtered by kwargs.
+        """Return a QuerySet, with the given filters applied.
 
         :param kwargs: Keywors arguments to filter the search.
         :type kwargs: dict
-        :returns: Resource objects.
-        :rtype: list
-        :raises: NoResourcesExist
+        :returns: A new QuerySet.
+        :rtype: :py:class:`~tastytopping.queryset.QuerySet`
         """
         return QuerySet(cls, **kwargs)
 
     @classmethod
     def all(cls):
-        """Return all existing objects via the API.
+        """Returns a QuerySet with no filters applied.
 
-        :returns: Resource objects.
-        :rtype: list
-        :raises: NoResourcesExist
+        :returns: A new QuerySet.
+        :rtype: :py:class:`~tastytopping.queryset.QuerySet`
         """
         return QuerySet(cls)
 
     @classmethod
     def none(cls):
-        """Return an EmptyQuerySet object."""
+        """Return an EmptyQuerySet object.
+
+        :returns: A new QuerySet.
+        :rtype: :py:class:`~tastytopping.queryset.QuerySet`
+        """
         return EmptyQuerySet(cls)
 
     @classmethod
@@ -389,14 +404,18 @@ class Resource(_BASE_META_BRIDGE, object):
         :param kwargs: Keywors arguments to filter the search.
         :type kwargs: dict
         :returns: The resource identified by the kwargs.
-        :rtype: Resource
-        :raises: NoResourcesExist, MultipleResourcesReturned
+        :rtype: :py:class:`~tastytopping.resource.Resource`
+        :raises: :py:class:`~tastytopping.exceptions.NoResourcesExist`,
+            :py:class:`~tastytopping.exceptions.MultipleResourcesReturned`
         """
         return QuerySet(cls).get(**kwargs)
 
     @classmethod
     def create(cls, resources):
         """Creates new resources for each dict given.
+
+        This method exists purely for convenience and readability - internally
+        it uses :py:meth:`~tastytopping.resource.Resource.bulk`.
 
         :param resources: A list of fields (dict) for new resources.
         :type resources: list
@@ -408,9 +427,9 @@ class Resource(_BASE_META_BRIDGE, object):
         """Create, update, and delete to multiple resources in a single request.
 
         Note that this doesn't return anything, so any created resources will
-        have to be retrieved with :meth:`tastytopping.resource.Resource.get` /
-        :meth:`tastytopping.resource.Resource.update` /
-        :meth:`tastytopping.resource.Resource.all`. Resource objects passed into
+        have to be retrieved with :meth:`~tastytopping.resource.Resource.get` /
+        :meth:`~tastytopping.resource.Resource.update` /
+        :meth:`~tastytopping.resource.Resource.all`. Resource objects passed into
         delete will be marked as deleted, so any attempt to use them afterwards
         will raise an exception.
 
@@ -428,6 +447,7 @@ class Resource(_BASE_META_BRIDGE, object):
         :type update: list
         :param delete: The Resource objects to delete.
         :type delete: list
+        :raises: :py:class:`~tastytopping.exceptions.ResourceDeleted`
         """
         create = create or []
         update = update or []

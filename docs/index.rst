@@ -16,9 +16,7 @@ behaviour, in addition to retrieving the data. TastyTopping only needs 2 things
 from you (3 if you're using authentication): The URL of the API, and the
 resource name.
 
-As a brief example:
-
-::
+As a brief example::
 
     >>> factory = ResourceFactory('http://localhost/app_name/api/v1')
     >>> ex = factory.example(field1='name', field2=10)
@@ -124,7 +122,7 @@ The examples shown here relate to the following TastyPie Resources:
 
 The following example shows basic usage of the ORM, that will use GET, PUT,
 POST, and DELETE methods on the API, using the
-:py:class:`tastytopping.factory.ResourceFactory`
+:py:class:`~tastytopping.ResourceFactory`
 
 ::
 
@@ -142,13 +140,13 @@ POST, and DELETE methods on the API, using the
         new_resource.save()
 
         # Get any user from the list of users and set it to created_by:
-        user = factory.user.get(limit=1)
+        user = factory.user.all().first()
         new_resource.created_by = user
         # Get the new resource by its title:
         another_resource = factory.example.get(title='A Title')
         # Delete the new resource:
         new_resource.delete()
-        # This will raise an exception
+        # This will raise an exception since it's been deleted.
         print another_resource.date
 
 

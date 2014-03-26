@@ -10,6 +10,7 @@
 
 
 __all__ = (
+    'AuthBase',
     'HTTPApiKeyAuth',
     'HTTPSessionAuth',
     'HTTPBasicAuth',
@@ -46,7 +47,8 @@ class HTTPSessionAuth(AuthBase):
 
     The CSRF token can either be passed in on construction, or it will be
     automatically taken from the session's cookies. If no CSRF token can be
-    found, a MissingCsrfTokenInCookies exception will be raised.
+    found, a :py:class:`~tastytopping.exceptions.MissingCsrfTokenInCookies`
+    exception will be raised.
     """
 
     def __init__(self, csrf_token=None):
@@ -61,7 +63,7 @@ class HTTPSessionAuth(AuthBase):
 
         :param cookies: A session's cookies, one of which should contain the CSRF token.
         :type cookies: `CookieJar <http://docs.python.org/2/library/cookielib.html#cookielib.CookieJar>`_
-        :raises: MissingCsrfTokenInCookies
+        :raises: :py:class:`~tastytopping.exceptions.MissingCsrfTokenInCookies`
         """
         try:
             self.csrf = cookies['csrftoken']

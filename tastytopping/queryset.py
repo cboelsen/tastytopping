@@ -55,13 +55,12 @@ class _AbstractQuerySet(object):
         raise NotImplementedError('abstract')
 
     def filter(self, **kwargs):
-        """Return existing objects via the API, filtered by kwargs.
+        """Return a new QuerySet, with the given filters additionally applied.
 
         :param kwargs: Keywors arguments to filter the search.
         :type kwargs: dict
         :returns: A new QuerySet.
         :rtype: QuerySet
-        :raises: NoResourcesExist
         """
         new_kwargs = self._kwargs.copy()
         new_kwargs.update(kwargs)
@@ -74,11 +73,10 @@ class _AbstractQuerySet(object):
         return self._queryset_class()(self._resource, **new_kwargs)
 
     def all(self):
-        """Return all existing objects via the API.
+        """Returns a copy of this QuerySet.
 
         :returns: A new QuerySet.
         :rtype: QuerySet
-        :raises: NoResourcesExist
         """
         return self.filter()
 
@@ -92,8 +90,9 @@ class _AbstractQuerySet(object):
         :param kwargs: Keywors arguments to filter the search.
         :type kwargs: dict
         :returns: The resource identified by the kwargs.
-        :rtype: Resource
-        :raises: NoResourcesExist, MultipleResourcesReturned
+        :rtype: :py:class:`~tastytopping.resource.Resource`
+        :raises: :py:class:`~tastytopping.exceptions.NoResourcesExist`,
+            :py:class:`~tastytopping.exceptions.MultipleResourcesReturned`
         """
         # No more than two results are needed, so save the server's resources.
         kwargs['limit'] = 2
@@ -107,31 +106,11 @@ class _AbstractQuerySet(object):
         return result
 
     def update(self, **kwargs):
-        """Updates all resources matching this query with the given fields.
-
-        This method provides a large optimization to updating each resource
-        individually: This method will only make 2 API calls per thousand
-        resources.
-
-        :param kwargs: The fields to update: {field_name: field_value, ...}
-        :param type: dict
-        :raises: NoResourcesExist
-        """
+        """Abstract method"""
         raise NotImplementedError('abstract')
 
     def delete(self):
-        """Delete every Resource filtered by this query.
-
-        Note that there is an optimization when calling delete() on a full
-        QuerySet (ie. one without filters). So:
-
-        ::
-
-            # this will be quicker:
-            Resource.all().filter()
-            # than this:
-            Resource.filter(id__gt=0).filter()
-        """
+        """Abstract method"""
         raise NotImplementedError('abstract')
 
     def order_by(self, *args):
@@ -156,7 +135,7 @@ class _AbstractQuerySet(object):
         return self.filter(order_by=list(args))
 
     def exists(self):
-        """Returns whether any resources match for the current query.
+        """Returns whether this query matches any resources.
 
         :returns: True if any resources match, otherwise False.
         :rtype: bool
@@ -164,13 +143,7 @@ class _AbstractQuerySet(object):
         return self.count() > 0
 
     def count(self):
-        """Return the number of records for this resource.
-
-        :param kwargs: Keywors arguments to filter the search.
-        :type kwargs: dict
-        :returns: The number of records for this resource.
-        :rtype: int
-        """
+        """Abstract method"""
         raise NotImplementedError('abstract')
 
     def reverse(self):
@@ -180,8 +153,10 @@ class _AbstractQuerySet(object):
         order of Resources.
 
         Evaluating a QuerySet that is reversed but has no order will result in
-        a OrderByRequiredForReverse exception being raised. So, ensure you call
-        order_by() on any reversed QuerySet.
+        a :py:class:`~tastytopping.exceptions.OrderByRequiredForReverse`
+        exception being raised. So, ensure you call
+        :py:meth:`~tastytopping.queryset.QuerySet.order_by` on any reversed
+        QuerySet.
 
         :returns: A new QuerySet.
         :rtype: QuerySet
@@ -189,51 +164,22 @@ class _AbstractQuerySet(object):
         return self.filter(__reverse=self._reverse ^ True)
 
     def iterator(self):
-        """Returns an iterator to the QuerySet's results.
-
-        Evaluates the QuerySet (by performing the query) and returns an
-        iterator over the results. A QuerySet typically caches its results
-        internally so that repeated evaluations do not result in additional
-        queries. In contrast, iterator() will read results directly, without
-        doing any caching at the QuerySet level (internally, the default
-        iterator calls iterator() and caches the return value). For a QuerySet
-        which returns a large number of objects that you only need to access
-        once, this can result in better performance and a significant reduction
-        in memory.
-
-        Note that using iterator() on a QuerySet which has already been
-        evaluated will force it to evaluate again, repeating the query.
-
-        :returns: An iterator to the QuerySet's results.
-        :rtype: iterator object
-        """
+        """Abstract method"""
         raise NotImplementedError('abstract')
 
     def latest(self, field_name):
-        """Returns the latest resource, by date, using the 'field_name'
-        provided as the date field.
-
-        Note that earliest() and latest() exist purely for convenience and
-        readability.
-
-        :param field_name: The name of the field to order the resources by.
-        :type field_name: str
-        :returns: The latest resource, by date.
-        :rtype: Resource
-        :raises: NoResourcesExist
-        """
+        """Abstract method"""
         raise NotImplementedError('abstract')
 
     def earliest(self, field_name):
-        """Works otherwise like latest() except the direction is changed."""
-        # TODO Link any methods named in the docstrings.
+        """Abstract method"""
         raise NotImplementedError('abstract')
 
     def first(self):
         """Return the first resource from the query.
 
-        :returns: The first Resource or None
-        :rtype: Resource
+        :returns: The first Resource, or None if the QuerySet is empty.
+        :rtype: :py:class:`~tastytopping.resource.Resource`
         """
         try:
             return self[0]
@@ -241,7 +187,9 @@ class _AbstractQuerySet(object):
             return None
 
     def last(self):
-        """Works like first(), but returns the last resource"""
+        """Works like :meth:`~tastytopping.queryset.QuerySet.first`, but returns
+        the last resource.
+        """
         try:
             return self[-1]
         except IndexError:
@@ -272,20 +220,19 @@ class _AbstractQuerySet(object):
 
 
 class QuerySet(_AbstractQuerySet):
-    """Makes lazy queries against Resources.
+    """Allows for easier querying of resources while reducing API access.
 
-    The API and function are very similar to Django's QuerySet class. There are
-    a few differences: slicing this QuerySet will always evaluate the query and
-    return a list; and this QuerySet accepts negative slices.
+    The API and function are very similar to Django's
+    `QuerySet <https://docs.djangoproject.com/en/dev/ref/models/querysets/>`_
+    class. There are a few differences: slicing this QuerySet will always
+    evaluate the query and return a list; and this QuerySet accepts negative
+    slices.
 
-    :param resource: The Resource to query against.
-    :type resource: Resource class
-    :param schema: The schema for this Resource.
-    :type schema: TastySchema
-    :param api: The API for this Resource type.
-    :type api: api.Api
-    :param kwargs: The filters to use in the query.
-    :type kwargs: dict
+    Note that you normally wouldn't instantiate QuerySets yourself; you'd be
+    using a Resource's :meth:`~tastytopping.resource.Resource.filter`,
+    :meth:`~tastytopping.resource.Resource.all`,
+    :meth:`~tastytopping.resource.Resource.none`,
+    :meth:`~tastytopping.resource.Resource.get` methods to create a QuerySet.
     """
 
     @staticmethod
@@ -438,6 +385,13 @@ class QuerySet(_AbstractQuerySet):
             return kwargs
 
     def count(self):
+        """Return the number of records for this resource.
+
+        :param kwargs: Keywors arguments to filter the search.
+        :type kwargs: dict
+        :returns: The number of records for this resource.
+        :rtype: int
+        """
         count_kwargs = self._kwargs.copy()
         count_kwargs['limit'] = 1
         self._schema.check_list_request_allowed('get')
@@ -446,6 +400,15 @@ class QuerySet(_AbstractQuerySet):
         return response['meta']['total_count']
 
     def update(self, **kwargs):
+        """Updates all resources matching this query with the given fields.
+
+        This method provides a large optimization to updating each resource
+        individually: This method will only make 2 API calls per thousand
+        resources.
+
+        :param kwargs: The fields to update: {field_name: field_value, ...}
+        :type kwargs: dict
+        """
         resources_to_update = list(self)
         resources = []
         for resource in resources_to_update:
@@ -455,6 +418,18 @@ class QuerySet(_AbstractQuerySet):
         self._resource.bulk(create=resources)
 
     def delete(self):
+        """Delete every Resource filtered by this query.
+
+        Note that there is an optimization when calling delete() on a full
+        QuerySet (ie. one without filters). So:
+
+        ::
+
+            # this will be quicker:
+            Resource.all().filter()
+            # than this:
+            Resource.filter(id__gt=0).filter()
+        """
         if self._kwargs:
             resources = list(self)
             self._resource.bulk(delete=resources)
@@ -465,6 +440,24 @@ class QuerySet(_AbstractQuerySet):
             self._resource._alive = set()
 
     def iterator(self):
+        """Returns an iterator to the QuerySet's results.
+
+        Evaluates the QuerySet (by performing the query) and returns an
+        iterator over the results. A QuerySet typically caches its results
+        internally so that repeated evaluations do not result in additional
+        queries. In contrast, iterator() will read results directly, without
+        doing any caching at the QuerySet level (internally, the default
+        iterator calls iterator() and caches the return value). For a QuerySet
+        which returns a large number of objects that you only need to access
+        once, this can result in better performance and a significant reduction
+        in memory.
+
+        Note that using iterator() on a QuerySet which has already been
+        evaluated will force it to evaluate again, repeating the query.
+
+        :returns: An iterator to the QuerySet's results.
+        :rtype: iterator object
+        """
         self._schema.check_list_request_allowed('get')
         self._schema.check_fields_in_filters(self._kwargs)
         fields = self._filter_fields(self._kwargs)
@@ -487,25 +480,31 @@ class QuerySet(_AbstractQuerySet):
             raise NoResourcesExist(self._resource._name(), self._kwargs)
 
     def latest(self, field_name):
+        """Returns the latest resource, by date, using the 'field_name'
+        provided as the date field.
+
+        Note that :meth:`~tastytopping.queryset.QuerySet.earliest` and
+        :meth:`~tastytopping.queryset.QuerySet.latest` exist purely for
+        convenience and readability.
+
+        :param field_name: The name of the field to order the resources by.
+        :type field_name: str
+        :returns: The latest resource, by date.
+        :rtype: :py:class:`~tastytopping.resource.Resource`
+        :raises: :py:class:`~tastytopping.exceptions.NoResourcesExist`
+        """
         field_name = self._flip_field_order(field_name)
         return self._return_first_by_date(field_name)
 
     def earliest(self, field_name):
+        """Works otherwise like :meth:`~tastytopping.queryset.QuerySet.latest`
+        except the direction is changed.
+        """
         return self._return_first_by_date(field_name)
 
 
 class EmptyQuerySet(_AbstractQuerySet):
-    """A no-op QuerySet class to shortcut API access.
-
-    :param resource: The Resource to query against.
-    :type resource: Resource class
-    :param schema: The schema for this Resource.
-    :type schema: TastySchema
-    :param api: The API for this Resource type.
-    :type api: api.Api
-    :param kwargs: The filters to use in the query.
-    :type kwargs: dict
-    """
+    """A no-op QuerySet class to shortcut API access."""
 
     def __and__(self, other):
         return EmptyQuerySet(self._resource)

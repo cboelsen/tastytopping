@@ -21,10 +21,10 @@ class ResourceFactory(object):
 
     The resource classes are accessed as member variables on the factory object,
     via a resource's name. For example, with a resource at
-    http://localhost/app_name/api/v1/example_resource/, the ResourceFactory will
-    have a member variable called 'example_resource' returning a
-    :class:`tastytopping.resource.Resource` class (more specifically, a subclass
-    of it, specialised for the resource in question):
+    ``http://localhost/app_name/api/v1/example_resource/``, the ResourceFactory
+    will have a member variable called 'example_resource' returning a
+    :py:class:`~tastytopping.resource.Resource` class (more specifically, a
+    subclass of it, specialised for the resource in question):
 
     ::
 

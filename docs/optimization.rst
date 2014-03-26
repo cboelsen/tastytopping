@@ -14,7 +14,7 @@ Bulk operations (PATCH)
 The PATCH REST method provides a nice way to for clients to create, update and
 delete resources en masse, which tastypie has implemented. TastyTopping has
 wrapped this functionality behind the
-:py:meth:`tastytopping.resource.Resource.bulk` method. To create multiple blog
+:py:meth:`~tastytopping.resource.Resource.bulk` method. To create multiple blog
 entries (from the tutorial):
 
 ::
@@ -28,7 +28,7 @@ entries (from the tutorial):
 
 Note that unlike when creating a resource normally, the bulk method does NOT
 return anything. This means if you want to get any of the resources later,
-you'll need to :py:meth:`tastytopping.resource.Resource.get` them.
+you'll need to :py:meth:`~tastytopping.resource.Resource.get` them.
 
 Using bulk, it's also possible to update multiple Resources in a single
 request:
@@ -74,15 +74,15 @@ in the event that it does fail, all changes will be rolled back.
 Delete list resource
 --------------------
 
-To prevent you having to call :py:meth:`tastytopping.resource.Resource.delete`
-for every resource in a list resource, you can instead use the
-:py:meth:`tastytopping.resource.Resource.delete_all` classmethod:
+To prevent you having to call :py:meth:`~tastytopping.resource.Resource.delete`
+for every resource in a list resource, you can instead use the QuerySet's
+:py:meth:`~tastytopping.queryset.QuerySet.delete` method:
 
 ::
 
     entry1 = factory.entry(user=user1, title='Entry 1', body='Some text.\n')
     entry2 = factory.entry(user=user1, title='Entry 2', body='Some text.\n')
-    factory.entry.delete_all()
+    factory.entryall().delete()
 
 This method will also mark all Resources as deleted, so any use of them will
 result in a ResourceDeleted exception.
@@ -91,9 +91,9 @@ Update multiple fields
 ----------------------
 
 As a shortcut, it's possible to update multiple fields in a single request
-using :py:meth:`tastytopping.resource.Resource.update`, which will also update
+using :py:meth:`~tastytopping.resource.Resource.update`, which will also update
 the resource remotely (ie. effectively call
-:py:meth:`tastytopping.resource.Resource.save`).
+:py:meth:`~tastytopping.resource.Resource.save`).
 
 ::
 

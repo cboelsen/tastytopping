@@ -15,23 +15,36 @@ Usage
 -----
 
 To use an authentication class in either case is very simple. As an example, to
-use API key authentication for all Resources by default:
-
-::
+use API key authentication for all Resources by default::
 
     from tastytopping import ResourceFactory, HttpApiKeyAuth
     factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
     factory.auth = HttpApiKeyAuth(username, api_key)
 
-And to use digest authentication on a single resource (secret_resource):
-
-::
+And to use digest authentication on a single resource (secret_resource)::
 
     from tastytopping import HTTPDigestAuth
     factory.secret_resource.auth = HTTPDigestAuth(username, password)
 
-Besides ``HttpApiKeyAuth`` and ``HTTPDigestAuth``, TastyTopping also provides
-``HTTPBasicAuth``. To use OAuth with your API, the `requests-oathlib
+There is also a class to use with django's session authentication. This
+requires that you set up a Resource in tastypie that is capable of returning
+a CSRF token in a cookie, an example of which can be found in the django app
+used by TastyTopping's `unit tests
+<https://github.com/cboelsen/tastytopping/blob/master/tests/testsite/testapp/api.py#L50>`_.
+
+Once a CSRF token has been returned in a cookie, telling a Resource to use
+session auth is as simple as::
+
+    from tastytopping import HTTPSessionAuth
+    factory.some_resource.auth = HTTPSessionAuth()
+
+The CSRF token will be taken from the cookies automatically. If the CSRF token
+was obtained in another way, it's also possible to pass the token into
+:py:class:`~tastytopping.auth.HTTPSessionAuth`'s constructor.
+
+Besides the aforementioned auth classes, TastyTopping also provides
+:py:class:`~tastytopping.auth.HTTPBasicAuth`. To use OAuth with your API,
+the `requests-oathlib
 <https://requests-oauthlib.readthedocs.org/en/latest/>`_ package provides a
 compatible authentication class.
 
