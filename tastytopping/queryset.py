@@ -26,10 +26,10 @@ from .field import create_field
 
 class _AbstractQuerySet(object):
 
-    def __init__(self, resource, schema, api, **kwargs):
+    def __init__(self, resource, **kwargs):
         self._resource = resource
-        self._schema = schema
-        self._api = api
+        self._schema = resource._schema()
+        self._api = resource._api()
         self._kwargs = kwargs
         self._reverse = kwargs.pop('__reverse', False)
         self._prefetch = kwargs.pop('__prefetch', [])
@@ -71,7 +71,7 @@ class _AbstractQuerySet(object):
             new_kwargs['order_by'] = self._ordering + new_kwargs.get('order_by', [])
         if self._prefetch or '__prefetch' in new_kwargs:
             new_kwargs['__prefetch'] = self._prefetch + new_kwargs.get('__prefetch', [])
-        return self._queryset_class()(self._resource, self._schema, self._api, **new_kwargs)
+        return self._queryset_class()(self._resource, **new_kwargs)
 
     def all(self):
         """Return all existing objects via the API.
@@ -84,7 +84,7 @@ class _AbstractQuerySet(object):
 
     def none(self):
         """Return an EmptyQuerySet object."""
-        return EmptyQuerySet(self._resource, self._schema, self._api, **self._kwargs)
+        return EmptyQuerySet(self._resource, **self._kwargs)
 
     def get(self, **kwargs):
         """Return an existing object via the API.
@@ -297,7 +297,7 @@ class QuerySet(_AbstractQuerySet):
 
     def __and__(self, other):
         if isinstance(other, EmptyQuerySet):
-            return EmptyQuerySet(other._resource, other._schema, other._api)
+            return EmptyQuerySet(other._resource)
         new_kwargs = self._kwargs.copy()
         if self._ordering or other._ordering:
             new_kwargs['order_by'] = self._ordering + other._ordering
@@ -307,7 +307,7 @@ class QuerySet(_AbstractQuerySet):
                 new_kwargs[name] = self._create_filter_list(new_kwargs[name], value)
             else:
                 new_kwargs[name] = value
-        return QuerySet(self._resource, self._schema, self._api, **new_kwargs)
+        return QuerySet(self._resource, **new_kwargs)
 
     def __getitem__(self, key):
         # TODO Cache the results here too!
@@ -486,7 +486,7 @@ class QuerySet(_AbstractQuerySet):
         date_field = field_name if not self._reverse else self._flip_field_order(field_name)
         date_kwargs['order_by'] = [date_field] + self._ordering
         try:
-            return QuerySet(self._resource, self._schema, self._api, **date_kwargs)[0]
+            return QuerySet(self._resource, **date_kwargs)[0]
         except IndexError:
             raise NoResourcesExist(self._resource._name(), self._kwargs)
 
@@ -512,7 +512,7 @@ class EmptyQuerySet(_AbstractQuerySet):
     """
 
     def __and__(self, other):
-        return EmptyQuerySet(self._resource, self._schema, self._api)
+        return EmptyQuerySet(self._resource)
 
     def __getitem__(self, key):
         raise IndexError("The index {0} is out of range.".format(key))

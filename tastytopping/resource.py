@@ -365,7 +365,7 @@ class Resource(_BASE_META_BRIDGE, object):
         :rtype: list
         :raises: NoResourcesExist
         """
-        return QuerySet(cls, cls._schema(), cls._api(), **kwargs)
+        return QuerySet(cls, **kwargs)
 
     @classmethod
     def all(cls):
@@ -375,12 +375,12 @@ class Resource(_BASE_META_BRIDGE, object):
         :rtype: list
         :raises: NoResourcesExist
         """
-        return QuerySet(cls, cls._schema(), cls._api())
+        return QuerySet(cls)
 
     @classmethod
     def none(cls):
         """Return an EmptyQuerySet object."""
-        return EmptyQuerySet(cls, cls._schema(), cls._api())
+        return EmptyQuerySet(cls)
 
     @classmethod
     def get(cls, **kwargs):
@@ -392,7 +392,7 @@ class Resource(_BASE_META_BRIDGE, object):
         :rtype: Resource
         :raises: NoResourcesExist, MultipleResourcesReturned
         """
-        return QuerySet(cls, cls._schema(), cls._api()).get(**kwargs)
+        return QuerySet(cls).get(**kwargs)
 
     @classmethod
     def create(cls, resources):

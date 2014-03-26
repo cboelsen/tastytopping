@@ -247,7 +247,7 @@ class QuerySetTests(TestsBase):
         self.assertRaises(NoResourcesExist, TestResource.all().latest, 'date')
 
     def test_abstract_querysets_abstractness___exceptions_raised(self):
-        abstract = queryset._AbstractQuerySet(None, None, None)
+        abstract = queryset._AbstractQuerySet(TestResource)
         self.assertRaises(NotImplementedError, abstract._queryset_class)
         self.assertRaises(NotImplementedError, abstract.update)
         self.assertRaises(NotImplementedError, abstract.delete)
