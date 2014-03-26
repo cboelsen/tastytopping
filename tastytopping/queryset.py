@@ -326,7 +326,6 @@ class QuerySet(_AbstractQuerySet):
             raise TypeError("Invalid argument type.")
 
     def __iter__(self):
-        exist = bool(self._retrieved_resources)
         for resource in self._retrieved_resources:
             resource = self._insert_prefetched_resources(resource)
             yield resource
@@ -334,9 +333,6 @@ class QuerySet(_AbstractQuerySet):
             resource = self._insert_prefetched_resources(resource)
             self._retrieved_resources.append(resource)
             yield resource
-            exist = True
-        if not exist:
-            raise NoResourcesExist(self._resource._name(), self._kwargs)
 
     @classmethod
     def _queryset_class(cls):

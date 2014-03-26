@@ -60,7 +60,7 @@ class IntegrationTests(TestsBase):
     def test_delete_object___no_object_to_get(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
         resource.delete()
-        self.assertRaises(NoResourcesExist, list, TestResource.filter(path=self.TEST_PATH1))
+        self.assertEqual(0, TestResource.filter(path=self.TEST_PATH1).count())
 
     def test_delete_object_twice___exception_raised(self):
         resource = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
@@ -310,7 +310,7 @@ class IntegrationTests(TestsBase):
         res1 = TestResource(path=self.TEST_PATH1).save()
         res2 = TestResource(path=self.TEST_PATH2).save()
         TestResource.bulk(delete=[res1, res2])
-        self.assertRaises(NoResourcesExist, list, TestResource.all())
+        self.assertEqual(0, TestResource.all().count())
         self.assertRaises(ResourceDeleted, setattr, res1, 'rating', 50)
 
     def test_get_with_multiple_results___throws_exception(self):
