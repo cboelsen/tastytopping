@@ -377,3 +377,7 @@ class QuerySetTests(TestsBase):
         self.assertEqual('101', all_trees[0].children[1].name)
         self.assertEqual('103', all_trees[1].children[0].name)
         self.assertEqual('0', all_trees[21].parent.name)
+
+    def test_pagination_with_slicing___all_results_are_returned(self):
+        FACTORY.tree.create([{'name': str(i)} for i in range(23)])
+        self.assertEqual(21, len(FACTORY.tree.all()[:-2]))

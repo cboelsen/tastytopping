@@ -173,6 +173,7 @@ class TreeResource(ModelResource):
         detail_allowed_methods = ['get', 'delete', 'put']
         authorization = Authorization()
         always_return_data = True
+        max_limit = 10
         filtering = {
             'number': ALL,
             'name': ALL,

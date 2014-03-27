@@ -134,16 +134,14 @@ class TastyApi(object):
         :returns: A generator object that yields dicts.
         :rtype: dict
         """
-        retrieve_all_results = False
-        if 'limit' not in kwargs:
-            retrieve_all_results = True
+        limit = kwargs.get('limit', 0) or 1000000000    # Stupidly large number to simulate 'unlimited'.
         result = self._transmit(self._session().get, url, params=kwargs)
+        limit -= int(result['meta']['limit'])
         yield result
-        # Only continue to retrieve results if the user hasn't specified the
-        # number of results to retrieve.
-        while result['meta']['next'] and retrieve_all_results:
+        while result['meta']['next'] and limit > 0:
             url = self.create_full_uri(result['meta']['next'])
-            result = self._transmit(self._session().get, url)
+            result = self._transmit(self._session().get, url, params={'limit': limit})
+            limit -= int(result['meta']['limit'])
             yield result
 
     def get(self, url, **kwargs):

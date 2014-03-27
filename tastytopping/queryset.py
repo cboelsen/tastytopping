@@ -224,13 +224,29 @@ class QuerySet(_AbstractQuerySet):
     `QuerySet <https://docs.djangoproject.com/en/dev/ref/models/querysets/>`_
     class. There are a few differences: slicing this QuerySet will always
     evaluate the query and return a list; and this QuerySet accepts negative
-    slices.
+    slices/indices [#f1]_.
 
     Note that you normally wouldn't instantiate QuerySets yourself; you'd be
     using a Resource's :meth:`~tastytopping.resource.Resource.filter`,
     :meth:`~tastytopping.resource.Resource.all`,
     :meth:`~tastytopping.resource.Resource.none`,
     :meth:`~tastytopping.resource.Resource.get` methods to create a QuerySet.
+
+    A quick example::
+
+        # These will not evaluate the query (ie. hit the API):
+        some_resources_50_100 = SomeResource.filter(rating__gt=50, rating__lt=100)
+        some_resources_ordered = some_resources_50_100.order_by('rating')
+
+        # These will evaluate the query:
+        first_resource_above_50 = some_resources_ordered.first()
+        arbitrary_resource_between_50_and_100 = some_resources_ordered[5]
+        all_resources_between_50_and_100 = list(some_resources_ordered)
+        every_third_resource_between_100_and_50 = some_resources_ordered[::-3]
+
+.. [#f1] Using negative slices/indices will result in more requests to the API, as
+        the QuerySet needs to find the number of resources this query matches (using
+        :py:meth:`~tastytopping.queryset.QuerySet.count`).
     """
 
     @staticmethod
@@ -354,13 +370,16 @@ class QuerySet(_AbstractQuerySet):
         get_kwargs.update({'offset': start, 'limit': limit})
         get_kwargs = self._apply_order(get_kwargs)
         get_kwargs = self._filter_fields(get_kwargs)
-        result = self._api.get(self._resource._full_name(), **get_kwargs)
+        all_resources = []
+        for resources in self._api.paginate(self._resource._full_name(), **get_kwargs):
+            all_resources += resources['objects']
+            result = resources
         total_count = result['meta']['total_count']
         if start >= total_count:
             raise IndexError("The index {0} is out of range.".format(start))
         if stop > total_count:
             raise IndexError("The index {0} is out of range.".format(stop))
-        return result['objects']
+        return all_resources
 
     def _get_specified_resources(self, start, stop, step=1):
         start, stop = self._convert_to_positive_indices(start, stop, step)
@@ -476,7 +495,6 @@ class QuerySet(_AbstractQuerySet):
                 yield self._resource(_fields=obj)
 
     def _return_first_by_date(self, field_name):
-        # TODO What happens when the field isn't a date/datetime field?!?!
         date_kwargs = self._kwargs.copy()
         date_kwargs['__reverse'] = self._reverse
         date_field = field_name if not self._reverse else self._flip_field_order(field_name)

@@ -448,26 +448,6 @@ class IntegrationTests(TestsBase):
         self.assertEqual(datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
 
 
-    #def test_queryset_logical_operator_and___filters_are_combined(self):
-    #    TestResource.create([
-    #        {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime(2014, 1, 1)},
-    #        {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime(2014, 1, 2)},
-    #        {'path': self.TEST_PATH1+'3', 'rating': 40, 'date': datetime(2014, 1, 2)},
-    #    ])
-    #    resources = TestResource.filter(rating__lt=30) & TestResource.filter(date=datetime(2014, 1, 2))
-    #    self.assertEqual(1, resources.count())
-    #    self.assertEqual(self.TEST_PATH1+'2', resources[0].path)
-
-    #def test_queryset_logical_operator_and___filters_are_combined(self):
-    #    TestResource.create([
-    #        {'path': self.TEST_PATH1+'1', 'rating': 10},
-    #        {'path': self.TEST_PATH1+'2', 'rating': 20},
-    #        {'path': self.TEST_PATH1+'3', 'rating': 40},
-    #    ])
-    #    resources = TestResource.filter(rating=20) & TestResource.filter(rating=10)
-    #    self.assertEqual(2, resources.count())
-
-
     # TODO Threading
     #def test_zzz_threading___argh(self):
     #    lock = threading.Lock()
