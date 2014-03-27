@@ -118,9 +118,7 @@ class _AbstractQuerySet(object):
 
         The first field's order will be most important, with the importance
         decending thereafter. Calling this method multiple times will achieve
-        the same. For example, the following are equivalent:
-
-        ::
+        the same. For example, the following are equivalent::
 
             query = query.order_by('path', 'content')
             # Is equivalent to:
@@ -243,6 +241,15 @@ class QuerySet(_AbstractQuerySet):
         return list(val1 & val2)
 
     def __and__(self, other):
+        if not isinstance(other, _AbstractQuerySet):
+            raise TypeError('Expected instance of type "{0}"; found "{1}".'.format(type(self), type(other)))
+        if not self._resource._name() == other._resource._name():
+            raise TypeError(
+                'Expected query against "{0}"; found "{1}".'.format(
+                    type(self._resource._name()),
+                    type(other._resource._name()),
+                )
+            )
         if isinstance(other, EmptyQuerySet):
             return EmptyQuerySet(other._resource)
         new_kwargs = self._kwargs.copy()

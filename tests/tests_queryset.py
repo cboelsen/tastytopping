@@ -305,6 +305,24 @@ class QuerySetTests(TestsBase):
         combined = TestResource.all().order_by('rating') & TestResource.all().order_by('date')
         self.assertEqual(self.TEST_PATH1+'3', combined[1].path)
 
+    def test_logical_and_multiple_times___combination_correct(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'3', 'rating': 30, 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'4', 'rating': 40, 'date': datetime(2013, 3, 3)},
+        ])
+        combined = TestResource.filter(rating__in=[20, 30]) & TestResource.filter(rating__in=[20, 40]) & TestResource.filter(date=datetime(2013, 3, 3))
+        self.assertEqual(self.TEST_PATH1+'2', combined.get().path)
+
+    def test_logical_and_with_queryset_of_different_resource___exception_raised(self):
+        with self.assertRaises(TypeError):
+            TestResource.all() & FACTORY.container.all()
+
+    def test_logical_and_with_wrong_type___exception_raised(self):
+        with self.assertRaises(TypeError):
+            TestResource.all() & 5
+
     def test_using_previously_cached_values_in_slicing___correct_results_returned(self):
         TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
         all_resources = TestResource.all()
