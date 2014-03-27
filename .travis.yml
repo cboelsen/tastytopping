@@ -1,6 +1,8 @@
 language: python
 python: 2.7
 env:
+  - TOX_ENV=pypy-dev
+  - TOX_ENV=pypy-0.11
   - TOX_ENV=py33-dev
   - TOX_ENV=py33-0.11
   - TOX_ENV=py33-0.10
