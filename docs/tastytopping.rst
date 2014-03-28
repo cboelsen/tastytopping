@@ -1,29 +1,29 @@
 API Documentation
 =================
 
-ResourceFactory class
----------------------
+ResourceFactory
+---------------
 
 .. autoclass:: tastytopping.ResourceFactory
     :members:
     :undoc-members:
 
-Resource class
---------------
+Resource
+--------
 
 .. autoclass:: tastytopping.resource.Resource
     :members: auth, uri, update, delete, refresh, save, fields, get, filter, all, bulk, create, none, check_alive
     :member-order: groupwise
 
-QuerySet class
---------------
+QuerySet
+--------
 
 .. autoclass:: tastytopping.queryset.QuerySet
     :members: filter, all, none, get, update, delete, order_by, exists, count, reverse, iterator, latest, earliest, first, last, prefetch_related
     :member-order: groupwise
 
-Authentication classes
-----------------------
+Authentications
+---------------
 
 .. automodule:: tastytopping.auth
     :members:

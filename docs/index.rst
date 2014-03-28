@@ -13,8 +13,7 @@ why would you want to have to do it all again on the client-side?
 TastyTopping creates objects that behave similarly to django models, using your
 self-documenting TastyPie REST API to create the object's attributes and
 behaviour, in addition to retrieving the data. TastyTopping only needs 2 things
-from you (3 if you're using authentication): The URL of the API, and the
-resource name.
+from you: The URL of the API, and the resource name.
 
 As a brief example::
 

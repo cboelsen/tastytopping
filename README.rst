@@ -17,57 +17,48 @@ Currently in beta.
 Features
 ^^^^^^^^
 
-- Django model-like ORM API allowing you to GET, POST, PUT, PATCH, and DELETE:
+- Django model-like ORM API allowing you to GET, POST, PUT, PATCH, and DELETE::
+
+    factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
+    current_resource = factory.resource.get(field='name')    # GET
+    new_resource = factory.resource(field='new_name').save() # POST
+    new_resource.field = 'different_name'                    # PATCH / PUT
+    current_resource.delete()                                # DELETE
+
+- Easily work with any related resources::
 
   ::
 
-      factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
-      current_resource = factory.resource.get(field='name')    # GET
-      new_resource = factory.resource(field='new_name').save() # POST
-      new_resource.field = 'different_name'                    # PATCH / PUT
-      current_resource.delete()                                # DELETE
+    new_resource.children = [
+        factory.resource(field='new_name1').save(),
+        factory.resource(field='new_name2').save(),
+    ]
 
-- Easily work with any related resources:
+- QuerySets::
 
-  ::
+    queryset1 = factory.resource.filter(field2__gt=20)
+    queryset2 = queryset1.order_by('field2')
+    # Evaluation happens here:
+    resources = queryset2[5:-8]
 
-      new_resource.children = [
-          factory.resource(field='new_name1').save(),
-          factory.resource(field='new_name2').save(),
-      ]
+- Simple way to set and update authentication per resource::
 
-- Simple way to set and update authentication per resource:
+    factory.resource.auth = ApiKeyAuth('username', 'key12345')
 
-  ::
+- Access nested resources using simple methods (currently in dev branch)::
 
-      factory.resource.auth = ApiKeyAuth('username', 'key12345')
-
-- Access nested resources using simple methods (currently in dev branch):
-
-  ::
-
-      new_resource.nested_resource('arg1', arg2=3)
-
-- Set whether the resources should be cached locally or always updated remotely
-  (per resource or per instance):
-
-  ::
-
-      factory.resource.caching = False
-      # Or per instance
-      new_resource.set_caching(False)
+    new_resource.nested.nested_resource('arg1', arg2=3)
 
 - Basic field validation before connecting to the API.
 
-- Bulk create / update / delete to minimise API access:
+- Bulk create / update / delete to minimise API access::
 
-  ::
 
-      factory.resource.bulk(
-          create=[{field='name1'}, {field='name2'}],
-          update=[current_resource, new_resource],
-          delete=[new_resource],
-      )
+    factory.resource.bulk(
+        create=[{field='name1'}, {field='name2'}],
+        update=[current_resource, new_resource],
+        delete=[new_resource],
+    )
 
 Find more information on these features at `read the docs!
 <http://tastytopping.readthedocs.org/en/latest/>`_
