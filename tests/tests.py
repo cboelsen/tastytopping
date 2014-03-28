@@ -463,7 +463,7 @@ class IntegrationTests(TestsBase):
 
     # TESTING:
     # TODO Tests have frozen twice!!!!
-    # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
+    # TODO Re-enable django-dev in *-dev when tastypie works with django 1.7 again.
 
     # DOCS
     # TODO Double check all language is correct (list resource => list view, etc.).
