@@ -448,26 +448,6 @@ class IntegrationTests(TestsBase):
         self.assertEqual(datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
 
 
-    # TODO Threading
-    #def test_zzz_threading___argh(self):
-    #    lock = threading.Lock()
-    #    def work(res):
-    #        for i in range(100):
-    #            # TODO This doesn't work!
-    #            with lock:
-    #                new_text = res.text + '_' + str(i)
-    #            res.text = new_text
-    #            time.sleep(0.00001)
-    #    res1 = TestResource(path=self.TEST_PATH1, text='start').save()
-    #    with futures.ThreadPoolExecutor(max_workers=10) as executor:
-    #        jobs = [executor.submit(work, res1) for _ in range(10)]
-    #        for future in futures.as_completed(jobs):
-    #            pass
-    #    import sys
-    #    sys.stderr.write(str(res1.text) + '\n')
-    #    sys.stderr.write(str(res1.text.count('_')) + '\n')
-
-
     # TODO Pickle
     #def test_pickling_resource___resource_useable(self):
     #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
@@ -477,23 +457,19 @@ class IntegrationTests(TestsBase):
 
 
     # FEATURES:
-    # TODO Allow stacking filters (ala Django) and allow count() on this object-thing. See:
-    #           https://docs.djangoproject.com/en/dev/ref/models/querysets/
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Allow 'exclude()' when tastypie allows it.
     # TODO Single dispatch functions.
-    # TODO asyncio
 
     # TESTING:
     # TODO Tests have frozen twice!!!!
-    # TODO Thread-safety
     # TODO Re-enable django-dev in py33-dev and py27-dev when tastypie works with django 1.7 again.
 
     # DOCS
+    # TODO Double check all language is correct (list resource => list view, etc.).
     # TODO QuerySet
     # TODO Cookbook
     #   - Extending Resource classes with own methods
-    # TODO Nested resources.
 
 
 if __name__ == "__main__":

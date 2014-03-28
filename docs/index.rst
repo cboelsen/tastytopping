@@ -33,6 +33,7 @@ Contents
 
     tutorial
     auth
+    nested
     optimization
     tastytopping
 

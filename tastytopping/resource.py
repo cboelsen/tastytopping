@@ -63,8 +63,9 @@ class Resource(_BASE_META_BRIDGE, object):
     """(:py:class:`~tastytopping.auth.AuthBase`): The Authorization to use with
         the resource. Note that because authorization applies to all resources
         of a given type, changing the auth will affect all instances of a
-        Resource, as well as the derived Resource class itself (TODO link to
-        examples here)."""
+        Resource, as well as the derived Resource class itself. The
+        :doc:`auth` page goes into more detail.
+        """
 
     _factory = None
     _alive = set()
