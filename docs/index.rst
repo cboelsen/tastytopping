@@ -32,6 +32,7 @@ Contents
 
     tutorial
     auth
+    query
     nested
     optimization
     tastytopping
