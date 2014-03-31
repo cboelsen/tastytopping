@@ -47,4 +47,21 @@ returns a QuerySet for that Resource:
 Usage
 -----
 
+To demonstrate using QuerySets, we're going to use the same API as in the
+:doc:`tutorial` section::
+
+    from tastytopping import ResourceFactory
+    factory = ResourceFactory('http://127.0.0.1:8000/api/v1/')
+
+We've even already used a QuerySet as part of the tutorial::
+
+    existing_user = factory.user.all().first()
+
+which is simple enough - it will get the first user (using the default
+ordering). Using this existing user, we can query the API to see how many blog
+entries this user has made::
+
+    blog_entries = factory.entry.filter(user=existing_user)
+    num_blog_entries = blog_entries.count()
+
 To view all available methods, take a look at the :doc:`tastytopping`.

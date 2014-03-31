@@ -81,6 +81,8 @@ you'll find it useful.
 That said, there is more to learn, if you need to use more of Tastypie's
 features:
 
+ - :doc:`query`
+
  - :doc:`auth`
 
  - :doc:`optimization`
