@@ -6,7 +6,7 @@
 #from concurrent import futures
 import copy
 from datetime import datetime
-#import pickle
+import pickle
 #import threading
 #import time
 import unittest
@@ -447,18 +447,21 @@ class IntegrationTests(TestsBase):
         res1 = TestResource(path=self.TEST_PATH1, date_only=DATE).save()
         self.assertEqual(datetime(2014, 11, 12, 0, 0, 0), res1.date_only)
 
-
-    # TODO Pickle
-    #def test_pickling_resource___resource_useable(self):
-    #    res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
-    #    res2 = pickle.loads(pickle.dumps(res1))
-    #    res2.rating = 11
-    #    res2.save()
+    def test_pickling_resource___resource_useable(self):
+        root = TestTreeResource(name='root').save()
+        tree1 = TestTreeResource(name='tree1').save()
+        tree2 = TestTreeResource(name='tree2').save()
+        parent = TestTreeResource(name='parent', children=[tree1, tree2]).save()
+        parent2 = pickle.loads(pickle.dumps(parent))
+        parent2.name = 'new_parent'
+        parent2.parent = root.uri()
+        parent2.save()
 
 
     # FEATURES:
     # TODO empty save() shouldn't blow up
     # TODO Save resource without unique fields should simply get the latest ?!?! resource (threads !???!?!)
+    # TODO Pickle factory, queryset
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Allow 'exclude()' when tastypie allows it.
     # TODO Single dispatch functions in field?

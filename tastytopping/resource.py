@@ -328,13 +328,14 @@ class Resource(_BASE_META_BRIDGE, object):
         :param kwargs: The fields to update as keyword arguments.
         :type kwargs: dict
         """
+        will_save = kwargs.pop('___no_save', True)
         # Check that all the values passed in are allowed by the schema.
         for field, value in kwargs.items():
             self._schema().validate(field, value)
         fields = self._create_fields(**kwargs)
         self._fields().update(fields)
         self._cached_fields.update(fields)
-        if '___no_save' not in kwargs:
+        if will_save:
             self.save()
 
     def save(self):
@@ -477,3 +478,27 @@ class Resource(_BASE_META_BRIDGE, object):
         # Mark each deleted resource as deleted.
         for resource in delete:
             cls._alive.remove(resource.uri())
+
+#==============================================================================#
+#                                   PICKLE                                     #
+#==============================================================================#
+
+    def __reduce__(self):
+        state = self.__dict__.copy()
+        class_state = {k: v for k, v in self.__class__.__dict__.items()
+                if k in ['api_url', 'resource_name', '_class_schema', '_auth', '_alive', '_factory']
+        }
+        class_state['auth'] = class_state.pop('_auth')
+        return (_unpickle, (self.__class__.__name__, class_state), state)
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            self._set(k, v)
+        self._factory._classes[self.resource_name] = self.__class__
+
+    @staticmethod
+    def _specialise(name, attrs):
+        return type(name, (Resource, ), attrs)
+
+def _unpickle(name, attrs):
+    return Resource._specialise(name, attrs)()

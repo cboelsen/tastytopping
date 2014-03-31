@@ -24,9 +24,7 @@ class ResourceFactory(object):
     ``http://localhost/app_name/api/v1/example_resource/``, the ResourceFactory
     will have a member variable called 'example_resource' returning a
     :py:class:`~tastytopping.resource.Resource` class (more specifically, a
-    subclass of it, specialised for the resource in question):
-
-    ::
+    subclass of it, specialised for the resource in question)::
 
         factory = ResourceFactory('http://localhost/app_name/api/v1/')
         old_resource = factory.example_resource.get(name='bob')
@@ -44,6 +42,19 @@ class ResourceFactory(object):
         self._auth = None
         self._auth_lock = Lock()
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['_classes'] = {}
+        state['_classes_locks'] = {}
+        del state['_classes_lock']
+        del state['_auth_lock']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self._classes_lock = Lock()
+        self._auth_lock = Lock()
+
     def __getattr__(self, name):
         with self._classes_lock:
             if name not in self._classes_locks:
@@ -55,9 +66,8 @@ class ResourceFactory(object):
         try:
             return self._classes[resource]
         except KeyError:
-            new_resource_class = type(
+            new_resource_class = Resource._specialise(
                     resource,
-                    (Resource, ),
                     {
                         'api_url': self._url,
                         'resource_name': resource,
