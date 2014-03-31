@@ -83,7 +83,8 @@ class ResourceFactory(object):
         _set_auth,
         None,
         (
-            '(AuthBase): Update the auth on all resources accessed via this API. '
+            '(:py:class:`~tastytopping.auth.AuthBase`) - '
+            'Update the auth on all resources accessed via this API. '
             'Any new Resources will have their auth set to this value too.'
         ),
     )

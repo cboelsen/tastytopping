@@ -12,6 +12,9 @@
 __all__ = ('QuerySet', 'EmptyQuerySet', )
 
 
+import abc
+
+
 from .exceptions import (
     MultipleResourcesReturned,
     NoResourcesExist,
@@ -24,7 +27,13 @@ from .field import create_field
 # pylint: disable=W0212
 
 
-class _AbstractQuerySet(object):
+try:
+    abc.ABC
+except AttributeError:
+    abc.ABC = abc.ABCMeta('ABC', (object, ), {})    # For python < 3.4
+
+
+class _AbstractQuerySet(abc.ABC):
 
     def __init__(self, resource, **kwargs):
         self._resource = resource
@@ -41,8 +50,9 @@ class _AbstractQuerySet(object):
         self._retrieved_resources = []
         self._prefetched_resources = {k: None for k in self._prefetch}
 
+    @abc.abstractmethod
     def __and__(self, other):
-        raise NotImplementedError('abstract')
+        raise NotImplementedError()
 
     def __bool__(self):
         return self.exists()
@@ -51,8 +61,9 @@ class _AbstractQuerySet(object):
     __nonzero__ = __bool__
 
     @classmethod
+    @abc.abstractmethod
     def _queryset_class(cls):
-        raise NotImplementedError('abstract')
+        raise NotImplementedError()
 
     def filter(self, **kwargs):
         """Return a new QuerySet, with the given filters additionally applied.
@@ -105,13 +116,15 @@ class _AbstractQuerySet(object):
             pass
         return result
 
+    @abc.abstractmethod
     def update(self, **kwargs):
         """Abstract method"""
-        raise NotImplementedError('abstract')
+        raise NotImplementedError()
 
+    @abc.abstractmethod
     def delete(self):
         """Abstract method"""
-        raise NotImplementedError('abstract')
+        raise NotImplementedError()
 
     def order_by(self, *args):
         """Order the query's result according to the fields given.
@@ -140,9 +153,10 @@ class _AbstractQuerySet(object):
         """
         return self.count() > 0
 
+    @abc.abstractmethod
     def count(self):
         """Abstract method"""
-        raise NotImplementedError('abstract')
+        raise NotImplementedError()
 
     def reverse(self):
         """Reverse the order of the Resources returned from the QuerySet.
@@ -161,14 +175,17 @@ class _AbstractQuerySet(object):
         """
         return self.filter(__reverse=self._reverse ^ True)
 
+    @abc.abstractmethod
     def iterator(self):
         """Abstract method"""
-        raise NotImplementedError('abstract')
+        raise NotImplementedError()
 
+    @abc.abstractmethod
     def latest(self, field_name):
         """Abstract method"""
-        raise NotImplementedError('abstract')
+        raise NotImplementedError()
 
+    @abc.abstractmethod
     def earliest(self, field_name):
         """Abstract method"""
         raise NotImplementedError('abstract')
@@ -538,7 +555,7 @@ class EmptyQuerySet(_AbstractQuerySet):
         raise IndexError("The index {0} is out of range.".format(key))
 
     def __iter__(self):
-        raise NoResourcesExist(self._resource._name(), self._kwargs)
+        return self.iterator()
 
     @classmethod
     def _queryset_class(cls):

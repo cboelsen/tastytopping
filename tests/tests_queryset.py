@@ -235,9 +235,7 @@ class QuerySetTests(TestsBase):
         empty = TestResource.none()
         with self.assertRaises(IndexError):
             empty.none()[0]
-        # TODO Is this the behaviour I want?!?!
-        with self.assertRaises(NoResourcesExist):
-            list(empty)
+        self.assertEqual([], list(empty))
         self.assertEqual(0, empty.count())
         self.assertEqual([], list(empty.iterator()))
         self.assertRaises(NoResourcesExist, empty.earliest, 'date')
@@ -245,18 +243,6 @@ class QuerySetTests(TestsBase):
         empty.update(rating=0)
         empty.delete()
         self.assertRaises(NoResourcesExist, TestResource.all().latest, 'date')
-
-    def test_abstract_querysets_abstractness___exceptions_raised(self):
-        abstract = queryset._AbstractQuerySet(TestResource)
-        self.assertRaises(NotImplementedError, abstract._queryset_class)
-        self.assertRaises(NotImplementedError, abstract.update)
-        self.assertRaises(NotImplementedError, abstract.delete)
-        self.assertRaises(NotImplementedError, abstract.count)
-        self.assertRaises(NotImplementedError, abstract.iterator)
-        self.assertRaises(NotImplementedError, abstract.latest, 'date')
-        self.assertRaises(NotImplementedError, abstract.earliest, 'date')
-        with self.assertRaises(NotImplementedError):
-            abstract & abstract
 
     def test_logical_and_with_empty_queryset___empty_queryset_returned(self):
         TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])

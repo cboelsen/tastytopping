@@ -459,7 +459,7 @@ class IntegrationTests(TestsBase):
     # FEATURES:
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Allow 'exclude()' when tastypie allows it.
-    # TODO Single dispatch functions.
+    # TODO Single dispatch functions in field?
 
     # TESTING:
     # TODO Tests have frozen twice!!!!
