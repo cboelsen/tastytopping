@@ -184,15 +184,24 @@ class Resource(_BASE_META_BRIDGE, object):
     def _stream_fields(fields):
         return {n: v.stream() for n, v in fields.items()}
 
-    def _get_this_resource(self, fields):
-        fields = dict([f.filter(n) for n, f in fields.items()])
-        fields = self._schema().remove_fields_not_in_filters(fields)
+    def _get_this_resource(self, create_fields):
+        create_fields = dict([f.filter(n) for n, f in create_fields.items()])
+        fields = self._schema().remove_fields_not_in_filters(create_fields)
         fields['limit'] = 2
         self._schema().check_list_request_allowed('get')
         results = self._api().get(self._full_name(), **fields)
         resources = results['objects']
         if len(resources) > 1:
-            raise MultipleResourcesReturned(fields, resources)
+            error = (
+                "Querying for the newly created resource returned multiple resources. This is because the only "
+                "identifying fields are not unique.\n"
+                "Either: Create the resource with a unique field; use Resource.create(); or explicitly ignore this "
+                "warning (see TODO!).\n"
+                "Fields used to create the resource: {0}\n"
+                "Resources returned from the query: {1}\n"
+                "".format(create_fields, resources)
+            )
+            raise MultipleResourcesReturned(error)
         return resources[0]
 
     def _create_new_resource(self, **kwargs):
