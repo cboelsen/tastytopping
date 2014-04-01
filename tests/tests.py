@@ -48,6 +48,10 @@ class IntegrationTests(TestsBase):
         resource2 = TestResource.get(path=self.TEST_PATH1)
         self.assertEqual(resource2.rating, self.TEST_RATING1 + 1)
 
+    def test_call_save_when_no_changes___no_op(self):
+        resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        resource1.save()
+
     def test_get_non_existent_field_on_object___raises_exception(self):
         resource1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1)
         with self.assertRaises(AttributeError):
@@ -460,7 +464,7 @@ class IntegrationTests(TestsBase):
 
     # FEATURES:
     # TODO empty save() shouldn't blow up
-    # TODO Save resource without unique fields should simply get the latest ?!?! resource (threads !???!?!)
+    # TODO Save resource without unique fields should simply get the latest ?!?! resource (threads !???!?!) Simply a better warning?!?!
     # TODO Pickle factory, queryset
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Allow 'exclude()' when tastypie allows it.
@@ -475,6 +479,7 @@ class IntegrationTests(TestsBase):
     # TODO QuerySet
     # TODO Cookbook
     #   - Extending Resource classes with own methods
+    #   - Ignore warning and get latest resource anyway!
 
 
 if __name__ == "__main__":

@@ -189,8 +189,8 @@ class Resource(_BASE_META_BRIDGE, object):
         fields = self._schema().remove_fields_not_in_filters(fields)
         fields['limit'] = 2
         self._schema().check_list_request_allowed('get')
-        results = self._api().paginate(self._full_name(), **fields)
-        resources = next(results)['objects']
+        results = self._api().get(self._full_name(), **fields)
+        resources = results['objects']
         if len(resources) > 1:
             raise MultipleResourcesReturned(fields, resources)
         return resources[0]
@@ -207,16 +207,15 @@ class Resource(_BASE_META_BRIDGE, object):
         return details
 
     def _update_remote_fields(self, **kwargs):
-        full_uri = self.full_uri()
         fields = self._stream_fields(kwargs)
         try:
             self._schema().check_detail_request_allowed('patch')
-            self._api().patch(full_uri, **fields)
+            self._api().patch(self.full_uri(), **fields)
         except RestMethodNotAllowed:
             self._schema().check_detail_request_allowed('put')
             current_fields = self._stream_fields(self._fields())
             current_fields.update(fields)
-            self._api().put(full_uri, **current_fields)
+            self._api().put(self.full_uri(), **current_fields)
 
     def _set(self, name, value):
         #Avoiding python's normal __setattr__ behaviour to avoid infinite recursion.
@@ -346,8 +345,10 @@ class Resource(_BASE_META_BRIDGE, object):
         try:
             # Attempt to update the resource.
             self.check_alive()
-            self._update_remote_fields(**self._cached_fields)
-            self._set('_cached_fields', {})
+            self.full_uri()
+            if self._cached_fields:
+                self._update_remote_fields(**self._cached_fields)
+                self._set('_cached_fields', {})
         except ResourceHasNoUri:
             # No uri was found, so the resource needs to be created.
             fields = self._stream_fields(self._resource_fields)
