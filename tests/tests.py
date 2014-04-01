@@ -463,9 +463,8 @@ class IntegrationTests(TestsBase):
 
 
     # FEATURES:
-    # TODO empty save() shouldn't blow up
     # TODO Save resource without unique fields should simply get the latest ?!?! resource (threads !???!?!) Simply a better warning?!?!
-    # TODO Pickle factory, queryset
+    # TODO Pickle queryset
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Allow 'exclude()' when tastypie allows it.
     # TODO Single dispatch functions in field?

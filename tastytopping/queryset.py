@@ -23,10 +23,6 @@ from .exceptions import (
 from .field import create_field
 
 
-# There's a lot of access to protected members of the contained Resource.
-# pylint: disable=W0212
-
-
 try:
     abc.ABC
 except AttributeError:

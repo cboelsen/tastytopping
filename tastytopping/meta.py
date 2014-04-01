@@ -21,8 +21,6 @@ class ResourceMeta(type):
     _classes = []
 
     def __new__(mcs, name, bases, classdict):
-        # We're accessing a member of the same class.
-        # pylint: disable=W0212
         try:
             auth_value = classdict.pop('auth')
         except KeyError:

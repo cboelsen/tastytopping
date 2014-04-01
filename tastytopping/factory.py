@@ -43,6 +43,7 @@ class ResourceFactory(object):
         self._auth_lock = Lock()
 
     def __getstate__(self):
+        # TODO This shouldn't be pickled directly - possible to stop?!?
         state = self.__dict__.copy()
         state['_classes'] = {}
         state['_classes_locks'] = {}
@@ -51,7 +52,7 @@ class ResourceFactory(object):
         return state
 
     def __setstate__(self, state):
-        self.__dict__ = state
+        setattr(self, '__dict__', state)
         self._classes_lock = Lock()
         self._auth_lock = Lock()
 

@@ -460,8 +460,6 @@ class Resource(_BASE_META_BRIDGE, object):
         # The resources to create or update are sent in a single list.
         resources = [cls._stream_fields(cls._create_fields(**res)) for res in create]
         for resource in update:
-            # We're accessing a member of the same class.
-            # pylint: disable=W0212
             resource_fields = {n: v.stream() for n, v in resource._fields().items()}
             resource_fields['resource_uri'] = resource.uri()
             resources.append(resource_fields)
@@ -493,8 +491,8 @@ class Resource(_BASE_META_BRIDGE, object):
         return (_unpickle, (self.__class__.__name__, class_state), state)
 
     def __setstate__(self, state):
-        for k, v in state.items():
-            self._set(k, v)
+        for member, value in state.items():
+            self._set(member, value)
         self._factory._classes[self.resource_name] = self.__class__
 
     @staticmethod
