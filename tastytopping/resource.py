@@ -504,6 +504,9 @@ class Resource(_BASE_META_BRIDGE, object):
             self._set(member, value)
         self._factory._classes[self.resource_name] = self.__class__
 
+    def __getnewargs__(self):
+        return ()   # TODO Investigate why python3.3 needs this!
+
     @staticmethod
     def _specialise(name, attrs):
         return type(name, (Resource, ), attrs)
