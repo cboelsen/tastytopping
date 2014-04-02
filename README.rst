@@ -11,8 +11,6 @@ TastyTopping
 Designed to take the heavy lifting out of working with django-tastypie APIs on
 the client side.
 
-Currently in beta.
-
 
 Features
 ^^^^^^^^
@@ -26,8 +24,6 @@ Features
     current_resource.delete()                                # DELETE
 
 - Easily work with any related resources::
-
-  ::
 
     new_resource.children = [
         factory.resource(field='new_name1').save(),
