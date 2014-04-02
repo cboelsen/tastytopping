@@ -461,6 +461,15 @@ class IntegrationTests(TestsBase):
         parent2.parent = root.uri()
         parent2.save()
 
+    def test_auth_kept_after_pickling___access_allowed(self):
+        DATE_COMPARE = datetime.now()
+        res1 = TestResource(path=self.TEST_PATH1, rating=self.TEST_RATING1).save()
+        res1_copy = pickle.loads(pickle.dumps(res1))
+        res1_copy.date = DATE_COMPARE
+        res1_copy.save()
+        res1.refresh()
+        self.assertEqual(DATE_COMPARE, res1.date)
+
 
     # FEATURES:
     # TODO Pickle queryset

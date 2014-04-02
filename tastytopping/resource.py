@@ -493,19 +493,18 @@ class Resource(_BASE_META_BRIDGE, object):
 
     def __reduce__(self):
         state = self.__dict__.copy()
+        state['factory_type'] = type(self._factory)
         class_state = {k: v for k, v in self.__class__.__dict__.items()
-                if k in ['api_url', 'resource_name', '_class_schema', '_auth', '_alive', '_factory']
+                if k in ['api_url', 'resource_name', '_class_schema', '_auth', '_alive']
         }
         class_state['auth'] = class_state.pop('_auth')
         return (_unpickle, (self.__class__.__name__, class_state), state)
 
     def __setstate__(self, state):
+        type(self)._factory = state.pop('factory_type')(self.api_url)
         for member, value in state.items():
             self._set(member, value)
         self._factory._classes[self.resource_name] = self.__class__
-
-    def __getnewargs__(self):
-        return ()   # TODO Investigate why python3.3 needs this!
 
     @staticmethod
     def _specialise(name, attrs):

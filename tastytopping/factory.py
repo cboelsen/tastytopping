@@ -42,20 +42,6 @@ class ResourceFactory(object):
         self._auth = None
         self._auth_lock = Lock()
 
-    def __getstate__(self):
-        # TODO This shouldn't be pickled directly - possible to stop?!?
-        state = self.__dict__.copy()
-        state['_classes'] = {}
-        state['_classes_locks'] = {}
-        del state['_classes_lock']
-        del state['_auth_lock']
-        return state
-
-    def __setstate__(self, state):
-        setattr(self, '__dict__', state)
-        self._classes_lock = Lock()
-        self._auth_lock = Lock()
-
     def __getattr__(self, name):
         with self._classes_lock:
             if name not in self._classes_locks:
