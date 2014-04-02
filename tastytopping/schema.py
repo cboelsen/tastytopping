@@ -215,3 +215,23 @@ class TastySchema(object):
         bad_fields = set(fields.keys()) - set(allowed_fields.keys())
         if bad_fields:
             raise FilterNotAllowedForField(bad_fields, self._schema)
+
+    @staticmethod
+    def append_to_filter(field_filter, related_field):
+        """Append the field of a related resource into the filter.
+
+        This method ensures the type of filter (gte, in, exact, etc.) is at the
+        end of the filter.
+
+        :param field_filter: The filter for the current Resource.
+        :type field_filter: str
+        :param related_field: The unique field identifying the related Resource.
+        :type related_field: str
+        :returns: The combined filter.
+        :rtype: str
+        """
+        # TODO Check what happens when field is named same as filter type?
+        filter_type = field_filter if '__' not in field_filter else field_filter.rsplit('__', 1)[1]
+        if filter_type in _POSSIBLE_FILTERS:
+            return '{0}__{1}__{2}'.format(field_filter.rsplit('__', 1)[0], related_field, filter_type)
+        return '{0}__{1}'.format(field_filter, related_field)

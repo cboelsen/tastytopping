@@ -64,4 +64,23 @@ entries this user has made::
     blog_entries = factory.entry.filter(user=existing_user)
     num_blog_entries = blog_entries.count()
 
+To update the published date on all of these blog entries to the current date
+in a single call::
+
+    from datetime import datetime
+    blog_entries.update(pub_date=datetime.now())
+
+To delete all blog entries from before 2012::
+
+    factory.entry.filter(pub_date__lt=datetime(2012)).delete()
+
+There's a more convenient way to order the resources too; to order the blog
+entries by reverse date::
+
+    factory.entry.all().order_by('-pub_date')
+
+or to get the latest blog entry::
+
+    factory.entry.all().latest('pub_date')
+
 To view all available methods, take a look at the :doc:`tastytopping`.

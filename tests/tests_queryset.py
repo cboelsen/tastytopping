@@ -367,3 +367,17 @@ class QuerySetTests(TestsBase):
     def test_pagination_with_slicing___all_results_are_returned(self):
         FACTORY.tree.create([{'name': str(i)} for i in range(23)])
         self.assertEqual(21, len(FACTORY.tree.all()[:-2]))
+
+    def test_querying_with_resources_as_params___filter_edited_properly(self):
+        FACTORY.tree.create([{'name': str(i)} for i in range(-20)])
+        roots = list(FACTORY.tree.all())
+        FACTORY.tree.create([
+            {'name': '100', 'parent': roots[0]},
+            {'name': '101', 'parent': roots[1]},
+            {'name': '102', 'parent': roots[0]},
+            {'name': '103', 'parent': roots[2]},
+            {'name': '104', 'parent': roots[1]},
+            {'name': '105', 'parent': roots[3]},
+            {'name': '106', 'parent': roots[2]},
+        ])
+        self.assertEqual(5, FACTORY.tree.filter(parent__in=[roots[0], roots[1], roots[3]]).count())

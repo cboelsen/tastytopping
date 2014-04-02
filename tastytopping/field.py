@@ -90,8 +90,9 @@ class ResourceField(Field):
         return self._value.uri()
 
     def filter(self, field):
-        related_field = self._value.filter_field()
-        return '{0}__{1}'.format(field, related_field), getattr(self._value, related_field)
+        related_field = self.value().filter_field()
+        filtered_field = self.value()._schema().append_to_filter(field, related_field)
+        return filtered_field, getattr(self.value(), related_field)
 
 
 class ResourceListField(Field):
@@ -109,8 +110,9 @@ class ResourceListField(Field):
 
     def filter(self, field):
         try:
-            related_field = self._value[0].value().filter_field()
-            return '{0}__{1}'.format(field, related_field), [getattr(v.value(), related_field) for v in self._value]
+            related_field = self.value()[0].filter_field()
+            filtered_field = self.value()[0]._schema().append_to_filter(field, related_field)
+            return filtered_field, [getattr(v, related_field) for v in self.value()]
         except IndexError:
             return field, []
 
