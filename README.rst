@@ -1,11 +1,11 @@
 TastyTopping
 ============
 
-.. image:: https://travis-ci.org/cboelsen/tastytopping.svg?branch=master
+.. image:: https://img.shields.io/travis/cboelsen/tastytopping/master.svg
     :target: https://travis-ci.org/cboelsen/tastytopping
 
-.. image:: https://badge.fury.io/py/TastyTopping.svg
-    :target: https://badge.fury.io/py/TastyTopping
+.. image:: https://img.shields.io/pypi/v/TastyTopping.svg
+    :target: https://pypi.python.org/pypi/TastyTopping
 
 
 Designed to take the heavy lifting out of working with django-tastypie APIs on
