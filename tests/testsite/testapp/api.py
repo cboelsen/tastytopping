@@ -32,6 +32,16 @@ class ApiKeyResource(ModelResource):
         authorization = Authorization()
         filtering = {'user': ALL_WITH_RELATIONS}
 
+    def get_schema(self, request, **kwargs):
+        # Create an API key for testuser, and add a few extra users on first access.
+        if not ApiKey.objects.exists():
+            User.objects.create_user('testuser1', 'noemail1@nothing.com', 'password')
+            User.objects.create_user('testuser2', 'noemail2@nothing.com', 'password')
+            User.objects.create_user('testuser3', 'noemail3@nothing.com', 'password')
+            User.objects.create_user('testuser4', 'noemail4@nothing.com', 'password')
+            api_key = ApiKey.objects.get_or_create(user=User.objects.get(username='testuser'))
+        return super(ApiKeyResource, self).get_schema(request, **kwargs)
+
 
 class UserResource(ModelResource):
     class Meta:

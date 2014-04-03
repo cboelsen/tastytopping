@@ -2,6 +2,7 @@
 import atexit
 import os
 import psutil
+import socket
 import subprocess
 import threading
 import time
@@ -15,6 +16,12 @@ def start():
     if not verbose:
         cmd += ' > /dev/null 2>&1'
     os.system(cmd)
+
+
+def wait_for_django_port_open():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    while sock.connect_ex(('127.0.0.1', 8111)) != 0:
+        time.sleep(0.05)
 
 
 def kill_django():
@@ -45,6 +52,6 @@ def run():
     t = threading.Thread(target=start)
     t.daemon = True
     t.start()
-    subprocess.check_call('python manage.py user'.split())
+    wait_for_django_port_open()
 
 run()
