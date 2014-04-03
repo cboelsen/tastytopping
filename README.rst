@@ -1,10 +1,10 @@
 TastyTopping
 ============
 
-.. image:: https://img.shields.io/travis/cboelsen/tastytopping/master.svg
+.. image:: https://img.shields.io/travis/cboelsen/tastytopping/master.png
     :target: https://travis-ci.org/cboelsen/tastytopping
 
-.. image:: https://img.shields.io/pypi/v/TastyTopping.svg
+.. image:: https://img.shields.io/pypi/v/TastyTopping.png
     :target: https://pypi.python.org/pypi/TastyTopping
 
 
