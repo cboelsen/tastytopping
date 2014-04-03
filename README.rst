@@ -20,7 +20,8 @@ Features
     factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
     current_resource = factory.resource.get(field='name')    # GET
     new_resource = factory.resource(field='new_name').save() # POST
-    new_resource.field = 'different_name'                    # PATCH / PUT
+    new_resource.field = 'different_name'
+    new_resource.save()                                      # PUT / PATCH
     current_resource.delete()                                # DELETE
 
 - Easily work with any related resources::
@@ -41,7 +42,7 @@ Features
 
     factory.resource.auth = ApiKeyAuth('username', 'key12345')
 
-- Access nested resources using simple methods (currently in dev branch)::
+- Access nested resources using simple methods::
 
     new_resource.nested.nested_resource('arg1', arg2=3)
 
