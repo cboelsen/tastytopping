@@ -478,13 +478,7 @@ class IntegrationTests(TestsBase):
     # TODO Single dispatch functions in field?
 
     # TESTING:
-    # TODO Tests have frozen multiple times!!!!
     # TODO Re-enable django-dev in *-dev when tastypie works with django 1.7 again.
-
-    # DOCS
-    # TODO Cookbook
-    #   - Extending Resource classes with own methods
-    #   - Ignore warning and get latest resource anyway!
 
 
 if __name__ == "__main__":

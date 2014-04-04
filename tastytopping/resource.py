@@ -196,7 +196,8 @@ class Resource(_BASE_META_BRIDGE, object):
                 "Querying for the newly created resource returned multiple resources. This is because the only "
                 "identifying fields are not unique.\n"
                 "Either: Create the resource with a unique field; use Resource.create(); or explicitly ignore this "
-                "warning.\n"    # TODO Link to docs stating workaround.
+                "warning (see https://tastytopping.readthedocs.org/en/latest/cookbook.html"
+                "#ignore-multipleresourcesreturned-when-creating-a-resource).\n"
                 "Fields used to create the resource: {0}\n"
                 "Resources returned from the query: {1}\n"
                 "".format(create_fields, resources)

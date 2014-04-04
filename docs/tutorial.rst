@@ -88,3 +88,5 @@ features:
  - :doc:`nested`
 
  - :doc:`optimization`
+
+ - :doc:`cookbook`

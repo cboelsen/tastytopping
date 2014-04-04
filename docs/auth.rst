@@ -15,7 +15,7 @@ Usage
 -----
 
 To use an authentication class is as simple as setting the 'auth' member on a
-:py:class:`~tastytopping.factory.ResourceFactory` or a
+:py:class:`~tastytopping.ResourceFactory` or a
 :py:class:`~tastytopping.resource.Resource`. As an example, to
 use API key authentication for all Resources by default::
 

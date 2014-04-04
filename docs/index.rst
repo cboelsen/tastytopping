@@ -35,6 +35,7 @@ Contents
     query
     nested
     optimization
+    cookbook
     tastytopping
 
 
