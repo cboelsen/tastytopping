@@ -317,6 +317,9 @@ class IntegrationTests(TestsBase):
         self.assertEqual(0, TestResource.all().count())
         self.assertRaises(ResourceDeleted, setattr, res1, 'rating', 50)
 
+    def test_get_with_no_results___throws_exception(self):
+        self.assertRaises(NoResourcesExist, TestResource.get)
+
     def test_get_with_multiple_results___throws_exception(self):
         res1 = TestResource(path=self.TEST_PATH1).save()
         res2 = TestResource(path=self.TEST_PATH2).save()

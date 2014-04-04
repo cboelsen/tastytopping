@@ -103,11 +103,14 @@ class _AbstractQuerySet(abc.ABC):
         """
         # No more than two results are needed, so save the server's resources.
         kwargs['limit'] = 2
-        resource_iter = iter(self.filter(**kwargs))
-        result = next(resource_iter)
+        resource_iter = self.filter(**kwargs).iterator()
+        try:
+            result = next(resource_iter)
+        except StopIteration:
+            raise NoResourcesExist(self._resource._name(), self._kwargs, kwargs)
         try:
             next(resource_iter)
-            raise MultipleResourcesReturned(self._resource._name(), kwargs, list(resource_iter))
+            raise MultipleResourcesReturned(self._resource._name(), self._kwargs, kwargs)
         except StopIteration:
             pass
         return result
