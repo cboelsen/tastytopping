@@ -482,7 +482,6 @@ class IntegrationTests(TestsBase):
     # TODO Re-enable django-dev in *-dev when tastypie works with django 1.7 again.
 
     # DOCS
-    # TODO Double check all language is correct (list resource => list view, etc.).
     # TODO Cookbook
     #   - Extending Resource classes with own methods
     #   - Ignore warning and get latest resource anyway!

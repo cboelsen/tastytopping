@@ -85,4 +85,6 @@ features:
 
  - :doc:`auth`
 
+ - :doc:`nested`
+
  - :doc:`optimization`

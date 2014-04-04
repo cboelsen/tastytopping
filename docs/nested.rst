@@ -3,10 +3,11 @@
 Nested Resources
 ================
 
-Nested resources allow you to extend the functionality of a resource in a nice
-and simple way. It would make sense to access that nested resource in a nice
-and simple way too, which is exactly what TastyTopping does. For information on
-how to create nested resources in tastypie, check out `tastypie's docs
+Nested resources allow you to extend the functionality of a tastypie Resource
+in a nice and simple way. It would make sense to access that nested resource on
+the client-side in a nice and simple way too, which is exactly what
+TastyTopping does. For information on how to create nested resources in
+tastypie, check out `tastypie's docs
 <http://django-tastypie.readthedocs.org/en/latest/cookbook.html#nested-resources>`_
 and TastyTopping's `unit test webapp
 <https://github.com/cboelsen/tastytopping/blob/master/tests/testsite/testapp/api.py>`_.
@@ -20,11 +21,11 @@ since there's no standard way of accessing that information via a schema.
 
 The examples below will illustrate what's configured on the server side by
 showing the contents of a Resource's ``prepend_urls()`` method. Nested
-resources can be appended to both list resources and detail resources, so we'll
+resources can be appended to both the list view and detail view, so we'll
 go through a couple of examples of each.
 
-List Resources
-^^^^^^^^^^^^^^
+List View
+^^^^^^^^^
 
 ::
 
@@ -45,8 +46,8 @@ So, in this (silly) example, we've got a nested resource at
     factory = ResourceFactory('http://some-server.com/api/v1/')
     my_sum = factory.some_resource.nested.add(2, 3).get()
 
-This will send a GET request to ``/api/v1/some_resource/add/2/3/``. A nested
-resource will accept any ``*args`` and just append them to the URL. So::
+This will send a GET request to ``/api/v1/some_resource/add/2/3/``. A
+NestedResource will accept any ``*args`` and just append them to the URL. So::
 
     factory.some_resource.nested.add(2, 3, 4, 5).get()
 
@@ -78,11 +79,11 @@ resource using TastyTopping looks like::
 This will send a POST request to ``/api/v1/some_resource/mult/``, and include
 the kwargs as the data dictionary.
 
-Detail Resources
-^^^^^^^^^^^^^^^^
+Detail View
+^^^^^^^^^^^
 
-Now we'll take a look at a nested resource as part of a detail resource. On
-tastypie's side, the matching regex will include the ``pk``, which will be
+Now we'll take a look at a nested resource as part of a Resource's detail view.
+On tastypie's side, the matching regex will include the ``pk``, which will be
 passed to the called method::
 
     # api.py on the server-side

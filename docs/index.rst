@@ -65,17 +65,20 @@ Justification
 ^^^^^^^^^^^^^
 
 Why another one? There are some other packages around that do something
-similar, but they're lacking in a few areas:
+similar, but none are the complete package:
 
 - `ORM <http://en.wikipedia.org/wiki/Object-relational_mapping>`_. A lot of
-  other packages need both the resource data and the API wrapper to work with
-  a resource, instead of just a resource-type object (which is more pythonic).
+  other packages use a C-style API, which involves passing a dict with your
+  data to their functions. TastyTopping wraps it all up in an ORM-style object,
+  which is more OO, more elegant, and more pythonic.
 
 - Python3 support.
 
 - Support for authentication.
 
 - Support for nested resources.
+
+- QuerySets!
 
 - A thorough set of `unit tests
   <https://github.com/cboelsen/tastytopping/blob/master/tests/tests.py>`_.
