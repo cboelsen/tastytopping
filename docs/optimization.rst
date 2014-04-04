@@ -76,6 +76,7 @@ and `tastypie <http://django-tastypie.readthedocs.org/en/latest/interacting.html
 This means it's possible for the request to fail without us knowing. However,
 in the event that it does fail, all changes will be rolled back.
 
+
 Update multiple fields
 ----------------------
 
@@ -91,6 +92,51 @@ the resource remotely (ie. effectively call
         title='Different title',
         body='Different text',
     )
+
+
+.. _prefetch_related:
+
+Prefetching a QuerySet's related resources
+------------------------------------------
+
+For a :py:class:`~tastytopping.queryset.QuerySet` that returns a large number
+of resources, it is sometimes more efficient to prefetch some, or all, of the
+resources' related resources. This can be achieved using a QuerySet's
+:py:meth:`~tastytopping.queryset.QuerySet.prefetch_related` method, which will
+GET all resources of the given type in a single request and perform an
+SQL-type 'join'.
+
+Take the example below, which will loop through all collections (a made-up
+resource that contains many blog entries) and print the title of each blog
+entry in the collection::
+
+    collection_queryset = factory.collection.all()
+    for collection in collection_queryset:
+        for entry in collection.entries:
+            print(entry.title)
+
+In this case, there will be an initial GET request for the collections,
+followed by a GET request for each ``entry`` in the collection. Ouch!
+
+To get around this situation, you can call
+:py:meth:`~tastytopping.queryset.QuerySet.prefetch_related` on the initial
+QuerySet::
+
+    collection_queryset = factory.collection.all()
+    collection_queryset.prefetch_related('entries')
+    for collection in collection_queryset:
+        for entry in collection.entries:
+            print(entry.title)
+
+This time, there will be a grand total of two GET requests: one for the
+collections, and one for the entries.
+
+There is a trade-off with this method, though, and that is that every resource
+of the requested type will be prefetched. This means that if you only need to
+prefetch a few resources, or there are a lot of resources of the requested
+type, then it can also be detrimental to call
+:py:meth:`~tastytopping.queryset.QuerySet.prefetch_related`.
+
 
 Server-side
 -----------

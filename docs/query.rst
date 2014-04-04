@@ -83,4 +83,8 @@ or to get the latest blog entry::
 
     factory.entry.all().latest('pub_date')
 
+There are some optimizations possible with QuerySets:
+
+- :ref:`prefetch_related`.
+
 To view all available methods, take a look at the :doc:`tastytopping`.

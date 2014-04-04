@@ -3,12 +3,9 @@
 # pylint: skip-file
 
 
-#from concurrent import futures
 import copy
 from datetime import datetime
 import pickle
-#import threading
-#import time
 import unittest
 
 from tastytopping import *
@@ -486,7 +483,6 @@ class IntegrationTests(TestsBase):
 
     # DOCS
     # TODO Double check all language is correct (list resource => list view, etc.).
-    # TODO QuerySet - prefetch_related: here or optimization?!?
     # TODO Cookbook
     #   - Extending Resource classes with own methods
     #   - Ignore warning and get latest resource anyway!
