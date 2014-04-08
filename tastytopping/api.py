@@ -24,8 +24,8 @@ from .exceptions import (
     BadUri,
     RestMethodNotAllowed,
 )
+from .lock import PickleLock
 from .schema import TastySchema
-from threading import Lock
 
 
 class TastyApi(object):
@@ -40,9 +40,9 @@ class TastyApi(object):
         if not address.endswith('/'):
             self._addr += '/'
         self._sess = None
-        self._sess_lock = Lock()
+        self._sess_lock = PickleLock()
         self._auth = None
-        self._auth_lock = Lock()
+        self._auth_lock = PickleLock()
 
     def _session(self):
         if self._sess is None:

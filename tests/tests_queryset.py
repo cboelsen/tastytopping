@@ -4,6 +4,7 @@
 
 
 from datetime import datetime
+import pickle
 import unittest
 
 from tastytopping import *
@@ -381,3 +382,26 @@ class QuerySetTests(TestsBase):
             {'name': '106', 'parent': roots[2]},
         ])
         self.assertEqual(5, FACTORY.tree.filter(parent__in=[roots[0], roots[1], roots[3]]).count())
+
+    def test_pickling_querysets___unpickled_queryset_iterable(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
+        q1 = TestResource.filter(rating__lt=2)
+        q1_copy = pickle.loads(pickle.dumps(q1))
+        self.assertEqual(list(q1), list(q1_copy))
+
+    def test_pickling_querysets___unpickled_queryset_slicable(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
+        q1 = TestResource.filter(rating__gt=0)
+        q1_copy = pickle.loads(pickle.dumps(q1))
+        self.assertEqual(q1[0], q1_copy[0])
+        self.assertEqual(q1[-1], q1_copy[-1])
+
+    def test_pickling_querysets___logical_and_still_functions(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A', 'date': datetime(2013, 3, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B', 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'3', 'rating': 20, 'text': 'C', 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D', 'date': datetime(2013, 3, 4)},
+        ])
+        combined = pickle.loads(pickle.dumps(TestResource.filter(rating=20))) & TestResource.filter(date=datetime(2013, 3, 2))
+        self.assertEqual(self.TEST_PATH1+'2', combined.get().path)

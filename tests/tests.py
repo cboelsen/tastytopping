@@ -472,13 +472,16 @@ class IntegrationTests(TestsBase):
 
 
     # FEATURES:
-    # TODO Pickle queryset
+    # TODO Only GET a new Resource when fields needed?!?! Should the exceptions be delayed?!? Will it be confusing?!?
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
     # TODO Allow 'exclude()' when tastypie allows it.
     # TODO Single dispatch functions in field?
 
     # TESTING:
     # TODO Re-enable django-dev in *-dev when tastypie works with django 1.7 again.
+
+    # DOCS
+    # TODO Pickling querysets
 
 
 if __name__ == "__main__":

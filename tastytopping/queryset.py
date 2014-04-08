@@ -232,6 +232,22 @@ class _AbstractQuerySet(abc.ABC):
         """
         return self.filter(__prefetch=list(args))
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        state['_resource'] = state['_resource']()
+        # TODO Keep cached copies?!
+        del state['_val_retriever']
+        del state['_retrieved_resources']
+        del state['_prefetched_resources']
+        return state
+
+    def __setstate__(self, state):
+        state['_resource'] = type(state['_resource'])
+        self.__dict__ = state
+        self._val_retriever = None
+        self._retrieved_resources = []
+        self._prefetched_resources = {k: None for k in self._prefetch}
+
 
 class QuerySet(_AbstractQuerySet):
     """Allows for easier querying of resources while reducing API access.
@@ -375,7 +391,7 @@ class QuerySet(_AbstractQuerySet):
                 stop = total_count + stop
             if start < 0:
                 raise IndexError("The index {0} is out of range.".format(orig_start))
-            if stop <= 0:
+            if stop < 0:
                 raise IndexError("The index {0} is out of range.".format(orig_stop))
         if step < 0:
             start, stop = stop + 1, start + 1

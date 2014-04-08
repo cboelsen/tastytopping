@@ -13,7 +13,6 @@ __all__ = ('Resource', )
 
 
 import copy
-from threading import Lock
 
 
 from .api import TastyApi
@@ -27,6 +26,7 @@ from .exceptions import (
     RestMethodNotAllowed,
 )
 from .field import create_field
+from .lock import PickleLock
 from .meta import ResourceMeta
 from .nested import NestedResource
 from .queryset import (
@@ -71,17 +71,17 @@ class Resource(_BASE_META_BRIDGE, object):
     _alive = set()
 
     _auth = None
-    _auth_lock = Lock()
+    _auth_lock = PickleLock()
     _class_api = None
-    _class_api_lock = Lock()
+    _class_api_lock = PickleLock()
     _class_resource = None
-    _class_resource_lock = Lock()
+    _class_resource_lock = PickleLock()
     _class_schema = None
-    _class_schema_lock = Lock()
+    _class_schema_lock = PickleLock()
     _full_name_ = None
-    _full_name_lock = Lock()
+    _full_name_lock = PickleLock()
     _filter_field = None
-    _filter_field_lock = Lock()
+    _filter_field_lock = PickleLock()
 
     def __init__(self, **kwargs):
         fields, uri = self._get_fields_and_uri_if_in_kwargs(**kwargs)
@@ -495,10 +495,9 @@ class Resource(_BASE_META_BRIDGE, object):
     def __reduce__(self):
         state = self.__dict__.copy()
         state['factory_type'] = type(self._factory)
-        class_state = {k: v for k, v in self.__class__.__dict__.items()
-                if k in ['api_url', 'resource_name', '_class_schema', '_auth', '_alive']
-        }
+        class_state = self.__class__.__dict__.copy()
         class_state['auth'] = class_state.pop('_auth')
+        del class_state['_factory']
         return (_unpickle, (self.__class__.__name__, class_state), state)
 
     def __setstate__(self, state):
