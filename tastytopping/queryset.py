@@ -243,7 +243,8 @@ class _AbstractQuerySet(abc.ABC):
 
     def __setstate__(self, state):
         state['_resource'] = type(state['_resource'])
-        self.__dict__ = state
+        for member, value in state.items():
+            setattr(self, member, value)
         self._val_retriever = None
         self._retrieved_resources = []
         self._prefetched_resources = {k: None for k in self._prefetch}
