@@ -56,26 +56,25 @@ class QuerySetTests(TestsBase):
         self.assertEqual(self.TEST_PATH1 + '5', TestResource.all()[-6:-3][1].path)
 
     def test_wrong_index_type___exception_raised(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         with self.assertRaises(TypeError):
             TestResource.all()['a']
 
     def test_empty_slice___empty_list_returned(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 3)])
         self.assertFalse(TestResource.all()[1:1])
 
     def test_queryset_to_bool_conversion___empty_list_returns_false(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 3)])
         self.assertTrue(TestResource.filter(path=self.TEST_PATH1 + '1'))
         self.assertFalse(TestResource.filter(path=self.TEST_PATH1 + '21'))
 
     def test_queryset_stores_iterated_values___same_values_returned_on_next_loop1(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 3)])
         all_resources = TestResource.all()
         self.assertEqual(list(all_resources), list(all_resources))
 
     def test_queryset_stores_iterated_values___same_values_returned_on_next_loop2(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 3)])
         all_resources = TestResource.all()
         next(iter(all_resources))
         next(iter(all_resources))
@@ -114,39 +113,39 @@ class QuerySetTests(TestsBase):
         self.assertEqual(self.TEST_PATH1 + '6', TestResource.all()[-3:-6:-1][1].path)
 
     def test_delete_on_queryset___only_filtered_resources_deleted(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 7)])
         TestResource.filter(rating__gt=5).delete()
         self.assertEquals(6, TestResource.all().count())
         self.assertEquals(5, TestResource.all()[-1].rating)
 
     def test_delete_on_queryset___delete_list_resource_when_no_filters(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
         TestResource.all().delete()
         self.assertEquals(0, TestResource.all().count())
 
     def test_reverse_queryset___returned_resources_order_reversed_list(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
         normal_order = TestResource.all().order_by('rating')
         reverse_order = normal_order.reverse()
         self.assertEqual(list(normal_order)[0], list(reverse_order)[-1])
         self.assertEqual(list(normal_order)[-1], list(reverse_order)[0])
 
     def test_reverse_queryset___returned_resources_order_reversed_slice(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
         normal_order = TestResource.all().order_by('rating')
         reverse_order = normal_order.reverse()
         self.assertEqual(normal_order[:][0], reverse_order[:][-1])
         self.assertEqual(normal_order[:][-1], reverse_order[:][0])
 
     def test_reverse_twice_queryset___returned_resources_order_not_reversed(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
         normal_order = TestResource.all()
         reverse_order = normal_order.reverse().reverse()
         self.assertEqual(normal_order[:][0], reverse_order[:][0])
         self.assertEqual(normal_order[:][-1], reverse_order[:][-1])
 
     def test_reverse_queryset_iterator___returned_resources_order_reversed_list(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
         normal_order = TestResource.all().order_by('rating')
         reverse_order = normal_order.reverse()
         self.assertEqual(list(normal_order.iterator())[0], list(reverse_order.iterator())[-1])
@@ -158,7 +157,7 @@ class QuerySetTests(TestsBase):
 
     def test_queryset_exist___states_whether_resources_match_query(self):
         self.assertFalse(TestResource.all().exists())
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
         self.assertTrue(bool(TestResource.all()))
         self.assertFalse(bool(TestResource.filter(rating__gt=20)))
         self.assertTrue(TestResource.filter(rating__lt=5).exists())
@@ -219,17 +218,17 @@ class QuerySetTests(TestsBase):
         self.assertEquals('D', all_resources[3].text)
 
     def test_queryset_iterator___evaluates_results_each_time(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 5)])
         all_resources = TestResource.all()
-        self.assertEqual(10, len(list(all_resources.iterator())))
+        self.assertEqual(5, len(list(all_resources.iterator())))
         TestResource(path=self.TEST_PATH1).save()
-        self.assertEqual(11, len(list(all_resources.iterator())))
+        self.assertEqual(6, len(list(all_resources.iterator())))
 
     def test_queryset_first_last___returns_the_first_resource(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 5)])
         self.assertEqual(self.TEST_PATH1 + '0', TestResource.all().first().path)
         self.assertEqual(None, TestResource.filter(rating=50).first())
-        self.assertEqual(self.TEST_PATH1 + '9', TestResource.all().last().path)
+        self.assertEqual(self.TEST_PATH1 + '4', TestResource.all().last().path)
         self.assertEqual(None, TestResource.filter(rating=50).last())
 
     def test_empty_queryset___returns_empty_list(self):
@@ -246,7 +245,7 @@ class QuerySetTests(TestsBase):
         self.assertRaises(NoResourcesExist, TestResource.all().latest, 'date')
 
     def test_logical_and_with_empty_queryset___empty_queryset_returned(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 10)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
         combined1 = TestResource.all() & TestResource.none()
         combined2 = TestResource.none() & TestResource.all()
         self.assertEqual(0, combined1.count())
@@ -326,7 +325,7 @@ class QuerySetTests(TestsBase):
         self.assertEqual(2, all_resources[2].rating)
 
     def test_prefetch_related___full_related_field_stored_on_return_of_iter(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 50)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 15)])
         FACTORY.container.create([
             {'test': TestResource.get(path=self.TEST_PATH1+'11')},
             {'test': TestResource.get(path=self.TEST_PATH1+'12')},
@@ -338,7 +337,7 @@ class QuerySetTests(TestsBase):
         self.assertEqual(13, list(all_containers)[2].test.rating)
 
     def test_prefetch_related___full_related_field_stored_on_return_of_slice(self):
-        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 50)])
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 15)])
         FACTORY.container.create([
             {'test': TestResource.get(path=self.TEST_PATH1+'11')},
             {'test': TestResource.get(path=self.TEST_PATH1+'12')},
@@ -350,7 +349,7 @@ class QuerySetTests(TestsBase):
         self.assertEqual(13, all_containers[2].test.rating)
 
     def test_prefetch_related_with_to_many_field___full_related_fields_stored_on_return_of_iter(self):
-        FACTORY.tree.create([{'name': str(i)} for i in range(20)])
+        FACTORY.tree.create([{'name': str(i)} for i in range(5)])
         roots = [FACTORY.tree.get(name='0'), FACTORY.tree.get(name='1')]
         FACTORY.tree.create([
             {'name': '100', 'parent': roots[0]},
@@ -363,14 +362,14 @@ class QuerySetTests(TestsBase):
         self.assertEqual('100', all_trees[0].children[0].name)
         self.assertEqual('101', all_trees[0].children[1].name)
         self.assertEqual('103', all_trees[1].children[0].name)
-        self.assertEqual('0', all_trees[21].parent.name)
+        self.assertEqual('0', all_trees[5].parent.name)
 
     def test_pagination_with_slicing___all_results_are_returned(self):
         FACTORY.tree.create([{'name': str(i)} for i in range(23)])
         self.assertEqual(21, len(FACTORY.tree.all()[:-2]))
 
     def test_querying_with_resources_as_params___filter_edited_properly(self):
-        FACTORY.tree.create([{'name': str(i)} for i in range(-20)])
+        FACTORY.tree.create([{'name': str(i)} for i in range(-10, 0)])
         roots = list(FACTORY.tree.all())
         FACTORY.tree.create([
             {'name': '100', 'parent': roots[0]},
