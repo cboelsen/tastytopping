@@ -132,12 +132,12 @@ POST, and DELETE methods on the API, using the
 ::
 
     from datetime import datetime
-    from tastytopping import TastyFactory, ApiKeyAuth
+    from tastytopping import TastyFactory, HTTPApiKeyAuth
 
     if __name__ == "__main__":
 
         factory = ResourceFactory('http://example.api.com:666/test/api/v1/')
-        auth = ApiKeyAuth('username', '35632435657adf786c876e097f')
+        auth = HTTPApiKeyAuth('username', '35632435657adf786c876e097f')
         factory.example.auth = auth
 
         new_resource = factory.example(title='A Title', rating=50)

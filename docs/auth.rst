@@ -19,9 +19,9 @@ To use an authentication class is as simple as setting the 'auth' member on a
 :py:class:`~tastytopping.resource.Resource`. As an example, to
 use API key authentication for all Resources by default::
 
-    from tastytopping import ResourceFactory, HttpApiKeyAuth
+    from tastytopping import ResourceFactory, HTTPApiKeyAuth
     factory = ResourceFactory('http://localhost:8000/myapp/api/v1/')
-    factory.auth = HttpApiKeyAuth(username, api_key)
+    factory.auth = HTTPApiKeyAuth(username, api_key)
 
 And to use digest authentication on a single resource (secret_resource)::
 
@@ -61,5 +61,5 @@ For documentation on how to do just that, see the excellent docs provided by
 requests on the `subject
 <http://requests.readthedocs.org/en/latest/user/advanced/#custom-authentication>`_.
 For an example of how to make an authentication class that interacts with a
-Tastypie Resource, see the HttpApiKeyAuth class on `github
+Tastypie Resource, see the HTTPApiKeyAuth class on `github
 <https://github.com/cboelsen/tastytopping/blob/master/tastytopping/auth.py>`_.

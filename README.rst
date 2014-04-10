@@ -40,7 +40,7 @@ Features
 
 - Simple way to set and update authentication per resource::
 
-    factory.resource.auth = ApiKeyAuth('username', 'key12345')
+    factory.resource.auth = HTTPApiKeyAuth('username', 'key12345')
 
 - Access nested resources using simple methods::
 
