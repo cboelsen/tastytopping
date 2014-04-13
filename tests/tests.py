@@ -470,6 +470,11 @@ class IntegrationTests(TestsBase):
         res1.refresh()
         self.assertEqual(DATE_COMPARE, res1.date)
 
+    def test_set_verify_false___continues_working(self):
+        FACTORY.verify = False
+        TestResource.all().count()
+        self.assertFalse(FACTORY.verify)
+
 
     # FEATURES:
     # TODO Only GET a new Resource when fields needed?!?! Should the exceptions be delayed?!? Will it be confusing?!?

@@ -32,6 +32,8 @@ class ResourceFactory(object):
 
     :param api_url: The url of the API!
     :type api_url: str
+    :var verify: (bool) Sets whether SSL certificates for the API should be
+        verified.
     """
 
     def __init__(self, api_url):
@@ -41,6 +43,7 @@ class ResourceFactory(object):
         self._classes_locks = {}
         self._auth = None
         self._auth_lock = Lock()
+        self.verify = True
 
     def __getattr__(self, name):
         with self._classes_lock:
@@ -62,6 +65,7 @@ class ResourceFactory(object):
                     },
             )
             new_resource_class.auth = self._auth
+            new_resource_class.verify = self.verify
             self._classes[resource] = new_resource_class
             return new_resource_class
 

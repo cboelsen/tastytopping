@@ -56,16 +56,21 @@ class Resource(_BASE_META_BRIDGE, object):
 
     api_url = None
     """(str) - The URL to the TastyPie API (eg. http://localhost/app_name/api/v1/)."""
+
     resource_name = None
     """(str) - The name of the resource. Defined by the 'resource_name' class
-        variable in the Resource's class Meta."""
+    variable in the Resource's class Meta."""
+
     auth = None
     """(:py:class:`~tastytopping.auth.AuthBase`) - The Authorization to use with
-        the resource. Note that because authorization applies to all resources
-        of a given type, changing the auth will affect all instances of a
-        Resource, as well as the derived Resource class itself. The
-        :doc:`auth` page goes into more detail.
-        """
+    the resource. Note that because authorization applies to all resources
+    of a given type, changing the auth will affect all instances of a
+    Resource, as well as the derived Resource class itself. The
+    :doc:`auth` page goes into more detail.
+    """
+
+    verify = True
+    """(bool) - Sets whether the SSL certificate of the API should be verified."""
 
     _factory = None
     _alive = set()
@@ -242,6 +247,7 @@ class Resource(_BASE_META_BRIDGE, object):
                     cls._class_api = TastyApi(cls.api_url)
                     if cls._auth:
                         cls._class_api.auth = cls._auth
+                    cls._class_api.verify = cls.verify
         return cls._class_api
 
     @classmethod

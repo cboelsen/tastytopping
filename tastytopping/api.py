@@ -43,6 +43,7 @@ class TastyApi(object):
         self._sess_lock = PickleLock()
         self._auth = None
         self._auth_lock = PickleLock()
+        self.verify = True
 
     def _session(self):
         if self._sess is None:
@@ -61,6 +62,7 @@ class TastyApi(object):
                     data=data,
                     headers=self._headers(),
                     auth=self.auth,
+                    verify=self.verify,
             )
             response.raise_for_status()
             return response.json()
