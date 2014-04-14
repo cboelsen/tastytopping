@@ -204,6 +204,11 @@ class TreeResource(ModelResource):
                 name="api_get_child",
             ),
             url(
+                r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/chained/nested/child_dict{1}$'.format(self._meta.resource_name, trailing_slash()),
+                self.wrap_view('get_child_dict'),
+                name="api_get_child_dict",
+            ),
+            url(
                 r'^(?P<resource_name>{0})/(?P<pk>\w[\w/-]*)/nested_children{1}$'.format(self._meta.resource_name, trailing_slash()),
                 self.children.to_class().wrap_view('get_list'),
                 name="api_dispatch_detail",
@@ -239,8 +244,22 @@ class TreeResource(ModelResource):
         try:
             bundle = self.build_bundle(data={'pk': kwargs['pk']}, request=request)
             obj = self.cached_obj_get(bundle=bundle, **self.remove_api_resource_names(kwargs))
-            # Warning: This smells like an ugly hack! I'm unsure of the best way to do this!
-            return self.create_response(request, self.get_resource_uri(obj.children.all()[0]))
+            return self.create_response(request, self.get_resource_uri(obj.children.first()))
+        except ObjectDoesNotExist:
+            return HttpGone()
+        except MultipleObjectsReturned:
+            return HttpMultipleChoices("More than one resource is found at this URI.")
+
+    def get_child_dict(self, request, **kwargs):
+        """Return the first child of this resource."""
+        self.method_check(request, allowed=['get'])
+        try:
+            bundle = self.build_bundle(data={'pk': kwargs['pk']}, request=request)
+            obj = self.cached_obj_get(bundle=bundle, **self.remove_api_resource_names(kwargs))
+            bundle = self.build_bundle(obj=obj.children.first(), request=request)
+            bundle = self.full_dehydrate(bundle)
+            bundle = self.alter_detail_data_to_serialize(request, bundle)
+            return self.create_response(request, bundle)
         except ObjectDoesNotExist:
             return HttpGone()
         except MultipleObjectsReturned:

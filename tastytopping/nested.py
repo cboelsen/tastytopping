@@ -66,44 +66,11 @@ class NestedResource(object):
             kwargs = kwargs or self.kwargs
             try:
                 result = method(self.uri, **convert_fields(**kwargs))
+                try:
+                    result = result['objects']
+                except (KeyError, TypeError):
+                    pass
             except NonExistantResource as err:
                 raise IncorrectNestedResourceArgs(*err.args)
             return create_field(result, None, self.factory).value()
         return _api_method
-
-    def filter(self, **kwargs):
-        """Return a list of Resources via the API, filtered by kwargs.
-
-        Note that unlike when using the Resource class method, there is no
-        guarantee that the API responds with a list of Resources at this
-        endpoint. This means the user is responsible for ensuring this method
-        is used at the correct endpoints.
-
-        :param kwargs: Keywors arguments to filter the search.
-        :type kwargs: dict
-        :returns: Resource objects.
-        :rtype: list
-        :raises: NoResourcesExist
-        """
-        fields = self._filter_fields(**kwargs)
-        exist = False
-        for response in self.api.paginate(self.uri, **fields):
-            for obj in response['objects']:
-                yield create_field(obj, None, self.factory).value()
-                exist = True
-        if not exist:
-            raise NoResourcesExist(self.uri, kwargs)
-
-    def all(self):
-        """Return a list of Resources via the API.
-
-        Note that unlike when using the Resource class method, there is no
-        guarantee that the API responds with a list of Resources at this
-        endpoint. This means the user is responsible for ensuring this method
-        is used at the correct endpoints.
-
-        :returns: Resource objects.
-        :rtype: list
-        :raises: NoResourcesExist
-        """
-        return self.filter()

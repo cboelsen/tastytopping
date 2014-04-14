@@ -41,6 +41,11 @@ class NestedTests(TestsBase):
         tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME).save()]).save()
         self.assertEqual(CHILD_NAME, tree1.nested.chained.nested.child.get().name)
 
+    def test_nested_resource_returning_related_resource_dictionary___resource_object_returned(self):
+        CHILD_NAME = 'tree2'
+        tree1 = TestTreeResource(name='tree1', children=[TestTreeResource(name=CHILD_NAME).save()]).save()
+        self.assertEqual(CHILD_NAME, tree1.nested.chained.nested.child_dict.get().name)
+
     def test_nested_resource_on_resource_with_too_few_args_in_get___more_explicit_exception_raised(self):
         tree1 = TestTreeResource(name='tree1', children=[]).save()
         self.assertRaises(IncorrectNestedResourceArgs, tree1.nested.chained.nested.child(1).get)
@@ -53,10 +58,10 @@ class NestedTests(TestsBase):
         tree1 = TestTreeResource(name='tree1').save()
         tree2 = TestTreeResource(name='tree2').save()
         parent = TestTreeResource(name='parent', children=[tree1, tree2]).save()
-        self.assertEqual([tree1, tree2, parent], list(parent.nested.nested_children().all()))
+        self.assertEqual([tree1, tree2, parent], list(parent.nested.nested_children().get()))
 
-    def test_nested_resource_with_empty_resource_list___exception_raised(self):
+    def test_nested_resource_with_empty_resource_list___empty_list_returned(self):
         tree1 = TestTreeResource(name='tree1').save()
         tree2 = TestTreeResource(name='tree2').save()
         parent = TestTreeResource(name='parent', children=[tree1, tree2]).save()
-        self.assertRaises(NoResourcesExist, list, parent.nested.nested_children().filter(name='fake'))
+        self.assertEqual([], parent.nested.nested_children(name='fake').get())
