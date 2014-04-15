@@ -12,7 +12,6 @@
 from .exceptions import (
     NonExistantResource,
     IncorrectNestedResourceArgs,
-    NoResourcesExist,
 )
 from .field import create_field
 

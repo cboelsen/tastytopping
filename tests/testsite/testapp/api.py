@@ -244,7 +244,7 @@ class TreeResource(ModelResource):
         try:
             bundle = self.build_bundle(data={'pk': kwargs['pk']}, request=request)
             obj = self.cached_obj_get(bundle=bundle, **self.remove_api_resource_names(kwargs))
-            return self.create_response(request, self.get_resource_uri(obj.children.first()))
+            return self.create_response(request, self.get_resource_uri(obj.children.all()[0]))
         except ObjectDoesNotExist:
             return HttpGone()
         except MultipleObjectsReturned:
@@ -256,7 +256,7 @@ class TreeResource(ModelResource):
         try:
             bundle = self.build_bundle(data={'pk': kwargs['pk']}, request=request)
             obj = self.cached_obj_get(bundle=bundle, **self.remove_api_resource_names(kwargs))
-            bundle = self.build_bundle(obj=obj.children.first(), request=request)
+            bundle = self.build_bundle(obj=obj.children.all()[0], request=request)
             bundle = self.full_dehydrate(bundle)
             bundle = self.alter_detail_data_to_serialize(request, bundle)
             return self.create_response(request, bundle)
