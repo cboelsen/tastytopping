@@ -404,3 +404,17 @@ class QuerySetTests(TestsBase):
         ])
         combined = pickle.loads(pickle.dumps(TestResource.filter(rating=20))) & TestResource.filter(date=datetime(2013, 3, 2))
         self.assertEqual(self.TEST_PATH1+'2', combined.get().path)
+
+    def test_caching_queryset_count_on_iteration___count_returns_number_at_evaluation_time(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 2)])
+        q1 = TestResource.all()
+        list(q1)
+        TestResource.all().delete()
+        self.assertEqual(2, q1.count())
+
+    def test_caching_queryset_count_on_slice___count_returns_number_at_evaluation_time(self):
+        TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 2)])
+        q1 = TestResource.all()
+        q1[0]
+        TestResource.all().delete()
+        self.assertEqual(2, q1.count())

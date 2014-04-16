@@ -41,6 +41,7 @@ class _AbstractQuerySet(abc.ABC):
         self._ordering = kwargs.pop('order_by', [])
         if not isinstance(self._ordering, list):
             self._ordering = [self._ordering]
+        self._count = None
 
         self._val_retriever = None
         self._retrieved_resources = []
@@ -408,6 +409,7 @@ class QuerySet(_AbstractQuerySet):
             all_resources += resources['objects']
             result = resources
         total_count = result['meta']['total_count']
+        self._count = total_count
         if start >= total_count:
             raise IndexError("The index {0} is out of range.".format(start))
         if stop > total_count:
@@ -451,12 +453,14 @@ class QuerySet(_AbstractQuerySet):
         :returns: The number of records for this resource.
         :rtype: int
         """
-        count_kwargs = self._kwargs.copy()
-        count_kwargs['limit'] = 1
-        self._schema.check_list_request_allowed('get')
-        count_kwargs = self._filter_fields(count_kwargs)
-        response = self._api.get(self._resource._full_name(), **count_kwargs)
-        return response['meta']['total_count']
+        if self._count is None:
+            count_kwargs = self._kwargs.copy()
+            count_kwargs['limit'] = 1
+            self._schema.check_list_request_allowed('get')
+            count_kwargs = self._filter_fields(count_kwargs)
+            response = self._api.get(self._resource._full_name(), **count_kwargs)
+            self._count = response['meta']['total_count']
+        return self._count
 
     def update(self, **kwargs):
         """Updates all resources matching this query with the given fields.
@@ -526,6 +530,7 @@ class QuerySet(_AbstractQuerySet):
         for response in self._api.paginate(self._resource._full_name(), **fields):
             for obj in response['objects']:
                 yield self._resource(_fields=obj)
+            self._count = response['meta']['total_count']
 
     def _return_first_by_date(self, field_name):
         date_kwargs = self._kwargs.copy()
