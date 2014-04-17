@@ -475,6 +475,10 @@ class IntegrationTests(TestsBase):
         TestResource.all().count()
         self.assertFalse(FACTORY.verify)
 
+    def test_bad_uri_exception_takes_unicode_values___doesnt_raise_unicode_error(self):
+        text = u'/some/name/Boßeln'
+        list(TestResource.filter(path__startswith=text))
+
 
     # FEATURES:
     # TODO Don't update field if value the same.

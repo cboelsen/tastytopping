@@ -122,7 +122,7 @@ class TastyApi(object):
             uri_cutoff -= 1
             if self.address().endswith(uri[:uri_cutoff]):
                 return self.address() + uri[uri_cutoff:]
-        raise BadUri('Could not find full uri. Address = "{0}", URI = "{1}"'.format(self.address(), uri))
+        raise BadUri(u'Could not find full uri. Address = "{0}", URI = "{1}"'.format(self.address(), uri))
 
     def paginate(self, url, **kwargs):
         """Retrieve the objects for a given resource type.
