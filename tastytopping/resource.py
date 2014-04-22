@@ -89,6 +89,7 @@ class Resource(_BASE_META_BRIDGE, object):
     _filter_field_lock = PickleLock()
 
     def __init__(self, **kwargs):
+        super(Resource, self).__init__()
         fields, uri = self._get_fields_and_uri_if_in_kwargs(**kwargs)
         self._set_uri(uri)
         self._set('_resource_fields', fields)
