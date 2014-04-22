@@ -61,11 +61,11 @@ class ResourceFactory(object):
                     {
                         'api_url': self._url,
                         'resource_name': resource,
-                        '_factory': self
+                        'auth': self._auth,
+                        'verify': self.verify,
+                        '_factory': self,
                     },
             )
-            new_resource_class.auth = self._auth
-            new_resource_class.verify = self.verify
             self._classes[resource] = new_resource_class
             return new_resource_class
 
