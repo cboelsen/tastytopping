@@ -17,7 +17,6 @@ import requests
 
 from .exceptions import (
     ErrorResponse,
-    NonExistantResource,
     CannotConnectToAddress,
     ResourceDeleted,
     IncorrectNestedResourceKwargs,
@@ -71,7 +70,7 @@ class TastyApi(object):
                 if response.text:
                     args = (response.text, err, url, params, data)
                     if 'NotFound: Invalid resource' in response.text:
-                        raise NonExistantResource(*args)
+                        raise AttributeError(*args)
                     if 'KeyError: ' in response.text:
                         raise IncorrectNestedResourceKwargs(*args)
                     raise ErrorResponse(*args)
@@ -237,11 +236,16 @@ class TastyApi(object):
         :type resource: str
         :returns: A wrapper around the resource's schema.
         :rtype: TastySchema
-        :raises: NonExistantResource
         """
-        try:
-            url += 'schema/'
-            schema_dict = self._transmit(self._session().get, url)
-            return TastySchema(schema_dict, url)
-        except (KeyError, ResourceDeleted):
-            raise NonExistantResource(url)
+        url += 'schema/'
+        schema_dict = self._transmit(self._session().get, url)
+        return TastySchema(schema_dict, url)
+
+    def resources(self):
+        """Return the resources available from this API.
+
+        :returns: A list of available resources as strings.
+        :rtype: list
+        :raises: CannotConnectToAddress
+        """
+        return self._transmit(self._session().get, self.address()).keys()

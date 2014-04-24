@@ -10,7 +10,6 @@
 
 
 from .exceptions import (
-    NonExistantResource,
     IncorrectNestedResourceArgs,
 )
 from .field import create_field
@@ -69,7 +68,7 @@ class NestedResource(object):
                     result = result['objects']
                 except (KeyError, TypeError):
                     pass
-            except NonExistantResource as err:
+            except AttributeError as err:
                 raise IncorrectNestedResourceArgs(*err.args)
             return create_field(result, None, self.factory).value()
         return _api_method

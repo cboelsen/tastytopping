@@ -80,8 +80,8 @@ class NoDefaultValueInSchema(PrettyException):
 
     ::
 
-        res = factory.test_resource(path='test/path')
-        print(res.rating)   # Exception raised if rating has no default value.
+        >>> res = factory.test_resource(path='test/path')
+        >>> res.rating      # Exception raised if rating has no default value.
     """
     pass
 
@@ -111,10 +111,6 @@ class BadUri(PrettyException):
 
 class ErrorResponse(PrettyException):
     """Raised when an error status is returned from the API."""
-    pass
-
-class NonExistantResource(PrettyException):
-    """Raised when a non-existant resource has been given."""
     pass
 
 class CannotConnectToAddress(PrettyException):

@@ -115,11 +115,12 @@ class IntegrationTests(TestsBase):
         self.assertFalse(resource1 == 1)
 
     def test_bad_address___exception_raised(self):
-        factory = ResourceFactory('http://localhost:8888/test/api/v1')
-        self.assertRaises(CannotConnectToAddress, factory.test_resource._schema)
+        with self.assertRaises(CannotConnectToAddress):
+            factory = ResourceFactory('http://localhost:8888/test/api/v1')
 
     def test_bad_resource___exception_raised(self):
-        self.assertRaises(NonExistantResource, FACTORY.not_exist, blah=1)
+        with self.assertRaises(AttributeError):
+            FACTORY.not_exist
 
     def test_creating_with_fields_that_arent_filterable___fields_excluded_from_get(self):
         test_text = 'Text.'

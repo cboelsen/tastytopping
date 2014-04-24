@@ -168,7 +168,7 @@ class _FieldCreator(object):
                 result.value()[0].full_uri()
             else:
                 result = self._try_remaining_types()
-        except (BadUri, IndexError):
+        except (BadUri, IndexError, AttributeError):
             result = self._try_remaining_types()
         return result
 

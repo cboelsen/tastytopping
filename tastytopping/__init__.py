@@ -35,7 +35,6 @@ from .exceptions import (
     ResourceHasNoUri,
     BadUri,
     ErrorResponse,
-    NonExistantResource,
     CannotConnectToAddress,
     IncorrectNestedResourceArgs,
     IncorrectNestedResourceKwargs,

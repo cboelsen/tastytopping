@@ -12,8 +12,11 @@
 __all__ = ('ResourceFactory', )
 
 
-from .resource import Resource
 from threading import Lock
+
+
+from .api import TastyApi
+from .resource import Resource
 
 
 class ResourceFactory(object):
@@ -26,48 +29,46 @@ class ResourceFactory(object):
     :py:class:`~tastytopping.resource.Resource` class (more specifically, a
     subclass of it, specialised for the resource in question)::
 
-        factory = ResourceFactory('http://localhost/app_name/api/v1/')
-        old_resource = factory.example_resource.get(name='bob')
-        new_resource = factory.example_resource(name='new name')
+        >>> factory = ResourceFactory('http://localhost/app_name/api/v1/')
+        >>> old_resource = factory.example_resource.get(name='bob')
+        >>> new_resource = factory.example_resource(name='new name')
+        >>> # And to see what resources are available:
+        >>> factory.resources
+        ['example', 'another_resource', 'entry']
 
     :param api_url: The url of the API!
     :type api_url: str
-    :var verify: (bool) Sets whether SSL certificates for the API should be
+    :var verify: (bool) - Sets whether SSL certificates for the API should be
         verified.
+    :var resources: (list) - The names of each
+        :py:class:`~tastytopping.resource.Resource` this factory can create.
     """
 
     def __init__(self, api_url):
         self._url = api_url
-        self._classes = {}
-        self._classes_lock = Lock()
-        self._classes_locks = {}
+        self.resources = TastyApi(api_url).resources()
+        self.__dict__.update({k: None for k in self.resources})
         self._auth = None
         self._auth_lock = Lock()
         self.verify = True
 
-    def __getattr__(self, name):
-        with self._classes_lock:
-            if name not in self._classes_locks:
-                self._classes_locks[name] = Lock()
-        with self._classes_locks[name]:
-            return self._resource_class(name)
+    def __getattribute__(self, name):
+        if name != 'resources' and name in self.resources:
+            if self.__dict__[name] is None:
+                self.__dict__[name] = self._resource_class(name)
+        return super(ResourceFactory, self).__getattribute__(name)
 
     def _resource_class(self, resource):
-        try:
-            return self._classes[resource]
-        except KeyError:
-            new_resource_class = Resource._specialise(
-                    resource,
-                    {
-                        'api_url': self._url,
-                        'resource_name': resource,
-                        'auth': self._auth,
-                        'verify': self.verify,
-                        '_factory': self,
-                    },
-            )
-            self._classes[resource] = new_resource_class
-            return new_resource_class
+        return Resource._specialise(
+                resource,
+                {
+                    'api_url': self._url,
+                    'resource_name': resource,
+                    'auth': self._auth,
+                    'verify': self.verify,
+                    '_factory': self,
+                },
+        )
 
     def _get_auth(self):
         with self._auth_lock:
@@ -76,8 +77,8 @@ class ResourceFactory(object):
     def _set_auth(self, auth):
         with self._auth_lock:
             self._auth = auth
-            for resource_class in self._classes.values():
-                resource_class.auth = auth
+            for resource_name in self.resources:
+                getattr(self, resource_name).auth = auth
 
     auth = property(
         _get_auth,

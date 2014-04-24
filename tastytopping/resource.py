@@ -511,7 +511,7 @@ class Resource(_BASE_META_BRIDGE, object):
         type(self)._factory = state.pop('factory_type')(self.api_url)
         for member, value in state.items():
             self._set(member, value)
-        self._factory._classes[self.resource_name] = self.__class__
+        setattr(self._factory, self.resource_name, self.__class__)
 
     @staticmethod
     def _specialise(name, attrs):
