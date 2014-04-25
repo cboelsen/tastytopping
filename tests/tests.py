@@ -472,9 +472,7 @@ class IntegrationTests(TestsBase):
         self.assertEqual(DATE_COMPARE, res1.date)
 
     def test_set_verify_false___continues_working(self):
-        factory = ResourceFactory('http://localhost:8111/test/api/v1/')
-        factory.verify = False
-        self.assertFalse(factory.verify)
+        factory = ResourceFactory('http://localhost:8111/test/api/v1/', verify=False)
         self.assertFalse(factory.tree.verify)
         self.assertFalse(factory.tree._api().verify)
         factory.tree.all().count()

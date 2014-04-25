@@ -38,19 +38,23 @@ class ResourceFactory(object):
 
     :param api_url: The url of the API!
     :type api_url: str
-    :var verify: (bool) - Sets whether SSL certificates for the API should be
-        verified.
+    :param verify: Sets whether SSL certificates for the API should be verified.
+    :type verify: bool
     :var resources: (list) - The names of each
         :py:class:`~tastytopping.resource.Resource` this factory can create.
     """
 
-    def __init__(self, api_url):
+    def __init__(self, api_url, verify=True):
         self._url = api_url
-        self.resources = TastyApi(api_url).resources()
+
+        api = TastyApi(api_url)
+        api.verify = verify
+        self.resources = api.resources()
+
         self.__dict__.update({k: None for k in self.resources})
         self._auth = None
         self._auth_lock = Lock()
-        self.verify = True
+        self._verify = verify
 
     def __getattribute__(self, name):
         if name != 'resources' and name in self.resources:
@@ -65,7 +69,7 @@ class ResourceFactory(object):
                     'api_url': self._url,
                     'resource_name': resource,
                     'auth': self._auth,
-                    'verify': self.verify,
+                    'verify': self._verify,
                     '_factory': self,
                 },
         )
