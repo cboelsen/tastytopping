@@ -56,12 +56,12 @@ class TastyApi(object):
             data = json.dumps(data)
         try:
             response = tx_func(
-                    url,
-                    params=params,
-                    data=data,
-                    headers=self._headers(),
-                    auth=self.auth,
-                    verify=self.verify,
+                url,
+                params=params,
+                data=data,
+                headers=self._headers(),
+                auth=self.auth,
+                verify=self.verify,
             )
             response.raise_for_status()
             return response.json()

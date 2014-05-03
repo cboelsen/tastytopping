@@ -64,14 +64,14 @@ class ResourceFactory(object):
 
     def _resource_class(self, resource):
         return Resource._specialise(
-                resource,
-                {
-                    'api_url': self._url,
-                    'resource_name': resource,
-                    'auth': self._auth,
-                    'verify': self._verify,
-                    '_factory': self,
-                },
+            resource,
+            {
+                'api_url': self._url,
+                'resource_name': resource,
+                'auth': self._auth,
+                'verify': self._verify,
+                '_factory': self,
+            },
         )
 
     def _get_auth(self):
