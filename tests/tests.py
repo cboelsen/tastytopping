@@ -483,6 +483,7 @@ class IntegrationTests(TestsBase):
 
 
     # FEATURES:
+    # TODO Don't raise ResourceDeleted when unable to connect to API.
     # TODO Don't update field if value the same.
     # TODO Only GET a new Resource when fields needed?!?! Should the exceptions be delayed?!? Will it be confusing?!?
     # TODO Allow files to be passed when tastypie supports it (https://github.com/cboelsen/tastytopping/issues/1)
