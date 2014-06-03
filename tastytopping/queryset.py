@@ -375,6 +375,8 @@ class QuerySet(_AbstractQuerySet):
     def _filter_fields(self, fields):
         filtered_fields = {}
         for name, value in fields.items():
+            if isinstance(value, _AbstractQuerySet):
+                value = list(value.all())
             field_desc = self._schema.field(name)
             field_type = field_desc and field_desc['type']
             relate_name, relate_field = create_field(value, field_type, self._resource._factory).filter(name)

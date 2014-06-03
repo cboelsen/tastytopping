@@ -418,3 +418,18 @@ class QuerySetTests(TestsBase):
         q1[0]
         TestResource.all().delete()
         self.assertEqual(2, q1.count())
+
+    def test_passing_queryset_as_filter___queryset_values_used_in_filter(self):
+        TestTreeResource.create([{'name': str(i)} for i in range(-10, 0)])
+        roots = list(TestTreeResource.all())
+        TestTreeResource.create([
+            {'name': '100', 'parent': roots[-1]},
+            {'name': '101', 'parent': roots[-2]},
+            {'name': '102', 'parent': roots[-1]},
+            {'name': '103', 'parent': roots[-3]},
+            {'name': '104', 'parent': roots[-2]},
+            {'name': '105', 'parent': roots[-4]},
+            {'name': '106', 'parent': roots[-3]},
+        ])
+        roots_query = TestTreeResource.filter(name__in=['-1', '-2', '-4'])
+        self.assertEqual(5, TestTreeResource.filter(parent__in=roots_query).count())
