@@ -349,29 +349,29 @@ class QuerySetTests(TestsBase):
         self.assertEqual(13, all_containers[2].test.rating)
 
     def test_prefetch_related_with_to_many_field___full_related_fields_stored_on_return_of_iter(self):
-        FACTORY.tree.create([{'name': str(i)} for i in range(5)])
-        roots = [FACTORY.tree.get(name='0'), FACTORY.tree.get(name='1')]
-        FACTORY.tree.create([
+        TestTreeResource.create([{'name': str(i)} for i in range(5)])
+        roots = [TestTreeResource.get(name='0'), TestTreeResource.get(name='1')]
+        TestTreeResource.create([
             {'name': '100', 'parent': roots[0]},
             {'name': '101', 'parent': roots[0]},
             {'name': '102', 'parent': roots[0]},
             {'name': '103', 'parent': roots[1]},
             {'name': '104', 'parent': roots[1]},
         ])
-        all_trees = list(FACTORY.tree.all().prefetch_related('children', 'parent'))
+        all_trees = list(TestTreeResource.all().prefetch_related('children', 'parent'))
         self.assertEqual('100', all_trees[0].children[0].name)
         self.assertEqual('101', all_trees[0].children[1].name)
         self.assertEqual('103', all_trees[1].children[0].name)
         self.assertEqual('0', all_trees[5].parent.name)
 
     def test_pagination_with_slicing___all_results_are_returned(self):
-        FACTORY.tree.create([{'name': str(i)} for i in range(23)])
-        self.assertEqual(21, len(FACTORY.tree.all()[:-2]))
+        TestTreeResource.create([{'name': str(i)} for i in range(23)])
+        self.assertEqual(21, len(TestTreeResource.all()[:-2]))
 
     def test_querying_with_resources_as_params___filter_edited_properly(self):
-        FACTORY.tree.create([{'name': str(i)} for i in range(-10, 0)])
-        roots = list(FACTORY.tree.all())
-        FACTORY.tree.create([
+        TestTreeResource.create([{'name': str(i)} for i in range(-10, 0)])
+        roots = list(TestTreeResource.all())
+        TestTreeResource.create([
             {'name': '100', 'parent': roots[0]},
             {'name': '101', 'parent': roots[1]},
             {'name': '102', 'parent': roots[0]},
@@ -380,7 +380,7 @@ class QuerySetTests(TestsBase):
             {'name': '105', 'parent': roots[3]},
             {'name': '106', 'parent': roots[2]},
         ])
-        self.assertEqual(5, FACTORY.tree.filter(parent__in=[roots[0], roots[1], roots[3]]).count())
+        self.assertEqual(5, TestTreeResource.filter(parent__in=[roots[0], roots[1], roots[3]]).count())
 
     def test_pickling_querysets___unpickled_queryset_iterable(self):
         TestResource.create([{'path': self.TEST_PATH1 + str(i), 'rating': i} for i in range(0, 3)])
