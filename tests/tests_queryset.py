@@ -433,3 +433,9 @@ class QuerySetTests(TestsBase):
         ])
         roots_query = TestTreeResource.filter(name__in=['-1', '-2', '-4'])
         self.assertEqual(5, TestTreeResource.filter(parent__in=roots_query).count())
+
+    def test_casting_empty_queryset_to_list___empty_list_returned(self):
+        query = TestTreeResource.all()
+        query[0:0]
+        query[:]
+        list(query)

@@ -316,6 +316,8 @@ class QuerySet(_AbstractQuerySet):
     def __getitem__(self, key):
         # TODO Cache the results here too!
         if isinstance(key, slice):
+            if key.start is None and key.stop is None:
+                return list(self)
             if key.start is not None and key.start == key.stop:
                 return []
             resource_list = self._get_specified_resources(key.start, key.stop, key.step or 1)
