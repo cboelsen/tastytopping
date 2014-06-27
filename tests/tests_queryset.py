@@ -41,12 +41,10 @@ class QuerySetTests(TestsBase):
         TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
         with self.assertRaises(IndexError):
             TestResource.all()[10]
+        TestResource.all()[9:11]
         with self.assertRaises(IndexError):
-            TestResource.all()[9:11]
-        with self.assertRaises(IndexError):
-            TestResource.all()[-10]
-        with self.assertRaises(IndexError):
-            TestResource.all()[-11:-9]
+            TestResource.all()[-11]
+        TestResource.all()[-11:-9]
 
     def test_negative_index___correct_resource_returned(self):
         TestResource.create([{'path': self.TEST_PATH1 + str(i)} for i in range(0, 10)])
@@ -436,6 +434,17 @@ class QuerySetTests(TestsBase):
 
     def test_casting_empty_queryset_to_list___empty_list_returned(self):
         query = TestTreeResource.all()
-        query[0:0]
-        query[:]
-        list(query)
+        self.assertFalse(query[0:0])
+        self.assertFalse(query[:])
+        self.assertFalse(list(query))
+
+    def test_slicing_queryset_with_indices_outside_bounds___full_queryset_returned(self):
+        TestTreeResource.create([{'name': str(i)} for i in range(0, 3)])
+        query = TestTreeResource.all()
+        self.assertEqual(3, len(query[0:5]))
+        self.assertEqual(0, len(query[4:5]))
+        self.assertEqual(0, len(query[-6:-4]))
+        self.assertEqual(1, len(query[2:5]))
+        self.assertEqual(1, len(query[-5:-2]))
+        self.assertEqual(3, len(query[:5]))
+        self.assertEqual(3, len(query[-5:]))

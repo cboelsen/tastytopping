@@ -483,7 +483,6 @@ class IntegrationTests(TestsBase):
 
 
     # FEATURES:
-    # TODO Slicing queryset should not raise IndexError is slice values are out-of-bounds.
     # TODO Don't raise ResourceDeleted when unable to connect to API.
     # TODO Don't update field if value the same.
     # TODO Only GET a new Resource when fields needed?!?! Should the exceptions be delayed?!? Will it be confusing?!?

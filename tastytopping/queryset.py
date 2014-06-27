@@ -320,12 +320,18 @@ class QuerySet(_AbstractQuerySet):
                 return list(self)
             if key.start is not None and key.start == key.stop:
                 return []
-            resource_list = self._get_specified_resources(key.start, key.stop, key.step or 1)
+            try:
+                resource_list = self._get_specified_resources(key.start, key.stop, key.step or 1)
+            except IndexError:
+                resource_list = []
             resource_list = [self._insert_prefetched_resources(r) for r in resource_list]
             return resource_list
         elif isinstance(key, int):
             stop = key - 1 if key < 0 else key + 1
-            resource = self._get_specified_resources(key, stop)[0]
+            try:
+                resource = self._get_specified_resources(key, stop)[0]
+            except IndexError:
+                raise IndexError("The index {0} is out of range.".format(key))
             resource = self._insert_prefetched_resources(resource)
             return resource
         else:
@@ -395,15 +401,15 @@ class QuerySet(_AbstractQuerySet):
                 start = total_count + start
             if stop < 0:
                 stop = total_count + stop
-            if start < 0:
-                raise IndexError("The index {0} is out of range.".format(orig_start))
             if stop < 0:
-                raise IndexError("The index {0} is out of range.".format(orig_stop))
+                raise IndexError()
+            if start < 0:
+                start = 0
         if step < 0:
             start, stop = stop + 1, start + 1
         return start, stop
 
-    def _get_specified_resource_objects(self, start, stop, limit):
+    def _get_specified_resource_objects(self, start, limit):
         get_kwargs = self._kwargs.copy()
         get_kwargs.update({'offset': start, 'limit': limit})
         get_kwargs = self._apply_order(get_kwargs)
@@ -414,10 +420,6 @@ class QuerySet(_AbstractQuerySet):
             result = resources
         total_count = result['meta']['total_count']
         self._count = total_count
-        if start >= total_count:
-            raise IndexError("The index {0} is out of range.".format(start))
-        if stop > total_count:
-            raise IndexError("The index {0} is out of range.".format(stop))
         return all_resources
 
     def _get_specified_resources(self, start, stop, step=1):
@@ -426,7 +428,7 @@ class QuerySet(_AbstractQuerySet):
         if start < available and stop < available and stop != 0:
             return self._retrieved_resources[start:stop:step]
         limit = stop - start if stop > start else start - stop
-        objects = self._get_specified_resource_objects(start, stop, limit)[::step]
+        objects = self._get_specified_resource_objects(start, limit)[::step]
         return create_field(objects, None, self._resource._factory).value()
 
     def _retriever(self):
