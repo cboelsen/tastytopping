@@ -395,7 +395,6 @@ class QuerySet(_AbstractQuerySet):
         start = start or 0
         stop = stop or 0
         if start < 0 or stop < 0:
-            orig_start, orig_stop = start, stop
             total_count = self.count()
             if start < 0:
                 start = total_count + start
