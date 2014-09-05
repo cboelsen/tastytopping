@@ -3,8 +3,6 @@
 # pylint: skip-file
 
 
-import unittest
-
 from tastytopping import *
 
 from .tests_base import *

@@ -46,6 +46,7 @@ class ResourceFactory(object):
 
     def __init__(self, api_url, verify=True):
         self._url = api_url
+        self._dependencies = []
 
         api = TastyApi(api_url)
         api.verify = verify
@@ -57,9 +58,14 @@ class ResourceFactory(object):
         self._verify = verify
 
     def __getattribute__(self, name):
-        if name != 'resources' and name in self.resources:
-            if self.__dict__[name] is None:
-                self.__dict__[name] = self._resource_class(name)
+        if name not in ['resources', '_dependencies']:
+            if name in self.resources:
+                if self.__dict__[name] is None:
+                    self.__dict__[name] = self._resource_class(name)
+            else:
+                for dep in self._dependencies:
+                    if name in dep.resources:
+                        return getattr(dep, name)
         return super(ResourceFactory, self).__getattribute__(name)
 
     def _resource_class(self, resource):
@@ -94,3 +100,17 @@ class ResourceFactory(object):
             'Any new Resources will have their auth set to this value too.'
         ),
     )
+
+    def add_factory_dependency(self, factory):
+        """Add another ResourceFactory as a dependency.
+
+        If any of the Resources associated with this ResourceFactory (Api on
+        the tastypie side) have foreign keys to Resources associated with a
+        different ResourceFactory, then this ResourceFactory depends on the
+        other to create the Resources. In this case, you will need to pass the
+        other ResourceFactory into this method.
+
+        :param factory: The ResourceFactory that this depends on.
+        :type factory: ResourceFactory
+        """
+        self._dependencies.append(factory)

@@ -3,6 +3,7 @@ from tastypie.api import Api
 
 from .api import (
     TestResource,
+    TestResource2,
     UserResource,
     ApiKeyResource,
     NoFilterResource,
@@ -25,7 +26,12 @@ api_v1.register(TestContainerResource())
 api_v1.register(InvalidFieldResource())
 api_v1.register(NoUniqueInitFieldResource())
 
+api_v2 = Api(api_name='v2')
+api_v2.register(TestResource2())
 
-urlpatterns = patterns('',
+
+urlpatterns = patterns(
+    '',
     url(r'^api/', include(api_v1.urls)),
+    url(r'^api/', include(api_v2.urls)),
 )

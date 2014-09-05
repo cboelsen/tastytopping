@@ -481,6 +481,14 @@ class IntegrationTests(TestsBase):
         text = u'/some/name/Boßeln'
         list(TestResource.filter(path__startswith=text))
 
+    def test_adding_nested_resource_from_another_api___nested_resources_retrieved_from_associated_factory(self):
+        factory = ResourceFactory('http://localhost:8111/test/api/v2')
+        factory.test_resource.auth = HTTPApiKeyAuth(TestsBase.TEST_USERNAME, TestsBase.TEST_API_KEY)
+        factory.add_factory_dependency(FACTORY)
+        user = FACTORY.user.get(username=self.TEST_USERNAME)
+        factory.test_resource(path=self.TEST_PATH1, created_by=user).save()
+
+        self.assertEqual(factory.test_resource.get(path=self.TEST_PATH1).created_by, user)
 
     # FEATURES:
     # TODO Don't raise ResourceDeleted when unable to connect to API.

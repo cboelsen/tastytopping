@@ -151,7 +151,6 @@ class _FieldCreator(object):
             self._is_probably_resource(self._field[0])
         )
 
-
     def _try_remaining_types(self):
         if self._is_probably_datetime():
             return DateTimeField(self._field)

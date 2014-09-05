@@ -37,10 +37,10 @@ from .queryset import (
 
 # Required because the syntax for metaclasses changed between python 2 and 3.
 # TODO Remove this when python2 finally dies.
-_BASE_META_BRIDGE = ResourceMeta('_BaseMetaBridge', (object, ), {'auth': None})
+BaseMetaBridge = ResourceMeta('_BaseMetaBridge', (object, ), {'auth': None})
 
 
-class Resource(_BASE_META_BRIDGE, object):
+class Resource(BaseMetaBridge, object):
     """A base class to inherit from, to wrap a TastyPie resource.
 
     To wrap a TastyPie resource, a class must be defined that inherits from

@@ -1,16 +1,12 @@
-import json
-
 from django.conf.urls import url
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.core import management
 from django.middleware.csrf import _get_new_csrf_key as get_new_csrf_key
-from django.middleware.csrf import _sanitize_token, constant_time_compare
 
 from tastypie import fields
 from tastypie.authentication import ApiKeyAuthentication, SessionAuthentication
 from tastypie.authorization import Authorization
-from tastypie.http import HttpGone, HttpMultipleChoices
+from tastypie.http import HttpGone, HttpMultipleChoices, HttpForbidden
 from tastypie.models import ApiKey
 from tastypie.resources import (
     ModelResource,
@@ -20,7 +16,7 @@ from tastypie.resources import (
     ALL_WITH_RELATIONS,
 )
 from tastypie.utils import trailing_slash
-    
+
 from .models import Test, Tree, TestContainer, InvalidField, NoUniqueInitField
 
 
@@ -39,7 +35,7 @@ class ApiKeyResource(ModelResource):
             User.objects.create_user('testuser2', 'noemail2@nothing.com', 'password')
             User.objects.create_user('testuser3', 'noemail3@nothing.com', 'password')
             User.objects.create_user('testuser4', 'noemail4@nothing.com', 'password')
-            api_key = ApiKey.objects.get_or_create(user=User.objects.get(username='testuser'))
+            ApiKey.objects.get_or_create(user=User.objects.get(username='testuser'))
         return super(ApiKeyResource, self).get_schema(request, **kwargs)
 
 
@@ -111,18 +107,25 @@ class UserResource(ModelResource):
         self.is_authenticated(request)
         if request.user and request.user.is_authenticated():
             logout(request)
-            return self.create_response(request, { 'success': True })
+            return self.create_response(request, {'success': True})
         else:
-            return self.create_response(request, { 'success': False, 'error_message': 'You are not authenticated, %s' % request.user.is_authenticated() })
-         
-         
+            return self.create_response(
+                request,
+                {
+                    'success': False,
+                    'error_message': 'You are not authenticated, %s' % request.user.is_authenticated()
+                }
+            )
+
+
 class TestResource(ModelResource):
     created_by = fields.ToOneField(UserResource, 'created_by', null=True)
     reviewed = fields.BooleanField(default=False, readonly=True)
+
     class Meta:
         queryset = Test.objects.all()
         resource_name = 'test_resource'
-        list_allowed_methods   = ['get', 'post', 'patch', 'delete']
+        list_allowed_methods = ['get', 'post', 'patch', 'delete']
         detail_allowed_methods = ['get', 'put', 'delete', 'patch']
         authentication = ApiKeyAuthentication()
         authorization = Authorization()
@@ -154,11 +157,15 @@ class TestResource(ModelResource):
         ordering = ['rating', 'date']
 
 
+class TestResource2(TestResource):
+    pass
+
+
 class NoFilterResource(ModelResource):
     class Meta:
         queryset = Test.objects.all()
         resource_name = 'no_filter'
-        list_allowed_methods   = ['get', 'post']
+        list_allowed_methods = ['get', 'post']
         detail_allowed_methods = ['get', 'post', 'put', 'delete']
         authorization = Authorization()
         filtering = {}
@@ -168,7 +175,7 @@ class OnlyPostResource(ModelResource):
     class Meta:
         queryset = Test.objects.all()
         resource_name = 'only_post'
-        list_allowed_methods   = ['post']
+        list_allowed_methods = ['post']
         detail_allowed_methods = []
         authorization = Authorization()
 
@@ -176,10 +183,11 @@ class OnlyPostResource(ModelResource):
 class TreeResource(ModelResource):
     parent = fields.ToOneField('self', 'parent', null=True)
     children = fields.ToManyField('self', 'children', null=True, related_name='parent')
+
     class Meta:
         resource_name = 'tree'
         queryset = Tree.objects.all()
-        list_allowed_methods   = ['get', 'post', 'patch']
+        list_allowed_methods = ['get', 'post', 'patch']
         detail_allowed_methods = ['get', 'delete', 'put']
         authorization = Authorization()
         always_return_data = True
@@ -292,6 +300,7 @@ class TreeResource(ModelResource):
 
 class TestContainerResource(ModelResource):
     test = fields.ToOneField(TestResource, 'test', null=True)
+
     class Meta:
         queryset = TestContainer.objects.all()
         resource_name = 'container'
@@ -314,4 +323,4 @@ class NoUniqueInitFieldResource(ModelResource):
         queryset = NoUniqueInitField.objects.all()
         resource_name = 'no_unique'
         authorization = Authorization()
-        filtering = {'name': ALL,}
+        filtering = {'name': ALL}
