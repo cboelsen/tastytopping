@@ -499,7 +499,7 @@ class IntegrationTests(TestsBase):
     # TODO Single dispatch functions in field?
 
     # TESTING:
-    # TODO Re-enable django-dev in *-dev when tastypie works with django 1.7 again.
+    # TODO Re-enable django-dev in *-dev when tastypie works with django 1.8 again.
 
     # DOCS
     # TODO Pickling querysets
