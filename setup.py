@@ -5,16 +5,16 @@ except ImportError:
 
 
 setup(
-    name = "TastyTopping",
-    version = "1.2.4",
-    description = "An ORM for tastypie's API on the client-side.",
-    author = "Christian Boelsen",
+    name="TastyTopping",
+    version="1.2.5",
+    description="An ORM for tastypie's API on the client-side.",
+    author="Christian Boelsen",
     author_email="christian.boelsen@hds.com",
-    url = 'https://github.com/cboelsen/tastytopping',
-    packages = ['tastytopping'],
-    license = "LGPLv3",
-    long_description = open('README.rst', 'r').read(),
-    install_requires = [
+    url='https://github.com/cboelsen/tastytopping',
+    packages=['tastytopping'],
+    license="LGPLv3",
+    long_description=open('README.rst', 'r').read(),
+    install_requires=[
         'requests >= 1.2.3',
     ],
     classifiers=[
@@ -42,5 +42,5 @@ setup(
         'api',
         'resource',
         'orm',
-        ],
+    ],
 )

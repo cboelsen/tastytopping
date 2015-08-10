@@ -1,17 +1,21 @@
 language: python
 python: 2.7
 env:
-#  - TOX_ENV=pypy-dev
+  - TOX_ENV=pypy-dev
+  - TOX_ENV=pypy-0.12.1
   - TOX_ENV=pypy-0.12
   - TOX_ENV=pypy-0.11
-#  - TOX_ENV=py34-dev
+  - TOX_ENV=py34-dev
+  - TOX_ENV=py34-0.12.1
   - TOX_ENV=py34-0.12
   - TOX_ENV=py34-0.11
-#  - TOX_ENV=py33-dev
+  - TOX_ENV=py33-dev
+  - TOX_ENV=py33-0.12.1
   - TOX_ENV=py33-0.12
   - TOX_ENV=py33-0.11
   - TOX_ENV=py33-0.10
-#  - TOX_ENV=py27-dev
+  - TOX_ENV=py27-dev
+  - TOX_ENV=py27-0.12.1
   - TOX_ENV=py27-0.12
   - TOX_ENV=py27-0.11
   - TOX_ENV=py27-0.10

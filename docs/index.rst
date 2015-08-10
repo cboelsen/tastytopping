@@ -132,7 +132,7 @@ POST, and DELETE methods on the API, using the
 ::
 
     from datetime import datetime
-    from tastytopping import TastyFactory, HTTPApiKeyAuth
+    from tastytopping import ResourceFactory, HTTPApiKeyAuth
 
     if __name__ == "__main__":
 
