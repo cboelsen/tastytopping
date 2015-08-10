@@ -7,35 +7,38 @@ import unittest
 
 from tastytopping import *
 
-from . import run_testsite
+from .run_testsite import setup_tastypie_site
 
+
+setup_tastypie_site()
 
 FACTORY = ResourceFactory('http://localhost:8111/test/api/v1/')
 
-################################ BAD RESOURCES ################################
+# ############################## BAD RESOURCES ############################## #
 NoFilterResource = FACTORY.no_filter
 
 
-############################### GOOD RESOURCES ################################
+# ############################# GOOD RESOURCES ############################## #
 ApiKeyResource = FACTORY.api_key
 TestResource = FACTORY.test_resource
 TestTreeResource = FACTORY.tree
+
 
 class TestResourceDerived(TestResource):
     pass
 
 
-################################# TEST CLASS ##################################
+# ############################### TEST CLASS ################################ #
 class TestsBase(unittest.TestCase):
 
-    ############### CONSTANTS ##############
+    # ############## CONSTANTS ############## #
     TEST_PATH1 = u'tést1üö'
     TEST_PATH2 = u'tést2ßä'
     TEST_RATING1 = 43
     TEST_USERNAME = 'testuser'
     TEST_API_KEY = ApiKeyResource.get(user__username='testuser').key
 
-    ################ HELPERS ###############
+    # ############### HELPERS ############### #
     def setUp(self):
         TestResource.auth = HTTPApiKeyAuth(self.TEST_USERNAME, self.TEST_API_KEY)
         self._delete_all_test_objects()

@@ -299,6 +299,16 @@ class QuerySetTests(TestsBase):
         combined = TestResource.filter(rating__in=[20, 30]) & TestResource.filter(rating__in=[20, 40]) & TestResource.filter(date=datetime(2013, 3, 3))
         self.assertEqual(self.TEST_PATH1+'2', combined.get().path)
 
+    def test_filter_in_empty_list(self):
+        TestResource.create([
+            {'path': self.TEST_PATH1+'1', 'rating': 20, 'text': 'A', 'date': datetime(2013, 3, 1)},
+            {'path': self.TEST_PATH1+'2', 'rating': 20, 'text': 'B', 'date': datetime(2013, 3, 2)},
+            {'path': self.TEST_PATH1+'3', 'rating': 80, 'text': 'C', 'date': datetime(2013, 3, 3)},
+            {'path': self.TEST_PATH1+'4', 'rating': 60, 'text': 'D', 'date': datetime(2013, 3, 4)},
+        ])
+        combined = TestResource.filter(rating__in=[])
+        self.assertEqual(0, combined.count())
+
     def test_logical_and_with_queryset_of_different_resource___exception_raised(self):
         with self.assertRaises(TypeError):
             TestResource.all() & FACTORY.container.all()

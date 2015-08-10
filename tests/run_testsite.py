@@ -1,4 +1,4 @@
-#pylint: skip-file
+# pylint: skip-file
 import atexit
 import os
 import psutil
@@ -43,15 +43,17 @@ def remove_db():
         pass
 
 
-def run():
+def setup_tastypie_site():
     atexit.register(kill_django)
     os.chdir(os.path.join('tests', 'testsite'))
     remove_db()
-    subprocess.check_call('python manage.py syncdb --noinput'.split())
+    try:
+        subprocess.check_call('python manage.py syncdb --noinput'.split())
+    except subprocess.CalledProcessError:
+        subprocess.check_call('python manage.py makemigrations testapp --noinput'.split())
+        subprocess.check_call('python manage.py migrate --noinput'.split())
     subprocess.check_call('python manage.py createsuperuser --noinput --username=testuser --email=none@test.test'.split())
     t = threading.Thread(target=start)
     t.daemon = True
     t.start()
     wait_for_django_port_open()
-
-run()
